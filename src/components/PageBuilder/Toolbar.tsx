@@ -18,6 +18,8 @@ import {
   FolderOpen
 } from 'lucide-react';
 import { usePageStore } from '../../store/usePageStore';
+import { prepareImagesForExport } from '../../utils/imageHandler';
+import { generateGlobalStylesCSS } from '../../utils/globalStylesHelper';
 import GlobalSettingsPanel from './GlobalSettingsPanel';
 import ProjectManager from './ProjectManager';
 
@@ -61,6 +63,12 @@ const Toolbar: React.FC = () => {
 
     const { globalSettings } = pageData;
     
+    // 画像ファイルの準備
+    const exportImages = prepareImagesForExport();
+    
+    // 共通スタイルのCSS生成
+    const globalStylesCSS = generateGlobalStylesCSS(pageData.globalStyles);
+    
     const htmlContent = `<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -85,6 +93,11 @@ const Toolbar: React.FC = () => {
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
     <link rel="stylesheet" href="../assets/common.css">
+    
+    <!-- 共通スタイル -->
+    <style>
+      ${globalStylesCSS}
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -106,7 +119,7 @@ const Toolbar: React.FC = () => {
                     <a href="#" style="color: #374151; text-decoration: none; padding: 8px 12px; font-size: 14px; font-weight: 500;">お問い合わせ</a>
                 </nav>
                 <div style="display: none; align-items: center; gap: 16px;">
-                    <a href="#" style="background-color: #2563eb; color: #ffffff; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none;">無料で始める</a>
+                    <a href="#" class="mainColor" style="padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none;">無料で始める</a>
                 </div>
             </div>
         </div>
@@ -139,15 +152,21 @@ const Toolbar: React.FC = () => {
 </body>
 </html>`;
 
-    // ディレクトリ設定に基づいてファイル名を決定
-    const directory = globalSettings.directory?.trim();
+    const { directory } = globalSettings;
     
     if (directory) {
-      // ディレクトリが指定されている場合、ZIPファイルを作成
-      createZipWithDirectory(htmlContent, directory);
+      // ディレクトリが指定されている場合、画像ファイルも含めてZIPファイルを作成
+      createZipWithDirectoryAndImages(htmlContent, directory, exportImages);
     } else {
       // ディレクトリが指定されていない場合、単純にindex.htmlをダウンロード
       downloadFile(htmlContent, 'index.html', 'text/html');
+      
+      // 画像がある場合は警告を表示
+      if (Object.keys(exportImages).length > 0) {
+        setTimeout(() => {
+          alert(`注意: ${Object.keys(exportImages).length}個の画像ファイルが使用されていますが、ディレクトリが設定されていないため画像ファイルは出力されませんでした。\n\nページ設定でディレクトリを設定すると、画像ファイルも一緒に出力されます。`);
+        }, 500);
+      }
     }
 
     // エクスポート後に状態を復元（プレビューエリアをリセットしない）
@@ -170,17 +189,43 @@ const Toolbar: React.FC = () => {
     }, 100);
   };
 
-  // ZIPファイルを作成してディレクトリ構造を含める関数
-  const createZipWithDirectory = (htmlContent: string, directoryName: string) => {
-    // JSZipライブラリを使わずに、シンプルな方法でディレクトリ構造を示す
-    // 実際の実装では、ユーザーに手動でディレクトリを作成してもらう
-    
+  // ZIPファイルを作成してディレクトリ構造と画像を含める関数
+  const createZipWithDirectoryAndImages = (htmlContent: string, directoryName: string, images: { [filename: string]: string }) => {
     // HTMLファイルは常にindex.html
     downloadFile(htmlContent, 'index.html', 'text/html');
     
+    // 画像ファイルがある場合は個別にダウンロード
+    if (Object.keys(images).length > 0) {
+      // 少し遅延してから画像ファイルをダウンロード
+      setTimeout(() => {
+        Object.entries(images).forEach(([filename, base64Data], index) => {
+          setTimeout(() => {
+            // Base64データをBlobに変換
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'image/jpeg' });
+            
+            // ファイルをダウンロード
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, index * 200); // 200ms間隔でダウンロード
+        });
+      }, 500);
+    }
+    
     // ディレクトリ構造の説明を表示
     const instructions = `
-HTMLファイルが「index.html」として出力されました。
+HTMLファイルと${Object.keys(images).length}個の画像ファイルが出力されました。
 
 【ディレクトリ構造の設定方法】
 以下のフォルダ構造を作成してください：
@@ -189,22 +234,27 @@ HTMLファイルが「index.html」として出力されました。
 │   ├── common.css (スタイルファイル)
 │   └── common.js (JavaScriptファイル)
 └── ${directoryName}/
-    ├── index.html (ダウンロードしたファイル)
-    └── images/ (画像ファイル用)
+    ├── index.html (ダウンロードしたHTMLファイル)
+    └── img/ (画像ファイル用フォルダ)
+        ${Object.keys(images).map(filename => `├── ${filename}`).join('\n        ')}
 
 【設定手順】
 1. プロジェクトのルートディレクトリに「assets」フォルダを作成
 2. 「${directoryName}」フォルダを作成
 3. ダウンロードした「index.html」ファイルを「${directoryName}」フォルダ内に配置
-4. 必要に応じて「${directoryName}/images」フォルダを作成
+4. 「${directoryName}/img」フォルダを作成
+5. ダウンロードした画像ファイルを「${directoryName}/img」フォルダ内に配置
 
-この構造により、HTMLファイルから「../assets/」の相対パスでCSSとJavaScriptファイルにアクセスできます。
+この構造により、HTMLファイルから「../assets/」の相対パスでCSSとJavaScriptファイルに、「./img/」の相対パスで画像ファイルにアクセスできます。
+
+【共通スタイル機能】
+HTMLファイルには、ページ設定で設定した共通スタイル（mainColor、baseColor、base2Color、accentColor）が自動的に適用されます。
     `.trim();
     
     // 遅延してアラートを表示（ダウンロードが完了してから）
     setTimeout(() => {
       alert(instructions);
-    }, 500);
+    }, 1000 + Object.keys(images).length * 200);
   };
 
   // ファイルをダウンロードする関数
@@ -515,7 +565,7 @@ HTMLファイルが「index.html」として出力されました。
             <button
               onClick={() => setShowGlobalSettings(true)}
               style={secondaryButtonStyle}
-              title="ページ設定"
+              title="ページ設定・共通スタイル"
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#e5e7eb';
               }}

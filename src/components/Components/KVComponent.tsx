@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Play, Star, Calendar, Users } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, Play, Star, Calendar, Users, Pause, Volume2, VolumeX } from 'lucide-react';
 import { ComponentData } from '../../types';
+import { usePageStore } from '../../store/usePageStore';
+import { getGlobalStyleValue } from '../../utils/globalStylesHelper';
 
 interface KVComponentProps {
   component: ComponentData;
@@ -8,7 +10,8 @@ interface KVComponentProps {
 }
 
 const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
-  const { headline, description, ctaText, ctaUrl, backgroundImage, pattern = 'carousel', carouselItems = [], cardItems = [] } = component.props;
+  const { pageData } = usePageStore();
+  const { headline, description, ctaText, ctaUrl, backgroundImage, pattern = 'carousel', carouselItems = [], cardItems = [], mediaItems = [], title, cast, broadcastInfo, ctaButtons, additionalInfo } = component.props;
   const { 
     backgroundColor, 
     textColor, 
@@ -18,7 +21,18 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
     buttonTextColor 
   } = component.style || {};
 
+  // 共通スタイルの取得
+  const mainColor = getGlobalStyleValue(pageData.globalStyles, 'mainColor');
+  const baseColor = getGlobalStyleValue(pageData.globalStyles, 'baseColor');
+  const base2Color = getGlobalStyleValue(pageData.globalStyles, 'base2Color');
+  const accentColor = getGlobalStyleValue(pageData.globalStyles, 'accentColor');
+
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isAutoSliding, setIsAutoSliding] = useState(true);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
   // デフォルトのカルーセルアイテム
   const defaultCarouselItems = [
@@ -85,17 +99,106 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
     }
   ];
 
+  // デフォルトのメディアアイテム（番組ヒーロー用）
+  const defaultMediaItems = [
+    {
+      type: 'image',
+      url: 'https://images.pexels.com/photos/3184287/pexels-photo-3184287.jpeg?auto=compress&cs=tinysrgb&w=800',
+      alt: 'メインビジュアル'
+    },
+    {
+      type: 'video',
+      url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      poster: 'https://images.pexels.com/photos/3184288/pexels-photo-3184288.jpeg?auto=compress&cs=tinysrgb&w=800',
+      alt: '予告編'
+    },
+    {
+      type: 'image',
+      url: 'https://images.pexels.com/photos/3184289/pexels-photo-3184289.jpeg?auto=compress&cs=tinysrgb&w=800',
+      alt: 'シーン画像'
+    }
+  ];
+
   const activeCarouselItems = carouselItems.length > 0 ? carouselItems : defaultCarouselItems;
   const activeCardItems = cardItems.length > 0 ? cardItems : defaultCardItems;
+  const activeMediaItems = mediaItems.length > 0 ? mediaItems : defaultMediaItems;
 
+  // カルーセル用の自動スライド
   useEffect(() => {
-    if (pattern === 'carousel') {
+    if (pattern === 'carousel' && activeCarouselItems.length > 1) {
       const interval = setInterval(() => {
         setCurrentSlide((prev) => (prev + 1) % activeCarouselItems.length);
       }, 5000);
       return () => clearInterval(interval);
     }
   }, [pattern, activeCarouselItems.length]);
+
+  // 番組ヒーロー用の自動スライド
+  useEffect(() => {
+    if (pattern === 'program-hero' && activeMediaItems.length > 1 && isAutoSliding) {
+      const interval = setInterval(() => {
+        // 動画が再生中の場合は自動スライドを停止
+        if (!isVideoPlaying) {
+          setCurrentMediaIndex((prev) => {
+            const newIndex = (prev + 1) % activeMediaItems.length;
+            // 動画の場合は一時停止
+            pauseAllVideos();
+            return newIndex;
+          });
+        }
+      }, 4000); // 4秒間隔
+      return () => clearInterval(interval);
+    }
+  }, [pattern, activeMediaItems.length, isAutoSliding, isVideoPlaying]);
+
+  // 動画制御関数
+  const pauseAllVideos = () => {
+    videoRefs.current.forEach((video) => {
+      if (video) {
+        video.pause();
+      }
+    });
+    setIsVideoPlaying(false);
+  };
+
+  const playCurrentVideo = () => {
+    const currentVideo = videoRefs.current[currentMediaIndex];
+    if (currentVideo && activeMediaItems[currentMediaIndex]?.type === 'video') {
+      currentVideo.play();
+      setIsVideoPlaying(true);
+      setIsAutoSliding(false); // 動画再生中は自動スライドを停止
+    }
+  };
+
+  const toggleVideoPlayback = () => {
+    const currentVideo = videoRefs.current[currentMediaIndex];
+    if (currentVideo && activeMediaItems[currentMediaIndex]?.type === 'video') {
+      if (isVideoPlaying) {
+        currentVideo.pause();
+        setIsVideoPlaying(false);
+        setIsAutoSliding(true); // 動画停止時は自動スライドを再開
+      } else {
+        currentVideo.play();
+        setIsVideoPlaying(true);
+        setIsAutoSliding(false); // 動画再生中は自動スライドを停止
+      }
+    }
+  };
+
+  const toggleMute = () => {
+    const currentVideo = videoRefs.current[currentMediaIndex];
+    if (currentVideo) {
+      currentVideo.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  // メディアスライド変更時の処理
+  const changeMediaSlide = (newIndex: number) => {
+    pauseAllVideos(); // 全ての動画を停止
+    setCurrentMediaIndex(newIndex);
+    setIsAutoSliding(true); // 手動変更時は自動スライドを再開
+  };
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % activeCarouselItems.length);
@@ -105,15 +208,25 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
     setCurrentSlide((prev) => (prev - 1 + activeCarouselItems.length) % activeCarouselItems.length);
   };
 
+  const nextMediaSlide = () => {
+    const newIndex = (currentMediaIndex + 1) % activeMediaItems.length;
+    changeMediaSlide(newIndex);
+  };
+
+  const prevMediaSlide = () => {
+    const newIndex = (currentMediaIndex - 1 + activeMediaItems.length) % activeMediaItems.length;
+    changeMediaSlide(newIndex);
+  };
+
   const containerStyle = {
-    backgroundColor: backgroundColor || undefined,
+    backgroundColor: backgroundColor || baseColor,
     color: textColor || undefined,
   };
 
   // パターン1: カルーセル・プレゼンテーション（情報整理型）
   if (pattern === 'carousel') {
     return (
-      <div style={{ ...containerStyle, minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ ...containerStyle, minHeight: '100vh', position: 'relative', overflow: 'hidden' }} className="baseColor">
         <div style={{ display: 'flex', height: '100vh' }}>
           {/* カルーセル部分 */}
           <div style={{ flex: '1', position: 'relative' }}>
@@ -147,115 +260,119 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
             </div>
 
             {/* ナビゲーション矢印 */}
-            <button
-              onClick={prevSlide}
-              style={{
-                position: 'absolute',
-                left: '20px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                border: 'none',
-                borderRadius: '50%',
-                width: '50px',
-                height: '50px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'background-color 0.3s ease',
-                backdropFilter: 'blur(10px)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)';
-              }}
-            >
-              <ChevronLeft size={24} color="white" />
-            </button>
-
-            <button
-              onClick={nextSlide}
-              style={{
-                position: 'absolute',
-                right: '20px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                border: 'none',
-                borderRadius: '50%',
-                width: '50px',
-                height: '50px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'background-color 0.3s ease',
-                backdropFilter: 'blur(10px)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)';
-              }}
-            >
-              <ChevronRight size={24} color="white" />
-            </button>
-
-            {/* ドットインジケーター */}
-            <div style={{
-              position: 'absolute',
-              bottom: '30px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              display: 'flex',
-              gap: '10px'
-            }}>
-              {activeCarouselItems.map((_, index) => (
+            {activeCarouselItems.length > 1 && (
+              <>
                 <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
+                  onClick={prevSlide}
                   style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
+                    position: 'absolute',
+                    left: '20px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
                     border: 'none',
-                    backgroundColor: index === currentSlide ? 'white' : 'rgba(255,255,255,0.5)',
+                    borderRadius: '50%',
+                    width: '50px',
+                    height: '50px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     cursor: 'pointer',
                     transition: 'background-color 0.3s ease',
+                    backdropFilter: 'blur(10px)',
                   }}
-                />
-              ))}
-            </div>
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)';
+                  }}
+                >
+                  <ChevronLeft size={24} color="white" />
+                </button>
+
+                <button
+                  onClick={nextSlide}
+                  style={{
+                    position: 'absolute',
+                    right: '20px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '50px',
+                    height: '50px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.3s ease',
+                    backdropFilter: 'blur(10px)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)';
+                  }}
+                >
+                  <ChevronRight size={24} color="white" />
+                </button>
+
+                {/* ドットインジケーター */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '30px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  display: 'flex',
+                  gap: '10px'
+                }}>
+                  {activeCarouselItems.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlide(index)}
+                      style={{
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        border: 'none',
+                        backgroundColor: index === currentSlide ? 'white' : 'rgba(255,255,255,0.5)',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.3s ease',
+                      }}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* 情報パネル */}
           <div style={{
             width: '400px',
-            backgroundColor: backgroundColor || 'rgba(255,255,255,0.95)',
+            backgroundColor: backgroundColor || base2Color,
             backdropFilter: 'blur(20px)',
             padding: '40px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
             color: textColor || '#333'
-          }}>
+          }} className="base2Color">
             <div style={{ marginBottom: '20px' }}>
               <span style={{
-                backgroundColor: '#ff6b6b',
+                backgroundColor: mainColor,
                 color: 'white',
                 padding: '4px 12px',
                 borderRadius: '20px',
                 fontSize: '12px',
                 fontWeight: 'bold'
-              }}>
+              }} className="mainColor">
                 {activeCarouselItems[currentSlide].category}
               </span>
               <span style={{
-                backgroundColor: '#4ecdc4',
+                backgroundColor: accentColor,
                 color: 'white',
                 padding: '4px 12px',
                 borderRadius: '20px',
@@ -310,7 +427,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
               <a
                 href={ctaUrl}
                 style={{
-                  backgroundColor: buttonBackgroundColor || '#ff6b6b',
+                  backgroundColor: buttonBackgroundColor || mainColor,
                   color: buttonTextColor || 'white',
                   padding: '12px 24px',
                   borderRadius: '8px',
@@ -321,11 +438,12 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                   gap: '8px',
                   transition: 'background-color 0.3s ease'
                 }}
+                className="mainColor"
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = buttonBackgroundColor || '#ff5252';
+                  e.currentTarget.style.filter = 'brightness(0.9)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = buttonBackgroundColor || '#ff6b6b';
+                  e.currentTarget.style.filter = 'brightness(1)';
                 }}
               >
                 <Play size={16} />
@@ -372,7 +490,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
-      }}>
+      }} className="baseColor">
         {/* オーバーレイ */}
         <div style={{
           position: 'absolute',
@@ -388,14 +506,14 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
           position: 'absolute',
           top: '40px',
           left: '40px',
-          backgroundColor: 'rgba(255,107,107,0.9)',
+          backgroundColor: mainColor,
           color: 'white',
           padding: '8px 16px',
           borderRadius: '20px',
           fontSize: '14px',
           fontWeight: 'bold',
           backdropFilter: 'blur(10px)'
-        }}>
+        }} className="mainColor">
           プレミアム
         </div>
 
@@ -404,7 +522,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
           position: 'absolute',
           top: '40px',
           right: '40px',
-          backgroundColor: 'rgba(76,175,80,0.9)',
+          backgroundColor: accentColor,
           color: 'white',
           padding: '8px 16px',
           borderRadius: '20px',
@@ -454,7 +572,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
             <a
               href={ctaUrl}
               style={{
-                backgroundColor: buttonBackgroundColor || '#ff6b6b',
+                backgroundColor: buttonBackgroundColor || mainColor,
                 color: buttonTextColor || 'white',
                 padding: '16px 32px',
                 borderRadius: '8px',
@@ -467,13 +585,14 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                 transition: 'all 0.3s ease',
                 boxShadow: '0 4px 15px rgba(255,107,107,0.4)'
               }}
+              className="mainColor"
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = buttonBackgroundColor || '#ff5252';
+                e.currentTarget.style.filter = 'brightness(0.9)';
                 e.currentTarget.style.transform = 'translateY(-2px)';
                 e.currentTarget.style.boxShadow = '0 6px 20px rgba(255,107,107,0.6)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = buttonBackgroundColor || '#ff6b6b';
+                e.currentTarget.style.filter = 'brightness(1)';
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = '0 4px 15px rgba(255,107,107,0.4)';
               }}
@@ -554,12 +673,12 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
       <div style={{
         ...containerStyle,
         minHeight: '100vh',
-        backgroundColor: backgroundColor || '#f8f9fa',
+        backgroundColor: backgroundColor || baseColor,
         padding: '60px 20px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
-      }}>
+      }} className="baseColor">
         <div style={{
           maxWidth: '1200px',
           width: '100%'
@@ -595,13 +714,14 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
               <div
                 key={index}
                 style={{
-                  backgroundColor: 'white',
+                  backgroundColor: base2Color,
                   borderRadius: '16px',
                   overflow: 'hidden',
                   boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
                   transition: 'all 0.3s ease',
                   cursor: 'pointer'
                 }}
+                className="base2Color"
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-8px)';
                   e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.15)';
@@ -623,13 +743,13 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                       position: 'absolute',
                       top: '12px',
                       left: '12px',
-                      backgroundColor: '#ff6b6b',
+                      backgroundColor: mainColor,
                       color: 'white',
                       padding: '4px 8px',
                       borderRadius: '12px',
                       fontSize: '12px',
                       fontWeight: 'bold'
-                    }}>
+                    }} className="mainColor">
                       NEW
                     </div>
                   )}
@@ -682,8 +802,8 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                         <Star
                           key={star}
                           size={14}
-                          fill={star <= item.rating ? '#ffc107' : 'none'}
-                          color={star <= item.rating ? '#ffc107' : '#ddd'}
+                          fill={star <= item.rating ? accentColor : 'none'}
+                          color={star <= item.rating ? accentColor : '#ddd'}
                         />
                       ))}
                     </div>
@@ -692,13 +812,13 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
 
                   <div style={{
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'start',
                     gap: '8px',
                     marginBottom: '12px',
                     color: '#666',
                     fontSize: '14px'
                   }}>
-                    <Users size={16} />
+                    <Users size={16} style={{ marginTop: '2px', flexShrink: 0 }} />
                     <span>出演: {item.cast}</span>
                   </div>
 
@@ -717,7 +837,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                     flexWrap: 'wrap'
                   }}>
                     <button style={{
-                      backgroundColor: buttonBackgroundColor || '#ff6b6b',
+                      backgroundColor: buttonBackgroundColor || mainColor,
                       color: buttonTextColor || 'white',
                       padding: '8px 16px',
                       borderRadius: '6px',
@@ -727,11 +847,12 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                       cursor: 'pointer',
                       transition: 'background-color 0.3s ease'
                     }}
+                    className="mainColor"
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = buttonBackgroundColor || '#ff5252';
+                      e.currentTarget.style.filter = 'brightness(0.9)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = buttonBackgroundColor || '#ff6b6b';
+                      e.currentTarget.style.filter = 'brightness(1)';
                     }}
                     >
                       予約
@@ -778,7 +899,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                     </button>
                     <button style={{
                       backgroundColor: '#f0f0f0',
-                      color: buttonBackgroundColor || '#ff6b6b',
+                      color: buttonBackgroundColor || mainColor,
                       padding: '8px 16px',
                       borderRadius: '6px',
                       border: 'none',
@@ -809,7 +930,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
             <a
               href={ctaUrl}
               style={{
-                backgroundColor: buttonBackgroundColor || '#ff6b6b',
+                backgroundColor: buttonBackgroundColor || mainColor,
                 color: buttonTextColor || 'white',
                 padding: '16px 32px',
                 borderRadius: '8px',
@@ -819,17 +940,324 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                 display: 'inline-block',
                 transition: 'all 0.3s ease'
               }}
+              className="mainColor"
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = buttonBackgroundColor || '#ff5252';
+                e.currentTarget.style.filter = 'brightness(0.9)';
                 e.currentTarget.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = buttonBackgroundColor || '#ff6b6b';
+                e.currentTarget.style.filter = 'brightness(1)';
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
               {ctaText || 'すべてのコンテンツを見る'}
             </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // パターン4: 番組ヒーロー型（新規追加）
+  if (pattern === 'program-hero') {
+    return (
+      <div style={containerStyle} className="py-12 sm:py-16 baseColor">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+            {/* 左側：メディアスライダー */}
+            <div className="relative">
+              {activeMediaItems && activeMediaItems.length > 0 && (
+                <div className="relative aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-2xl">
+                  {/* 現在のメディア表示 */}
+                  {activeMediaItems[currentMediaIndex]?.type === 'video' ? (
+                    <div className="relative w-full h-full">
+                      <video
+                        ref={(el) => (videoRefs.current[currentMediaIndex] = el)}
+                        src={activeMediaItems[currentMediaIndex].url}
+                        poster={activeMediaItems[currentMediaIndex].poster}
+                        className="w-full h-full object-cover"
+                        muted={isMuted}
+                        onPlay={() => setIsVideoPlaying(true)}
+                        onPause={() => setIsVideoPlaying(false)}
+                        onEnded={() => {
+                          setIsVideoPlaying(false);
+                          setIsAutoSliding(true); // 動画終了時は自動スライドを再開
+                        }}
+                      />
+                      
+                      {/* 動画コントロール */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <button
+                          onClick={toggleVideoPlayback}
+                          className="bg-black bg-opacity-50 text-white p-4 rounded-full hover:bg-opacity-70 transition-all"
+                        >
+                          {isVideoPlaying ? <Pause size={32} /> : <Play size={32} />}
+                        </button>
+                      </div>
+                      
+                      {/* 音量コントロール */}
+                      <button
+                        onClick={toggleMute}
+                        className="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                      >
+                        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                      </button>
+                    </div>
+                  ) : (
+                    <img
+                      src={activeMediaItems[currentMediaIndex]?.url}
+                      alt={activeMediaItems[currentMediaIndex]?.alt || title}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                  
+                  {/* メディアナビゲーション矢印 */}
+                  {activeMediaItems.length > 1 && (
+                    <>
+                      <button
+                        onClick={prevMediaSlide}
+                        style={{
+                          position: 'absolute',
+                          left: '16px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          backgroundColor: 'rgba(0,0,0,0.5)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '48px',
+                          height: '48px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          backdropFilter: 'blur(10px)',
+                          zIndex: 10
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.7)';
+                          e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                          e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                        }}
+                      >
+                        <ChevronLeft size={20} />
+                      </button>
+                      
+                      <button
+                        onClick={nextMediaSlide}
+                        style={{
+                          position: 'absolute',
+                          right: '16px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          backgroundColor: 'rgba(0,0,0,0.5)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '48px',
+                          height: '48px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          backdropFilter: 'blur(10px)',
+                          zIndex: 10
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.7)';
+                          e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                          e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                        }}
+                      >
+                        <ChevronRight size={20} />
+                      </button>
+                      
+                      {/* ドットインジケーター */}
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '16px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        display: 'flex',
+                        gap: '8px',
+                        zIndex: 10
+                      }}>
+                        {activeMediaItems.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={() => changeMediaSlide(index)}
+                            style={{
+                              width: '12px',
+                              height: '12px',
+                              borderRadius: '50%',
+                              border: 'none',
+                              backgroundColor: index === currentMediaIndex ? 'white' : 'rgba(255,255,255,0.5)',
+                              cursor: 'pointer',
+                              transition: 'all 0.3s ease',
+                              backdropFilter: 'blur(10px)'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (index !== currentMediaIndex) {
+                                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.8)';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (index !== currentMediaIndex) {
+                                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.5)';
+                              }
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {/* メディア数インジケーター */}
+                  {activeMediaItems.length > 1 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '16px',
+                      left: '16px',
+                      backgroundColor: 'rgba(0,0,0,0.7)',
+                      color: 'white',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      backdropFilter: 'blur(10px)'
+                    }}>
+                      {currentMediaIndex + 1} / {activeMediaItems.length}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 右側：番組情報 */}
+            <div className="space-y-6">
+              {/* タイトル */}
+              <div>
+                <h1 
+                  className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4"
+                  style={{ color: headlineColor || textColor || '#333' }}
+                >
+                  {title || 'ブラックリスト ファイナル・シーズン'}
+                </h1>
+                
+                {/* 放送情報バッジ */}
+                {broadcastInfo && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {broadcastInfo.status && (
+                      <span 
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
+                        style={{ backgroundColor: mainColor }}
+                      >
+                        {broadcastInfo.status}
+                      </span>
+                    )}
+                    {broadcastInfo.category && (
+                      <span 
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
+                        style={{ backgroundColor: accentColor }}
+                      >
+                        {broadcastInfo.category}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 説明文 */}
+              <p 
+                className="text-lg leading-relaxed"
+                style={{ color: descriptionColor || textColor || '#666' }}
+              >
+                {description || '世界で最も危険な犯罪者たちのリストを持つ元政府エージェント、レイモンド・レディントンが、FBIと協力して凶悪犯を追い詰める。'}
+              </p>
+
+              {/* 放送・出演情報 */}
+              <div className="space-y-3">
+                {broadcastInfo?.schedule && (
+                  <div className="flex items-center text-sm" style={{ color: textColor || '#333' }}>
+                    <Calendar className="w-5 h-5 mr-3 text-gray-500" />
+                    <span>{broadcastInfo.schedule}</span>
+                  </div>
+                )}
+                
+                {broadcastInfo?.duration && (
+                  <div className="flex items-center text-sm" style={{ color: textColor || '#333' }}>
+                    <Play className="w-5 h-5 mr-3 text-gray-500" />
+                    <span>{broadcastInfo.duration}</span>
+                  </div>
+                )}
+                
+                {cast && (
+                  <div className="flex items-start text-sm" style={{ color: textColor || '#333' }}>
+                    <Users className="w-5 h-5 mr-3 mt-0.5 text-gray-500 flex-shrink-0" />
+                    <span>{cast}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* CTAボタン */}
+              {ctaButtons && ctaButtons.length > 0 && (
+                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                  {ctaButtons.map((button: any, index: number) => (
+                    <a
+                      key={index}
+                      href={button.url}
+                      className={`inline-flex items-center justify-center px-8 py-4 rounded-lg text-lg font-medium transition-all duration-200 ${
+                        button.type === 'primary'
+                          ? 'text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
+                          : 'bg-white border-2 hover:bg-gray-50'
+                      }`}
+                      style={
+                        button.type === 'primary' 
+                          ? { 
+                              backgroundColor: buttonBackgroundColor || mainColor,
+                              color: buttonTextColor || '#ffffff'
+                            }
+                          : {
+                              color: mainColor,
+                              borderColor: mainColor
+                            }
+                      }
+                    >
+                      {button.type === 'primary' && <Play className="w-5 h-5 mr-2" />}
+                      {button.text}
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              {/* 追加情報 */}
+              {additionalInfo && additionalInfo.length > 0 && (
+                <div 
+                  className="mt-8 p-6 rounded-lg"
+                  style={{
+                    backgroundColor: backgroundColor ? 'rgba(255,255,255,0.1)' : base2Color,
+                    color: textColor || '#374151'
+                  }}
+                >
+                  <div className="space-y-2">
+                    {additionalInfo.map((info: any, index: number) => (
+                      <div key={index} className="flex justify-between items-center text-sm">
+                        <span className="font-medium">{info.label}:</span>
+                        <span>{info.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -851,6 +1279,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}
+      className="baseColor"
     >
       {backgroundImage && (
         <div style={{
@@ -902,19 +1331,20 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
               fontSize: '18px',
               fontWeight: 500,
               textDecoration: 'none',
-              backgroundColor: buttonBackgroundColor || '#2563eb',
+              backgroundColor: buttonBackgroundColor || mainColor,
               color: buttonTextColor || '#ffffff',
               boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
               transition: 'all 0.2s ease-in-out',
               transform: 'translateY(0)'
             }}
+            className="mainColor"
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = buttonBackgroundColor || '#1d4ed8';
+              e.currentTarget.style.filter = 'brightness(0.9)';
               e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
               e.currentTarget.style.transform = 'translateY(-2px)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = buttonBackgroundColor || '#2563eb';
+              e.currentTarget.style.filter = 'brightness(1)';
               e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
               e.currentTarget.style.transform = 'translateY(0)';
             }}

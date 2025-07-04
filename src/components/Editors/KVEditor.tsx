@@ -2,6 +2,8 @@ import React from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { ComponentData } from '../../types';
 import { usePageStore } from '../../store/usePageStore';
+import ImageDropZone from '../UI/ImageDropZone';
+import { ImageUploadResult } from '../../utils/imageHandler';
 
 interface KVEditorProps {
   component: ComponentData;
@@ -14,6 +16,32 @@ const KVEditor: React.FC<KVEditorProps> = ({ component }) => {
     updateComponent(component.id, {
       props: { ...component.props, [key]: value }
     });
+  };
+
+  // 画像アップロード処理
+  const handleImageUpload = (field: string, result: ImageUploadResult) => {
+    handlePropChange(field, result.url);
+  };
+
+  // カルーセルアイテムの画像アップロード
+  const handleCarouselImageUpload = (index: number, result: ImageUploadResult) => {
+    const newItems = [...(component.props.carouselItems || [])];
+    newItems[index] = { ...newItems[index], image: result.url };
+    handlePropChange('carouselItems', newItems);
+  };
+
+  // カードアイテムの画像アップロード
+  const handleCardImageUpload = (index: number, result: ImageUploadResult) => {
+    const newItems = [...(component.props.cardItems || [])];
+    newItems[index] = { ...newItems[index], image: result.url };
+    handlePropChange('cardItems', newItems);
+  };
+
+  // メディアアイテムの画像/動画アップロード
+  const handleMediaImageUpload = (index: number, field: string, result: ImageUploadResult) => {
+    const newItems = [...(component.props.mediaItems || [])];
+    newItems[index] = { ...newItems[index], [field]: result.url };
+    handlePropChange('mediaItems', newItems);
   };
 
   // カルーセルアイテムの管理
@@ -92,6 +120,67 @@ const KVEditor: React.FC<KVEditorProps> = ({ component }) => {
     const newItems = [...(component.props.cardItems || [])];
     newItems.splice(index, 1);
     handlePropChange('cardItems', newItems);
+  };
+
+  // メディアアイテムの管理（番組ヒーロー用）
+  const handleMediaItemChange = (index: number, field: string, value: string) => {
+    const newItems = [...(component.props.mediaItems || [])];
+    newItems[index] = { ...newItems[index], [field]: value };
+    handlePropChange('mediaItems', newItems);
+  };
+
+  const addMediaItem = () => {
+    const newItems = [...(component.props.mediaItems || [])];
+    newItems.push({
+      type: 'image',
+      url: 'https://images.pexels.com/photos/3184287/pexels-photo-3184287.jpeg?auto=compress&cs=tinysrgb&w=800',
+      alt: '番組画像'
+    });
+    handlePropChange('mediaItems', newItems);
+  };
+
+  const removeMediaItem = (index: number) => {
+    const newItems = [...(component.props.mediaItems || [])];
+    newItems.splice(index, 1);
+    handlePropChange('mediaItems', newItems);
+  };
+
+  // CTAボタンの管理（番組ヒーロー用）
+  const handleCTAButtonChange = (index: number, field: string, value: any) => {
+    const newButtons = [...(component.props.ctaButtons || [])];
+    newButtons[index] = { ...newButtons[index], [field]: value };
+    handlePropChange('ctaButtons', newButtons);
+  };
+
+  const addCTAButton = () => {
+    const newButtons = [...(component.props.ctaButtons || [])];
+    newButtons.push({ text: '視聴する', url: '#', type: 'primary' });
+    handlePropChange('ctaButtons', newButtons);
+  };
+
+  const removeCTAButton = (index: number) => {
+    const newButtons = [...(component.props.ctaButtons || [])];
+    newButtons.splice(index, 1);
+    handlePropChange('ctaButtons', newButtons);
+  };
+
+  // 追加情報の管理（番組ヒーロー用）
+  const handleAdditionalInfoChange = (index: number, field: string, value: string) => {
+    const newInfo = [...(component.props.additionalInfo || [])];
+    newInfo[index] = { ...newInfo[index], [field]: value };
+    handlePropChange('additionalInfo', newInfo);
+  };
+
+  const addAdditionalInfo = () => {
+    const newInfo = [...(component.props.additionalInfo || [])];
+    newInfo.push({ label: 'ラベル', value: '値' });
+    handlePropChange('additionalInfo', newInfo);
+  };
+
+  const removeAdditionalInfo = (index: number) => {
+    const newInfo = [...(component.props.additionalInfo || [])];
+    newInfo.splice(index, 1);
+    handlePropChange('additionalInfo', newInfo);
   };
 
   const containerStyle: React.CSSProperties = {
@@ -254,18 +343,60 @@ const KVEditor: React.FC<KVEditorProps> = ({ component }) => {
             <option value="carousel">カルーセル・プレゼンテーション（情報整理型）</option>
             <option value="cinematic">シネマティック・インパクト型</option>
             <option value="card">カード型情報整理型</option>
+            <option value="program-hero">番組ヒーロー型（画像・動画スライダー）</option>
           </select>
         </div>
 
-        {/* カルーセル型では表示しない */}
-        {component.props.pattern !== 'carousel' && (
+        {/* 番組ヒーロー型以外では表示 */}
+        {component.props.pattern !== 'program-hero' && (
           <>
+            {/* カルーセル型では表示しない */}
+            {component.props.pattern !== 'carousel' && (
+              <>
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>メインタイトル</label>
+                  <input
+                    type="text"
+                    value={component.props.headline || ''}
+                    onChange={(e) => handlePropChange('headline', e.target.value)}
+                    style={inputStyle}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#2563eb';
+                      e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+
+                <div style={fieldStyle}>
+                  <label style={labelStyle}>サブタイトル・説明文</label>
+                  <textarea
+                    value={component.props.description || ''}
+                    onChange={(e) => handlePropChange('description', e.target.value)}
+                    rows={3}
+                    style={textareaStyle}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#2563eb';
+                      e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+              </>
+            )}
+
             <div style={fieldStyle}>
-              <label style={labelStyle}>メインタイトル</label>
+              <label style={labelStyle}>CTAボタンテキスト</label>
               <input
                 type="text"
-                value={component.props.headline || ''}
-                onChange={(e) => handlePropChange('headline', e.target.value)}
+                value={component.props.ctaText || ''}
+                onChange={(e) => handlePropChange('ctaText', e.target.value)}
                 style={inputStyle}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#2563eb';
@@ -279,7 +410,59 @@ const KVEditor: React.FC<KVEditorProps> = ({ component }) => {
             </div>
 
             <div style={fieldStyle}>
-              <label style={labelStyle}>サブタイトル・説明文</label>
+              <label style={labelStyle}>CTAボタンリンク先URL</label>
+              <input
+                type="url"
+                value={component.props.ctaUrl || ''}
+                onChange={(e) => handlePropChange('ctaUrl', e.target.value)}
+                style={inputStyle}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#2563eb';
+                  e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#d1d5db';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
+            </div>
+
+            {component.props.pattern === 'cinematic' && (
+              <div style={fieldStyle}>
+                <label style={labelStyle}>背景画像</label>
+                <ImageDropZone
+                  onImageUpload={(result) => handleImageUpload('backgroundImage', result)}
+                  currentImageUrl={component.props.backgroundImage}
+                  placeholder="背景画像をドラッグ&ドロップまたはクリックして選択"
+                />
+              </div>
+            )}
+          </>
+        )}
+
+        {/* 番組ヒーロー型の基本情報 */}
+        {component.props.pattern === 'program-hero' && (
+          <>
+            <div style={fieldStyle}>
+              <label style={labelStyle}>番組タイトル</label>
+              <input
+                type="text"
+                value={component.props.title || ''}
+                onChange={(e) => handlePropChange('title', e.target.value)}
+                style={inputStyle}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#2563eb';
+                  e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#d1d5db';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
+            </div>
+
+            <div style={fieldStyle}>
+              <label style={labelStyle}>番組説明</label>
               <textarea
                 value={component.props.description || ''}
                 onChange={(e) => handlePropChange('description', e.target.value)}
@@ -295,63 +478,71 @@ const KVEditor: React.FC<KVEditorProps> = ({ component }) => {
                 }}
               />
             </div>
+
+            <div style={fieldStyle}>
+              <label style={labelStyle}>出演者</label>
+              <input
+                type="text"
+                value={component.props.cast || ''}
+                onChange={(e) => handlePropChange('cast', e.target.value)}
+                style={inputStyle}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#2563eb';
+                  e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#d1d5db';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
+            </div>
+
+            {/* 放送情報 */}
+            <div style={sectionStyle}>
+              <h3 style={sectionTitleStyle}>放送情報</h3>
+              
+              <div style={itemFieldStyle}>
+                <label style={labelStyle}>放送スケジュール</label>
+                <input
+                  type="text"
+                  value={component.props.broadcastInfo?.schedule || ''}
+                  onChange={(e) => handlePropChange('broadcastInfo', { ...component.props.broadcastInfo, schedule: e.target.value })}
+                  placeholder="例: 毎週金曜 21:00-22:00"
+                  style={itemInputStyle}
+                />
+              </div>
+              <div style={itemFieldStyle}>
+                <label style={labelStyle}>放送時間</label>
+                <input
+                  type="text"
+                  value={component.props.broadcastInfo?.duration || ''}
+                  onChange={(e) => handlePropChange('broadcastInfo', { ...component.props.broadcastInfo, duration: e.target.value })}
+                  placeholder="例: 60分"
+                  style={itemInputStyle}
+                />
+              </div>
+              <div style={itemFieldStyle}>
+                <label style={labelStyle}>ステータス</label>
+                <input
+                  type="text"
+                  value={component.props.broadcastInfo?.status || ''}
+                  onChange={(e) => handlePropChange('broadcastInfo', { ...component.props.broadcastInfo, status: e.target.value })}
+                  placeholder="例: 最新話配信中"
+                  style={itemInputStyle}
+                />
+              </div>
+              <div style={itemFieldStyle}>
+                <label style={labelStyle}>カテゴリ</label>
+                <input
+                  type="text"
+                  value={component.props.broadcastInfo?.category || ''}
+                  onChange={(e) => handlePropChange('broadcastInfo', { ...component.props.broadcastInfo, category: e.target.value })}
+                  placeholder="例: ドラマ"
+                  style={itemInputStyle}
+                />
+              </div>
+            </div>
           </>
-        )}
-
-        <div style={fieldStyle}>
-          <label style={labelStyle}>CTAボタンテキスト</label>
-          <input
-            type="text"
-            value={component.props.ctaText || ''}
-            onChange={(e) => handlePropChange('ctaText', e.target.value)}
-            style={inputStyle}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#2563eb';
-              e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#d1d5db';
-              e.target.style.boxShadow = 'none';
-            }}
-          />
-        </div>
-
-        <div style={fieldStyle}>
-          <label style={labelStyle}>CTAボタンリンク先URL</label>
-          <input
-            type="url"
-            value={component.props.ctaUrl || ''}
-            onChange={(e) => handlePropChange('ctaUrl', e.target.value)}
-            style={inputStyle}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#2563eb';
-              e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#d1d5db';
-              e.target.style.boxShadow = 'none';
-            }}
-          />
-        </div>
-
-        {component.props.pattern === 'cinematic' && (
-          <div style={fieldStyle}>
-            <label style={labelStyle}>背景画像URL</label>
-            <input
-              type="url"
-              value={component.props.backgroundImage || ''}
-              onChange={(e) => handlePropChange('backgroundImage', e.target.value)}
-              style={inputStyle}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#2563eb';
-                e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#d1d5db';
-                e.target.style.boxShadow = 'none';
-              }}
-            />
-          </div>
         )}
       </div>
 
@@ -380,12 +571,12 @@ const KVEditor: React.FC<KVEditorProps> = ({ component }) => {
                 </div>
 
                 <div style={itemFieldStyle}>
-                  <label style={labelStyle}>画像URL</label>
-                  <input
-                    type="url"
-                    value={item.image || ''}
-                    onChange={(e) => handleCarouselItemChange(index, 'image', e.target.value)}
-                    style={itemInputStyle}
+                  <label style={labelStyle}>画像</label>
+                  <ImageDropZone
+                    onImageUpload={(result) => handleCarouselImageUpload(index, result)}
+                    currentImageUrl={item.image}
+                    placeholder="画像をドラッグ&ドロップまたはクリックして選択"
+                    showPreview={true}
                   />
                 </div>
 
@@ -511,12 +702,12 @@ const KVEditor: React.FC<KVEditorProps> = ({ component }) => {
                 </div>
 
                 <div style={itemFieldStyle}>
-                  <label style={labelStyle}>画像URL</label>
-                  <input
-                    type="url"
-                    value={item.image || ''}
-                    onChange={(e) => handleCardItemChange(index, 'image', e.target.value)}
-                    style={itemInputStyle}
+                  <label style={labelStyle}>画像</label>
+                  <ImageDropZone
+                    onImageUpload={(result) => handleCardImageUpload(index, result)}
+                    currentImageUrl={item.image}
+                    placeholder="画像をドラッグ&ドロップまたはクリックして選択"
+                    showPreview={true}
                   />
                 </div>
 
@@ -624,6 +815,223 @@ const KVEditor: React.FC<KVEditorProps> = ({ component }) => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* メディアアイテム編集（番組ヒーロー用） */}
+      {component.props.pattern === 'program-hero' && (
+        <>
+          <div style={sectionStyle}>
+            <div style={itemHeaderStyle}>
+              <h3 style={sectionTitleStyle}>メディアアイテム（画像・動画）</h3>
+              <button
+                onClick={addMediaItem}
+                style={addButtonStyle}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#1d4ed8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#2563eb';
+                }}
+              >
+                <Plus size={12} style={{ marginRight: '4px' }} />
+                追加
+              </button>
+            </div>
+
+            <div>
+              {(component.props.mediaItems || []).map((item: any, index: number) => (
+                <div key={index} style={itemCardStyle}>
+                  <div style={itemHeaderItemStyle}>
+                    <span style={itemIndexStyle}>メディア {index + 1}</span>
+                    <button
+                      onClick={() => removeMediaItem(index)}
+                      style={deleteButtonStyle}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#fef2f2';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+
+                  <div style={itemFieldStyle}>
+                    <label style={labelStyle}>メディアタイプ</label>
+                    <select
+                      value={item.type || 'image'}
+                      onChange={(e) => handleMediaItemChange(index, 'type', e.target.value)}
+                      style={itemInputStyle}
+                    >
+                      <option value="image">画像</option>
+                      <option value="video">動画</option>
+                    </select>
+                  </div>
+
+                  <div style={itemFieldStyle}>
+                    <label style={labelStyle}>{item.type === 'video' ? '動画' : '画像'}</label>
+                    <ImageDropZone
+                      onImageUpload={(result) => handleMediaImageUpload(index, 'url', result)}
+                      currentImageUrl={item.url}
+                      placeholder={`${item.type === 'video' ? '動画' : '画像'}をドラッグ&ドロップまたはクリックして選択`}
+                      showPreview={true}
+                    />
+                  </div>
+
+                  {item.type === 'video' && (
+                    <div style={itemFieldStyle}>
+                      <label style={labelStyle}>ポスター画像（動画のサムネイル）</label>
+                      <ImageDropZone
+                        onImageUpload={(result) => handleMediaImageUpload(index, 'poster', result)}
+                        currentImageUrl={item.poster}
+                        placeholder="ポスター画像をドラッグ&ドロップまたはクリックして選択"
+                        showPreview={true}
+                      />
+                    </div>
+                  )}
+
+                  <div style={itemFieldStyle}>
+                    <label style={labelStyle}>代替テキスト</label>
+                    <input
+                      type="text"
+                      value={item.alt || ''}
+                      onChange={(e) => handleMediaItemChange(index, 'alt', e.target.value)}
+                      style={itemInputStyle}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CTAボタン編集 */}
+          <div style={sectionStyle}>
+            <div style={itemHeaderStyle}>
+              <h3 style={sectionTitleStyle}>CTAボタン</h3>
+              <button
+                onClick={addCTAButton}
+                style={addButtonStyle}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#1d4ed8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#2563eb';
+                }}
+              >
+                <Plus size={12} style={{ marginRight: '4px' }} />
+                追加
+              </button>
+            </div>
+
+            <div>
+              {(component.props.ctaButtons || []).map((button: any, index: number) => (
+                <div key={index} style={itemCardStyle}>
+                  <div style={itemHeaderItemStyle}>
+                    <span style={itemIndexStyle}>ボタン {index + 1}</span>
+                    <button
+                      onClick={() => removeCTAButton(index)}
+                      style={deleteButtonStyle}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#fef2f2';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+
+                  <div style={itemFieldStyle}>
+                    <label style={labelStyle}>ボタンテキスト</label>
+                    <input
+                      type="text"
+                      value={button.text || ''}
+                      onChange={(e) => handleCTAButtonChange(index, 'text', e.target.value)}
+                      style={itemInputStyle}
+                    />
+                  </div>
+
+                  <div style={itemFieldStyle}>
+                    <label style={labelStyle}>リンクURL</label>
+                    <input
+                      type="url"
+                      value={button.url || ''}
+                      onChange={(e) => handleCTAButtonChange(index, 'url', e.target.value)}
+                      style={itemInputStyle}
+                    />
+                  </div>
+
+                  <div style={itemFieldStyle}>
+                    <label style={labelStyle}>ボタンタイプ</label>
+                    <select
+                      value={button.type || 'primary'}
+                      onChange={(e) => handleCTAButtonChange(index, 'type', e.target.value)}
+                      style={itemInputStyle}
+                    >
+                      <option value="primary">プライマリ</option>
+                      <option value="secondary">セカンダリ</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 追加情報編集 */}
+          <div style={sectionStyle}>
+            <div style={itemHeaderStyle}>
+              <h3 style={sectionTitleStyle}>追加情報</h3>
+              <button
+                onClick={addAdditionalInfo}
+                style={addButtonStyle}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#1d4ed8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#2563eb';
+                }}
+              >
+                <Plus size={12} style={{ marginRight: '4px' }} />
+                追加
+              </button>
+            </div>
+
+            <div>
+              {(component.props.additionalInfo || []).map((info: any, index: number) => (
+                <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <input
+                    type="text"
+                    value={info.label || ''}
+                    onChange={(e) => handleAdditionalInfoChange(index, 'label', e.target.value)}
+                    placeholder="ラベル"
+                    style={{ ...itemInputStyle, flex: 1 }}
+                  />
+                  <input
+                    type="text"
+                    value={info.value || ''}
+                    onChange={(e) => handleAdditionalInfoChange(index, 'value', e.target.value)}
+                    placeholder="値"
+                    style={{ ...itemInputStyle, flex: 1 }}
+                  />
+                  <button
+                    onClick={() => removeAdditionalInfo(index)}
+                    style={deleteButtonStyle}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#fef2f2';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

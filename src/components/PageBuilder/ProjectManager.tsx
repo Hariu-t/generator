@@ -14,8 +14,7 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
     loadProject, 
     deleteProject, 
     getSavedProjects, 
-    getCurrentProjectName,
-    pageData 
+    getCurrentProjectName
   } = usePageStore();
   
   const [projectName, setProjectName] = useState('');

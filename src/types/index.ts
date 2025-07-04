@@ -14,7 +14,8 @@ export type ComponentType =
   | 'footer'
   | 'about'
   | 'pricing'
-  | 'contact';
+  | 'contact'
+  | 'app-intro';
 
 export interface ComponentStyle {
   theme?: 'light' | 'dark';
@@ -56,6 +57,16 @@ export interface PageData {
     ogImage?: string;
     directory?: string;
   };
+  // 共通スタイル設定を追加
+  globalStyles?: GlobalStyles;
+}
+
+// 共通スタイル設定の型定義
+export interface GlobalStyles {
+  mainColor: string;
+  baseColor: string;
+  base2Color: string;
+  accentColor: string;
 }
 
 export type ViewMode = 'desktop' | 'tablet' | 'mobile';

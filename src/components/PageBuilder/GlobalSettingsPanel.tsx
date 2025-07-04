@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Globe, FileText, FolderOpen } from 'lucide-react';
+import { X, Globe, FileText, FolderOpen, Palette } from 'lucide-react';
 import { usePageStore } from '../../store/usePageStore';
 
 interface GlobalSettingsPanelProps {
@@ -8,10 +8,14 @@ interface GlobalSettingsPanelProps {
 }
 
 const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClose }) => {
-  const { pageData, updateGlobalSettings } = usePageStore();
+  const { pageData, updateGlobalSettings, updateGlobalStyles } = usePageStore();
 
   const handleSettingChange = (key: string, value: string | boolean) => {
     updateGlobalSettings({ [key]: value });
+  };
+
+  const handleStyleChange = (key: string, value: string) => {
+    updateGlobalStyles({ [key]: value });
   };
 
   if (!isOpen) return null;
@@ -117,10 +121,43 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
     resize: 'none' as const,
   };
 
+  const colorInputContainerStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  };
+
+  const colorInputStyle: React.CSSProperties = {
+    width: '60px',
+    height: '40px',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    outline: 'none',
+  };
+
+  const colorValueStyle: React.CSSProperties = {
+    flex: 1,
+    padding: '8px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '12px',
+    fontFamily: 'monospace',
+    backgroundColor: '#f9fafb',
+    color: '#374151',
+  };
+
   const helpTextStyle: React.CSSProperties = {
     fontSize: '12px',
     color: '#6b7280',
     marginTop: '4px',
+  };
+
+  const colorDescriptionStyle: React.CSSProperties = {
+    fontSize: '12px',
+    color: '#6b7280',
+    marginTop: '4px',
+    lineHeight: '1.4',
   };
 
   const footerStyle: React.CSSProperties = {
@@ -269,6 +306,119 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
               />
               <p style={helpTextStyle}>
                 SNSでシェアされた時に表示される画像です（推奨サイズ: 1200x630px）
+              </p>
+            </div>
+          </div>
+
+          {/* 共通スタイル設定セクション */}
+          <div style={sectionStyle}>
+            <h3 style={sectionTitleStyle}>
+              <Palette size={20} color="#4b5563" style={{ marginRight: '8px' }} />
+              共通スタイル設定
+            </h3>
+            
+            <div style={fieldStyle}>
+              <label style={labelStyle}>mainColor（メインカラー）</label>
+              <div style={colorInputContainerStyle}>
+                <input
+                  type="color"
+                  value={pageData.globalStyles?.mainColor || '#dc2626'}
+                  onChange={(e) => handleStyleChange('mainColor', e.target.value)}
+                  style={colorInputStyle}
+                />
+                <input
+                  type="text"
+                  value={pageData.globalStyles?.mainColor || '#dc2626'}
+                  onChange={(e) => handleStyleChange('mainColor', e.target.value)}
+                  style={colorValueStyle}
+                  placeholder="#dc2626"
+                />
+              </div>
+              <p style={colorDescriptionStyle}>
+                主要なアクション要素（ボタン、リンクなど）に使用される色です。
+              </p>
+            </div>
+
+            <div style={fieldStyle}>
+              <label style={labelStyle}>baseColor（ベースカラー）</label>
+              <div style={colorInputContainerStyle}>
+                <input
+                  type="color"
+                  value={pageData.globalStyles?.baseColor || '#f8fafc'}
+                  onChange={(e) => handleStyleChange('baseColor', e.target.value)}
+                  style={colorInputStyle}
+                />
+                <input
+                  type="text"
+                  value={pageData.globalStyles?.baseColor || '#f8fafc'}
+                  onChange={(e) => handleStyleChange('baseColor', e.target.value)}
+                  style={colorValueStyle}
+                  placeholder="#f8fafc"
+                />
+              </div>
+              <p style={colorDescriptionStyle}>
+                セクションの背景色として使用される基本色です。
+              </p>
+            </div>
+
+            <div style={fieldStyle}>
+              <label style={labelStyle}>base2Color（セカンダリベースカラー）</label>
+              <div style={colorInputContainerStyle}>
+                <input
+                  type="color"
+                  value={pageData.globalStyles?.base2Color || '#f1f5f9'}
+                  onChange={(e) => handleStyleChange('base2Color', e.target.value)}
+                  style={colorInputStyle}
+                />
+                <input
+                  type="text"
+                  value={pageData.globalStyles?.base2Color || '#f1f5f9'}
+                  onChange={(e) => handleStyleChange('base2Color', e.target.value)}
+                  style={colorValueStyle}
+                  placeholder="#f1f5f9"
+                />
+              </div>
+              <p style={colorDescriptionStyle}>
+                カードやパネルの背景色として使用される補助的な基本色です。
+              </p>
+            </div>
+
+            <div style={fieldStyle}>
+              <label style={labelStyle}>accentColor（アクセントカラー）</label>
+              <div style={colorInputContainerStyle}>
+                <input
+                  type="color"
+                  value={pageData.globalStyles?.accentColor || '#3b82f6'}
+                  onChange={(e) => handleStyleChange('accentColor', e.target.value)}
+                  style={colorInputStyle}
+                />
+                <input
+                  type="text"
+                  value={pageData.globalStyles?.accentColor || '#3b82f6'}
+                  onChange={(e) => handleStyleChange('accentColor', e.target.value)}
+                  style={colorValueStyle}
+                  placeholder="#3b82f6"
+                />
+              </div>
+              <p style={colorDescriptionStyle}>
+                強調表示やアイコン、装飾要素に使用されるアクセント色です。
+              </p>
+            </div>
+
+            <div style={{
+              padding: '12px',
+              backgroundColor: '#f0f9ff',
+              borderRadius: '8px',
+              border: '1px solid #bae6fd',
+              marginTop: '16px',
+            }}>
+              <p style={{
+                fontSize: '12px',
+                color: '#0369a1',
+                margin: 0,
+                lineHeight: '1.4',
+              }}>
+                💡 これらの色は全コンポーネントで共通して使用されます。変更すると、ページ全体のデザインが統一されます。
               </p>
             </div>
           </div>

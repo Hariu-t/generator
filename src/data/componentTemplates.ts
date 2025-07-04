@@ -1,7 +1,7 @@
 import { ComponentTemplate } from '../types';
 
 export const componentTemplates: ComponentTemplate[] = [
-  // KV Components - 3つのパターン
+  // KV Components - 4つのパターンに拡張
   {
     id: 'kv-carousel',
     type: 'kv',
@@ -90,6 +90,70 @@ export const componentTemplates: ComponentTemplate[] = [
       ]
     },
   },
+  {
+    id: 'kv-program-hero',
+    type: 'kv',
+    name: 'KV 番組ヒーロー型',
+    description: '番組の詳細情報を魅力的に表示する画像・動画スライダー付きKV',
+    thumbnail: 'https://images.pexels.com/photos/3184287/pexels-photo-3184287.jpeg?auto=compress&cs=tinysrgb&w=400',
+    category: 'KV',
+    defaultProps: {
+      pattern: 'program-hero',
+      title: 'ブラックリスト ファイナル・シーズン',
+      description: '世界で最も危険な犯罪者たちのリストを持つ元政府エージェント、レイモンド・レディントンが、FBIと協力して凶悪犯を追い詰める。シリーズ最終章となる今シーズンでは、これまでの謎がついに明かされる。',
+      cast: 'ジェームズ・スペイダー、メーガン・ブーン、ディエゴ・クラテンホフ、ライアン・エッゴールド',
+      broadcastInfo: {
+        schedule: '毎週金曜 21:00-22:00',
+        duration: '60分',
+        status: '最新話配信中',
+        category: 'ドラマ'
+      },
+      mediaItems: [
+        {
+          type: 'image',
+          url: 'https://images.pexels.com/photos/3184287/pexels-photo-3184287.jpeg?auto=compress&cs=tinysrgb&w=800',
+          alt: 'ブラックリスト メインビジュアル'
+        },
+        {
+          type: 'video',
+          url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+          poster: 'https://images.pexels.com/photos/3184288/pexels-photo-3184288.jpeg?auto=compress&cs=tinysrgb&w=800',
+          alt: 'ブラックリスト 予告編'
+        },
+        {
+          type: 'image',
+          url: 'https://images.pexels.com/photos/3184289/pexels-photo-3184289.jpeg?auto=compress&cs=tinysrgb&w=800',
+          alt: 'ブラックリスト シーン3'
+        }
+      ],
+      ctaButtons: [
+        {
+          text: '今すぐ視聴',
+          url: '#',
+          type: 'primary'
+        },
+        {
+          text: '予告編を見る',
+          url: '#',
+          type: 'secondary'
+        }
+      ],
+      additionalInfo: [
+        {
+          label: '制作年',
+          value: '2023年'
+        },
+        {
+          label: 'ジャンル',
+          value: 'クライム・サスペンス'
+        },
+        {
+          label: '話数',
+          value: '全22話'
+        }
+      ]
+    },
+  },
 
   // Features Components
   {
@@ -142,6 +206,59 @@ export const componentTemplates: ComponentTemplate[] = [
           image: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=600',
         },
       ],
+    },
+  },
+
+  // Pricing Component - 新しく追加
+  {
+    id: 'pricing-1',
+    type: 'pricing',
+    name: '料金表示',
+    description: '価格比較と詳細な料金プランを表示する料金表コンポーネント',
+    thumbnail: 'https://images.pexels.com/photos/3760263/pexels-photo-3760263.jpeg?auto=compress&cs=tinysrgb&w=400',
+    category: '料金',
+    defaultProps: {
+      title: 'サービスを利用するには',
+      subtitle: 'ご加入月は0円で人気サービスが楽しめる！',
+      mainPlan: {
+        description: 'ブラックリストをはじめ、マークのある番組が全部見放題！',
+        name: 'スカパー！基本プラン',
+        priceLabel: '初回視聴料',
+        price: '1,980',
+        unit: '円（税込）',
+        note: '※翌月以降は3,960円/月（税込）',
+        hasDetails: true,
+        detailsLabel: '初回視聴料1,980円(税込)の注意事項'
+      },
+      additionalPlans: [
+        {
+          description: '○○（番組・特集・アーティスト名など）が見られる、スーパー！ドラマTVなど5チャンネルがえらべる',
+          name: 'スーパー！セレクト5',
+          priceLabel: '視聴料',
+          price: '1,100',
+          unit: '円/月（税込）'
+        },
+        {
+          description: '○○（番組・特集・アーティスト名など）が見られる、スーパー！ドラマTVなど5チャンネルがえらべる',
+          name: 'スーパー！セレクト5',
+          priceLabel: '視聴料',
+          price: '1,100',
+          unit: '円/月（税込）'
+        }
+      ]
+    },
+  },
+
+  // App Intro Component - 新しく追加
+  {
+    id: 'app-intro-1',
+    type: 'app-intro',
+    name: '番組配信紹介',
+    description: 'スカパー！番組配信の紹介とアプリダウンロードを促進するコンポーネント',
+    thumbnail: 'https://images.pexels.com/photos/3184287/pexels-photo-3184287.jpeg?auto=compress&cs=tinysrgb&w=400',
+    category: 'アプリ紹介',
+    defaultProps: {
+      balloonText: 'ブラックリストをマイリスト登録すれば便利！'
     },
   },
 

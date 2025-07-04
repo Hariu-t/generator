@@ -105,12 +105,14 @@ const Canvas: React.FC = () => {
     flex: 1,
     backgroundColor: '#f9fafb',
     overflowY: 'auto',
+    height: '100%',
   };
 
   const canvasContentStyle: React.CSSProperties = {
     margin: '0 auto',
     backgroundColor: '#ffffff',
     position: 'relative',
+    minHeight: '100%',
     ...getCanvasWidth(),
   };
 

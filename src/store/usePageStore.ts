@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ComponentData, PageData, ViewMode, SavedProject } from '../types';
+import { ComponentData, PageData, ViewMode, SavedProject, GlobalStyles } from '../types';
 
 interface PageStore {
   pageData: PageData;
@@ -20,6 +20,7 @@ interface PageStore {
   setViewMode: (mode: ViewMode) => void;
   setPreviewMode: (enabled: boolean) => void;
   updateGlobalSettings: (settings: Partial<PageData['globalSettings']>) => void;
+  updateGlobalStyles: (styles: Partial<GlobalStyles>) => void;
   undo: () => void;
   redo: () => void;
   canUndo: () => boolean;
@@ -28,7 +29,7 @@ interface PageStore {
   toggleComponentLibrary: () => void;
   togglePropertiesPanel: () => void;
   
-  // 新しく追加: プロジェクト保存機能
+  // プロジェクト保存機能（共有ストレージ）
   saveProject: (name: string) => void;
   loadProject: (projectId: string) => void;
   deleteProject: (projectId: string) => void;
@@ -45,11 +46,36 @@ const initialPageData: PageData = {
     description: 'A beautiful landing page created with our no-code builder',
     directory: '', // デフォルトは空（ルートディレクトリ）
   },
+  globalStyles: {
+    mainColor: '#dc2626', // 赤系
+    baseColor: '#f8fafc', // ライトグレー
+    base2Color: '#f1f5f9', // より薄いグレー
+    accentColor: '#3b82f6', // ブルー
+  },
 };
 
-// LocalStorageのキー
-const PROJECTS_STORAGE_KEY = 'lp-builder-projects';
+// 共有ストレージのキー（すべてのユーザーが共通で使用）
+const SHARED_PROJECTS_STORAGE_KEY = 'lp-builder-shared-projects';
 const CURRENT_PROJECT_KEY = 'lp-builder-current-project';
+
+// 共有ストレージのヘルパー関数
+const getSharedProjects = (): SavedProject[] => {
+  try {
+    const stored = localStorage.getItem(SHARED_PROJECTS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Failed to load shared projects:', error);
+    return [];
+  }
+};
+
+const saveSharedProjects = (projects: SavedProject[]): void => {
+  try {
+    localStorage.setItem(SHARED_PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+  } catch (error) {
+    console.error('Failed to save shared projects:', error);
+  }
+};
 
 export const usePageStore = create<PageStore>((set, get) => ({
   pageData: initialPageData,
@@ -171,6 +197,23 @@ export const usePageStore = create<PageStore>((set, get) => ({
     });
   },
 
+  updateGlobalStyles: (styles) => {
+    set((state) => {
+      const newPageData = {
+        ...state.pageData,
+        globalStyles: { ...state.pageData.globalStyles, ...styles },
+      };
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(newPageData);
+      
+      return {
+        pageData: newPageData,
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
   undo: () => {
     set((state) => {
       if (state.historyIndex > 0) {
@@ -224,7 +267,7 @@ export const usePageStore = create<PageStore>((set, get) => ({
     set((state) => ({ showPropertiesPanel: !state.showPropertiesPanel }));
   },
 
-  // プロジェクト保存機能
+  // プロジェクト保存機能（共有ストレージ）
   saveProject: (name: string) => {
     const state = get();
     const now = new Date().toISOString();
@@ -238,11 +281,11 @@ export const usePageStore = create<PageStore>((set, get) => ({
       updatedAt: now,
     };
 
-    // 既存のプロジェクトを取得
-    const existingProjects = get().getSavedProjects();
+    // 既存の共有プロジェクトを取得
+    const existingProjects = getSharedProjects();
     
     // 同じ名前のプロジェクトがある場合は更新、ない場合は新規作成
-    const existingProjectIndex = existingProjects.findIndex(p => p.name === name);
+    const existingProjectIndex = existingProjects.findIndex((p: SavedProject) => p.name === name);
     
     let updatedProjects: SavedProject[];
     if (existingProjectIndex >= 0) {
@@ -258,8 +301,8 @@ export const usePageStore = create<PageStore>((set, get) => ({
       updatedProjects = [...existingProjects, newProject];
     }
 
-    // LocalStorageに保存
-    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(updatedProjects));
+    // 共有ストレージに保存
+    saveSharedProjects(updatedProjects);
     
     // 現在のプロジェクト名を設定
     set({ currentProjectName: name });
@@ -267,8 +310,8 @@ export const usePageStore = create<PageStore>((set, get) => ({
   },
 
   loadProject: (projectId: string) => {
-    const projects = get().getSavedProjects();
-    const project = projects.find(p => p.id === projectId);
+    const projects = getSharedProjects();
+    const project = projects.find((p: SavedProject) => p.id === projectId);
     
     if (project) {
       set((state) => {
@@ -290,12 +333,12 @@ export const usePageStore = create<PageStore>((set, get) => ({
   },
 
   deleteProject: (projectId: string) => {
-    const projects = get().getSavedProjects();
-    const updatedProjects = projects.filter(p => p.id !== projectId);
-    localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(updatedProjects));
+    const projects = getSharedProjects();
+    const updatedProjects = projects.filter((p: SavedProject) => p.id !== projectId);
+    saveSharedProjects(updatedProjects);
     
     // 削除したプロジェクトが現在のプロジェクトの場合、現在のプロジェクト名をクリア
-    const deletedProject = projects.find(p => p.id === projectId);
+    const deletedProject = projects.find((p: SavedProject) => p.id === projectId);
     if (deletedProject && get().currentProjectName === deletedProject.name) {
       set({ currentProjectName: null });
       localStorage.removeItem(CURRENT_PROJECT_KEY);
@@ -303,13 +346,7 @@ export const usePageStore = create<PageStore>((set, get) => ({
   },
 
   getSavedProjects: () => {
-    try {
-      const stored = localStorage.getItem(PROJECTS_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-      console.error('Failed to load saved projects:', error);
-      return [];
-    }
+    return getSharedProjects();
   },
 
   getCurrentProjectName: () => {

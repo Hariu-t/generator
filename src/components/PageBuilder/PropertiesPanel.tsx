@@ -7,6 +7,8 @@ import CTAEditor from '../Editors/CTAEditor';
 import TestimonialsEditor from '../Editors/TestimonialsEditor';
 import FAQEditor from '../Editors/FAQEditor';
 import FooterEditor from '../Editors/FooterEditor';
+import PricingEditor from '../Editors/PricingEditor';
+import AppIntroEditor from '../Editors/AppIntroEditor';
 import StyleEditor from '../Editors/StyleEditor';
 
 const PropertiesPanel: React.FC = () => {
@@ -178,6 +180,10 @@ const PropertiesPanel: React.FC = () => {
         return <FAQEditor component={selectedComponent} />;
       case 'footer':
         return <FooterEditor component={selectedComponent} />;
+      case 'pricing':
+        return <PricingEditor component={selectedComponent} />;
+      case 'app-intro':
+        return <AppIntroEditor component={selectedComponent} />;
       default:
         return (
           <div style={{ padding: '16px' }}>
@@ -201,6 +207,10 @@ const PropertiesPanel: React.FC = () => {
         return 'FAQ';
       case 'footer':
         return 'フッター';
+      case 'pricing':
+        return '料金';
+      case 'app-intro':
+        return 'アプリ紹介';
       default:
         return type.charAt(0).toUpperCase() + type.slice(1);
     }
@@ -215,6 +225,7 @@ const PropertiesPanel: React.FC = () => {
         if (pattern === 'carousel') return 'KV カルーセル型';
         if (pattern === 'cinematic') return 'KV シネマティック型';
         if (pattern === 'card') return 'KV カード型';
+        if (pattern === 'program-hero') return 'KV 番組ヒーロー型';
         return 'KV';
       case 'features':
         // 画像があるかどうかで判定
@@ -230,6 +241,10 @@ const PropertiesPanel: React.FC = () => {
         return 'よくある質問';
       case 'footer':
         return 'フッター';
+      case 'pricing':
+        return '料金表示';
+      case 'app-intro':
+        return '番組配信紹介';
       default:
         return `${getComponentDisplayName(component.type)}コンポーネント`;
     }

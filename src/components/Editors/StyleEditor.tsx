@@ -1,5 +1,5 @@
 import React from 'react';
-import { Palette, Eye, Moon, Sun } from 'lucide-react';
+import { Palette, Moon, Sun } from 'lucide-react';
 import { ComponentData } from '../../types';
 import { usePageStore } from '../../store/usePageStore';
 import { designPatterns } from '../../data/designPatterns';
@@ -9,12 +9,10 @@ interface StyleEditorProps {
 }
 
 const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
-  const updateComponent = usePageStore((state) => state.updateComponent);
+  const { pageData, updateComponent, updateGlobalStyles } = usePageStore();
 
-  const handleStyleChange = (key: string, value: any) => {
-    updateComponent(component.id, {
-      style: { ...component.style, [key]: value }
-    });
+  const handleGlobalStyleChange = (key: string, value: string) => {
+    updateGlobalStyles({ [key]: value });
   };
 
   const toggleDarkMode = () => {
@@ -82,80 +80,6 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
     }
   };
 
-  // 要素の説明を取得する関数
-  const getElementDescription = (elementKey: string) => {
-    const descriptions: Record<string, { name: string; description: string; example: string }> = {
-      backgroundColor: {
-        name: 'セクション背景色',
-        description: 'コンポーネント全体の背景色',
-        example: 'セクション全体の背景として表示されます'
-      },
-      textColor: {
-        name: 'メインテキスト色',
-        description: '基本的なテキストの色',
-        example: '本文や一般的なテキストに適用されます'
-      },
-      headlineColor: {
-        name: '見出し色',
-        description: 'タイトルや見出しの色',
-        example: 'メインタイトルやセクション見出しに適用されます'
-      },
-      descriptionColor: {
-        name: '説明文色',
-        description: 'サブテキストや説明文の色',
-        example: 'サブタイトルや詳細説明に適用されます'
-      },
-      buttonBackgroundColor: {
-        name: 'ボタン背景色',
-        description: 'CTAボタンの背景色',
-        example: 'アクションボタンの背景として表示されます'
-      },
-      buttonTextColor: {
-        name: 'ボタンテキスト色',
-        description: 'CTAボタンの文字色',
-        example: 'ボタン内のテキストに適用されます'
-      },
-      cardBackgroundColor: {
-        name: 'カード背景色',
-        description: 'カード要素の背景色',
-        example: '特徴カードやお客様の声カードの背景に適用されます'
-      },
-      cardTextColor: {
-        name: 'カードテキスト色',
-        description: 'カード内のテキスト色',
-        example: 'カード内の文字に適用されます'
-      },
-      accentColor: {
-        name: 'アクセント色',
-        description: '装飾やアイコンの色',
-        example: 'アイコンや装飾要素に適用されます'
-      }
-    };
-
-    return descriptions[elementKey] || {
-      name: elementKey,
-      description: 'カスタム要素',
-      example: 'この要素に適用されます'
-    };
-  };
-
-  // コンポーネントタイプに応じて利用可能な要素を取得
-  const getAvailableElements = () => {
-    const baseElements = ['backgroundColor', 'textColor', 'headlineColor', 'descriptionColor', 'accentColor'];
-    
-    switch (component.type) {
-      case 'kv':
-      case 'cta':
-        return [...baseElements, 'buttonBackgroundColor', 'buttonTextColor'];
-      case 'features':
-      case 'testimonials':
-      case 'faq':
-        return [...baseElements, 'cardBackgroundColor', 'cardTextColor'];
-      default:
-        return baseElements;
-    }
-  };
-
   const containerStyle: React.CSSProperties = {
     padding: '16px',
   };
@@ -212,34 +136,11 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
     color: '#374151',
   };
 
-  const elementInfoStyle: React.CSSProperties = {
-    backgroundColor: '#f8fafc',
-    border: '1px solid #e2e8f0',
-    borderRadius: '6px',
-    padding: '8px',
-    marginBottom: '8px',
-  };
-
-  const elementNameStyle: React.CSSProperties = {
+  const colorDescriptionStyle: React.CSSProperties = {
     fontSize: '11px',
-    fontWeight: 600,
-    color: '#1e293b',
-    marginBottom: '2px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-  };
-
-  const elementDescStyle: React.CSSProperties = {
-    fontSize: '10px',
     color: '#64748b',
-    marginBottom: '2px',
-  };
-
-  const elementExampleStyle: React.CSSProperties = {
-    fontSize: '9px',
-    color: '#94a3b8',
-    fontStyle: 'italic',
+    marginTop: '4px',
+    lineHeight: '1.4',
   };
 
   const darkModeToggleStyle: React.CSSProperties = {
@@ -293,7 +194,21 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
     color: '#6b7280',
   };
 
-  const availableElements = getAvailableElements();
+  const infoBoxStyle: React.CSSProperties = {
+    padding: '12px',
+    backgroundColor: '#f0f9ff',
+    borderRadius: '8px',
+    border: '1px solid #bae6fd',
+    marginTop: '16px',
+  };
+
+  const infoTextStyle: React.CSSProperties = {
+    fontSize: '12px',
+    color: '#0369a1',
+    margin: 0,
+    lineHeight: '1.4',
+  };
+
   const isDarkMode = component.style?.isDarkMode || false;
 
   return (
@@ -328,49 +243,125 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
         </div>
       </div>
 
-      {/* 詳細カラー設定 */}
+      {/* 共通スタイル設定 */}
       <div style={sectionStyle}>
         <h3 style={sectionTitleStyle}>
           <Palette size={16} color="#4b5563" />
-          詳細カラー設定
+          共通スタイル設定
         </h3>
         
-        {availableElements.map((elementKey) => {
-          const elementInfo = getElementDescription(elementKey);
-          const currentValue = component.style?.[elementKey] || '#ffffff';
-          
-          return (
-            <div key={elementKey} style={fieldStyle}>
-              <label style={labelStyle}>{elementInfo.name}</label>
-              
-              {/* 要素の説明 */}
-              <div style={elementInfoStyle}>
-                <div style={elementNameStyle}>
-                  <Eye size={10} color="#3b82f6" />
-                  {elementInfo.description}
-                </div>
-                <div style={elementDescStyle}>{elementInfo.example}</div>
-              </div>
-              
-              {/* カラー入力 */}
-              <div style={colorInputContainerStyle}>
-                <input
-                  type="color"
-                  value={currentValue}
-                  onChange={(e) => handleStyleChange(elementKey, e.target.value)}
-                  style={colorInputStyle}
-                />
-                <input
-                  type="text"
-                  value={currentValue}
-                  onChange={(e) => handleStyleChange(elementKey, e.target.value)}
-                  style={colorValueStyle}
-                  placeholder="#ffffff"
-                />
-              </div>
-            </div>
-          );
-        })}
+        <div style={fieldStyle}>
+          <label style={labelStyle}>mainColor（メインカラー）</label>
+          <div style={colorInputContainerStyle}>
+            <input
+              type="color"
+              value={pageData.globalStyles?.mainColor || '#dc2626'}
+              onChange={(e) => handleGlobalStyleChange('mainColor', e.target.value)}
+              style={colorInputStyle}
+            />
+            <input
+              type="text"
+              value={pageData.globalStyles?.mainColor || '#dc2626'}
+              onChange={(e) => handleGlobalStyleChange('mainColor', e.target.value)}
+              style={colorValueStyle}
+              placeholder="#dc2626"
+            />
+          </div>
+          <p style={colorDescriptionStyle}>
+            主要なアクション要素（ボタン、リンクなど）に使用される色です。
+          </p>
+        </div>
+
+        <div style={fieldStyle}>
+          <label style={labelStyle}>baseColor（ベースカラー）</label>
+          <div style={colorInputContainerStyle}>
+            <input
+              type="color"
+              value={pageData.globalStyles?.baseColor || '#f8fafc'}
+              onChange={(e) => handleGlobalStyleChange('baseColor', e.target.value)}
+              style={colorInputStyle}
+            />
+            <input
+              type="text"
+              value={pageData.globalStyles?.baseColor || '#f8fafc'}
+              onChange={(e) => handleGlobalStyleChange('baseColor', e.target.value)}
+              style={colorValueStyle}
+              placeholder="#f8fafc"
+            />
+          </div>
+          <p style={colorDescriptionStyle}>
+            セクションの背景色として使用される基本色です。
+          </p>
+        </div>
+
+        <div style={fieldStyle}>
+          <label style={labelStyle}>base2Color（セカンダリベースカラー）</label>
+          <div style={colorInputContainerStyle}>
+            <input
+              type="color"
+              value={pageData.globalStyles?.base2Color || '#f1f5f9'}
+              onChange={(e) => handleGlobalStyleChange('base2Color', e.target.value)}
+              style={colorInputStyle}
+            />
+            <input
+              type="text"
+              value={pageData.globalStyles?.base2Color || '#f1f5f9'}
+              onChange={(e) => handleGlobalStyleChange('base2Color', e.target.value)}
+              style={colorValueStyle}
+              placeholder="#f1f5f9"
+            />
+          </div>
+          <p style={colorDescriptionStyle}>
+            カードやパネルの背景色として使用される補助的な基本色です。
+          </p>
+        </div>
+
+        <div style={fieldStyle}>
+          <label style={labelStyle}>accentColor（アクセントカラー）</label>
+          <div style={colorInputContainerStyle}>
+            <input
+              type="color"
+              value={pageData.globalStyles?.accentColor || '#3b82f6'}
+              onChange={(e) => handleGlobalStyleChange('accentColor', e.target.value)}
+              style={colorInputStyle}
+            />
+            <input
+              type="text"
+              value={pageData.globalStyles?.accentColor || '#3b82f6'}
+              onChange={(e) => handleGlobalStyleChange('accentColor', e.target.value)}
+              style={colorValueStyle}
+              placeholder="#3b82f6"
+            />
+          </div>
+          <p style={colorDescriptionStyle}>
+            強調表示やアイコン、装飾要素に使用されるアクセント色です。
+          </p>
+        </div>
+
+        <div style={infoBoxStyle}>
+          <p style={infoTextStyle}>
+            💡 これらの色は全コンポーネントで共通して使用されます。変更すると、ページ全体のデザインが統一されます。
+          </p>
+        </div>
+      </div>
+
+      {/* 個別スタイル設定の案内 */}
+      <div style={sectionStyle}>
+        <div style={{
+          padding: '12px',
+          backgroundColor: '#fef3c7',
+          borderRadius: '8px',
+          border: '1px solid #fbbf24',
+        }}>
+          <p style={{
+            fontSize: '12px',
+            color: '#92400e',
+            margin: 0,
+            lineHeight: '1.4',
+          }}>
+            📝 個別の色設定（背景色、文字色など）は「コンテンツ」タブで設定できます。
+          </p>
+        </div>
       </div>
     </div>
   );
