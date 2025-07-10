@@ -32,7 +32,7 @@ export const applyGlobalStyles = (
   return styles;
 };
 
-// CSS変数として共通スタイルを生成
+// CSS変数として共通スタイルを生成（全コンポーネントに適用）
 export const generateGlobalStylesCSS = (globalStyles: GlobalStyles | undefined): string => {
   if (!globalStyles) {
     return '';
@@ -46,6 +46,7 @@ export const generateGlobalStylesCSS = (globalStyles: GlobalStyles | undefined):
       --accent-color: ${globalStyles.accentColor};
     }
     
+    /* 全コンポーネントに適用される共通スタイル */
     .mainColor {
       background-color: var(--main-color) !important;
       color: #ffffff !important;
@@ -75,6 +76,61 @@ export const generateGlobalStylesCSS = (globalStyles: GlobalStyles | undefined):
     .base2Color:hover {
       filter: brightness(0.95);
     }
+    
+    /* 全コンポーネントのスタイル適用 */
+    [data-style-main-color] {
+      background-color: var(--main-color) !important;
+      color: #ffffff !important;
+    }
+    
+    [data-style-base-color] {
+      background-color: var(--base-color) !important;
+    }
+    
+    [data-style-base2-color] {
+      background-color: var(--base2-color) !important;
+    }
+    
+    [data-style-accent-color] {
+      color: var(--accent-color) !important;
+    }
+    
+    /* 個別コンポーネントスタイルの適用 */
+    [data-component-background] {
+      background-color: var(--component-background-color, inherit);
+    }
+    
+    [data-component-text] {
+      color: var(--component-text-color, inherit);
+    }
+    
+    [data-component-headline] {
+      color: var(--component-headline-color, inherit);
+    }
+    
+    [data-component-description] {
+      color: var(--component-description-color, inherit);
+    }
+    
+    [data-component-button-bg] {
+      background-color: var(--component-button-bg-color, inherit);
+    }
+    
+    [data-component-button-text] {
+      color: var(--component-button-text-color, inherit);
+    }
+    
+    [data-component-card-bg] {
+      background-color: var(--component-card-bg-color, inherit);
+    }
+    
+    [data-component-card-text] {
+      color: var(--component-card-text-color, inherit);
+    }
+    
+    [data-component-accent] {
+      color: var(--component-accent-color, inherit);
+    }
   `;
 };
 
@@ -95,4 +151,41 @@ export const getGlobalStyleValue = (
   }
   
   return globalStyles[styleKey];
+};
+
+// コンポーネント個別スタイルのCSS変数を生成
+export const generateComponentStyleCSS = (componentStyle: any): string => {
+  if (!componentStyle) return '';
+  
+  const cssVars: string[] = [];
+  
+  if (componentStyle.backgroundColor) {
+    cssVars.push(`--component-background-color: ${componentStyle.backgroundColor};`);
+  }
+  if (componentStyle.textColor) {
+    cssVars.push(`--component-text-color: ${componentStyle.textColor};`);
+  }
+  if (componentStyle.headlineColor) {
+    cssVars.push(`--component-headline-color: ${componentStyle.headlineColor};`);
+  }
+  if (componentStyle.descriptionColor) {
+    cssVars.push(`--component-description-color: ${componentStyle.descriptionColor};`);
+  }
+  if (componentStyle.buttonBackgroundColor) {
+    cssVars.push(`--component-button-bg-color: ${componentStyle.buttonBackgroundColor};`);
+  }
+  if (componentStyle.buttonTextColor) {
+    cssVars.push(`--component-button-text-color: ${componentStyle.buttonTextColor};`);
+  }
+  if (componentStyle.cardBackgroundColor) {
+    cssVars.push(`--component-card-bg-color: ${componentStyle.cardBackgroundColor};`);
+  }
+  if (componentStyle.cardTextColor) {
+    cssVars.push(`--component-card-text-color: ${componentStyle.cardTextColor};`);
+  }
+  if (componentStyle.accentColor) {
+    cssVars.push(`--component-accent-color: ${componentStyle.accentColor};`);
+  }
+  
+  return cssVars.length > 0 ? `:root { ${cssVars.join(' ')} }` : '';
 };

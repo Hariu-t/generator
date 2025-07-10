@@ -2,7 +2,6 @@ import React from 'react';
 import { Palette, Moon, Sun } from 'lucide-react';
 import { ComponentData } from '../../types';
 import { usePageStore } from '../../store/usePageStore';
-import { designPatterns } from '../../data/designPatterns';
 
 interface StyleEditorProps {
   component: ComponentData;
@@ -16,51 +15,53 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
   };
 
   const toggleDarkMode = () => {
-    const patterns = designPatterns[component.type] || [];
     const isDarkMode = component.style?.isDarkMode || false;
     
     if (!isDarkMode) {
       // ダークモードをONにする
-      const darkPattern = patterns.find(p => p.id.includes('dark'));
-      if (darkPattern) {
-        updateComponent(component.id, {
-          style: { 
-            ...component.style,
-            // 現在のスタイルをバックアップ
-            lightModeBackup: {
-              backgroundColor: component.style?.backgroundColor,
-              textColor: component.style?.textColor,
-              headlineColor: component.style?.headlineColor,
-              descriptionColor: component.style?.descriptionColor,
-              buttonBackgroundColor: component.style?.buttonBackgroundColor,
-              buttonTextColor: component.style?.buttonTextColor,
-              cardBackgroundColor: component.style?.cardBackgroundColor,
-              cardTextColor: component.style?.cardTextColor,
-              accentColor: component.style?.accentColor,
-            },
-            // ダークモードのスタイルを適用
-            ...darkPattern.style,
-            isDarkMode: true,
-            designPattern: darkPattern.id
-          }
-        });
-      }
+      updateComponent(component.id, {
+        style: { 
+          ...component.style,
+          // 現在のスタイルをバックアップ
+          lightModeBackup: {
+            backgroundColor: component.style?.backgroundColor,
+            textColor: component.style?.textColor,
+            headlineColor: component.style?.headlineColor,
+            descriptionColor: component.style?.descriptionColor,
+            buttonBackgroundColor: component.style?.buttonBackgroundColor,
+            buttonTextColor: component.style?.buttonTextColor,
+            cardBackgroundColor: component.style?.cardBackgroundColor,
+            cardTextColor: component.style?.cardTextColor,
+            accentColor: component.style?.accentColor,
+          },
+          // ダークモードのスタイルを適用
+          backgroundColor: '#0f172a',
+          textColor: '#f1f5f9',
+          headlineColor: '#ffffff',
+          descriptionColor: '#cbd5e1',
+          buttonBackgroundColor: '#3b82f6',
+          buttonTextColor: '#ffffff',
+          cardBackgroundColor: '#1e293b',
+          cardTextColor: '#f1f5f9',
+          accentColor: '#06b6d4',
+          isDarkMode: true,
+        }
+      });
     } else {
       // ダークモードをOFFにする（バックアップから復元）
       const backup = component.style?.lightModeBackup || {};
-      const lightPattern = patterns.find(p => p.id.includes('light'));
       
       // バックアップが存在する場合は復元、存在しない場合はライトモードのデフォルトを使用
       const restoreStyle = {
-        backgroundColor: backup.backgroundColor || lightPattern?.style.backgroundColor,
-        textColor: backup.textColor || lightPattern?.style.textColor,
-        headlineColor: backup.headlineColor || lightPattern?.style.headlineColor,
-        descriptionColor: backup.descriptionColor || lightPattern?.style.descriptionColor,
-        buttonBackgroundColor: backup.buttonBackgroundColor || lightPattern?.style.buttonBackgroundColor,
-        buttonTextColor: backup.buttonTextColor || lightPattern?.style.buttonTextColor,
-        cardBackgroundColor: backup.cardBackgroundColor || lightPattern?.style.cardBackgroundColor,
-        cardTextColor: backup.cardTextColor || lightPattern?.style.cardTextColor,
-        accentColor: backup.accentColor || lightPattern?.style.accentColor,
+        backgroundColor: backup.backgroundColor || '#ffffff',
+        textColor: backup.textColor || '#374151',
+        headlineColor: backup.headlineColor || '#111827',
+        descriptionColor: backup.descriptionColor || '#6b7280',
+        buttonBackgroundColor: backup.buttonBackgroundColor || '#2563eb',
+        buttonTextColor: backup.buttonTextColor || '#ffffff',
+        cardBackgroundColor: backup.cardBackgroundColor || '#f9fafb',
+        cardTextColor: backup.cardTextColor || '#374151',
+        accentColor: backup.accentColor || '#3b82f6',
       };
 
       // undefinedの値を除去
@@ -74,7 +75,6 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
           ...cleanedStyle,
           isDarkMode: false,
           lightModeBackup: undefined, // バックアップをクリア
-          designPattern: lightPattern?.id
         }
       });
     }
@@ -346,22 +346,21 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
       </div>
 
       {/* 個別スタイル設定の案内 */}
-      <div style={sectionStyle}>
-        <div style={{
-          padding: '12px',
-          backgroundColor: '#fef3c7',
-          borderRadius: '8px',
-          border: '1px solid #fbbf24',
+      <div style={{
+        padding: '12px',
+        backgroundColor: '#fef3c7',
+        borderRadius: '8px',
+        border: '1px solid #fbbf24',
+        marginTop: '16px',
+      }}>
+        <p style={{
+          fontSize: '12px',
+          color: '#92400e',
+          margin: 0,
+          lineHeight: '1.4',
         }}>
-          <p style={{
-            fontSize: '12px',
-            color: '#92400e',
-            margin: 0,
-            lineHeight: '1.4',
-          }}>
-            📝 個別の色設定（背景色、文字色など）は「コンテンツ」タブで設定できます。
-          </p>
-        </div>
+          📝 個別の色設定（背景色、文字色など）は「コンテンツ」タブで設定できます。
+        </p>
       </div>
     </div>
   );

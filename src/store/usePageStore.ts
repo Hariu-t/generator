@@ -40,11 +40,21 @@ interface PageStore {
 }
 
 const initialPageData: PageData = {
-  components: [],
+  components: [
+    {
+      id: 'headline-default',
+      type: 'headline',
+      props: {
+        text: 'タイトルを挿入',
+        usePageTitle: true
+      },
+      style: { theme: 'light', colorScheme: 'blue' as const },
+    }
+  ],
   globalSettings: {
-    title: 'My Landing Page',
-    description: 'A beautiful landing page created with our no-code builder',
-    directory: '', // デフォルトは空（ルートディレクトリ）
+    title: 'タイトルを挿入｜スカパー！: スポーツ＆音楽ライブ、アイドル、アニメ、ドラマ、映画など',
+    description: 'ディスクリプションを挿入',
+    directory: '',
   },
   globalStyles: {
     mainColor: '#dc2626', // 赤系
@@ -186,6 +196,12 @@ export const usePageStore = create<PageStore>((set, get) => ({
         ...state.pageData,
         globalSettings: { ...state.pageData.globalSettings, ...settings },
       };
+      
+      // タイトルが変更された場合、自動的にサフィックスを追加
+      if (settings.title && !settings.title.includes('｜スカパー！:')) {
+        newPageData.globalSettings.title = `${settings.title}｜スカパー！: スポーツ＆音楽ライブ、アイドル、アニメ、ドラマ、映画など`;
+      }
+      
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newPageData);
       
@@ -245,12 +261,28 @@ export const usePageStore = create<PageStore>((set, get) => ({
 
   resetPage: () => {
     set((state) => {
+      // ヘッドラインコンポーネントは必須なので残す
+      const headlineComponent = {
+        id: 'headline-default',
+        type: 'headline' as const,
+        props: {
+          text: 'タイトルを挿入',
+          usePageTitle: true
+        },
+        style: { theme: 'light' as const, colorScheme: 'blue' as const },
+      };
+      
+      const resetPageData = {
+        ...initialPageData,
+        components: [headlineComponent]
+      };
+      
       // リセット前の状態をhistoryに追加
       const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push(initialPageData);
+      newHistory.push(resetPageData);
       
       return {
-        pageData: initialPageData,
+        pageData: resetPageData,
         selectedComponentId: null,
         history: newHistory,
         historyIndex: newHistory.length - 1,

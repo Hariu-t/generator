@@ -31,6 +31,9 @@ const SortableComponent: React.FC<SortableComponentProps> = ({
   const { selectedComponentId, selectComponent, deleteComponent } = usePageStore();
   const isSelected = selectedComponentId === component.id;
 
+  // ヘッドラインコンポーネントは編集・削除不可
+  const isHeadline = component.type === 'headline';
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -39,12 +42,18 @@ const SortableComponent: React.FC<SortableComponentProps> = ({
 
   const handleSelect = (e: React.MouseEvent) => {
     e.stopPropagation();
-    selectComponent(component.id);
+    // ヘッドラインコンポーネントは選択不可
+    if (!isHeadline) {
+      selectComponent(component.id);
+    }
   };
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    deleteComponent(component.id);
+    // ヘッドラインコンポーネントは削除不可
+    if (!isHeadline) {
+      deleteComponent(component.id);
+    }
   };
 
   const handleAccessibilityToggle = (e: React.MouseEvent) => {
@@ -56,7 +65,7 @@ const SortableComponent: React.FC<SortableComponentProps> = ({
 
   const containerStyle: React.CSSProperties = {
     position: 'relative',
-    outline: isSelected ? '2px solid #2563eb' : 'none',
+    outline: (isSelected && !isHeadline) ? '2px solid #2563eb' : 'none',
     outlineOffset: isSelected ? '-2px' : '0',
     ...style,
   };
@@ -69,7 +78,7 @@ const SortableComponent: React.FC<SortableComponentProps> = ({
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    opacity: 0,
+    opacity: isHeadline ? 0 : 0, // ヘッドラインは常に非表示
     transition: 'opacity 0.15s ease-in-out',
   };
 
@@ -120,7 +129,7 @@ const SortableComponent: React.FC<SortableComponentProps> = ({
   };
 
   const contentStyle: React.CSSProperties = {
-    outline: isSelected ? '2px solid #2563eb inset' : 'none',
+    outline: (isSelected && !isHeadline) ? '2px solid #2563eb inset' : 'none',
   };
 
   return (
@@ -128,14 +137,17 @@ const SortableComponent: React.FC<SortableComponentProps> = ({
       ref={setNodeRef}
       style={containerStyle}
       onClick={handleSelect}
+      style={{...containerStyle, cursor: isHeadline ? 'default' : 'pointer'}}
       data-component-id={component.id}
       onMouseEnter={(e) => {
+        if (isHeadline) return; // ヘッドラインはホバー効果なし
         const controls = e.currentTarget.querySelector('.component-controls') as HTMLElement;
         if (controls) {
           controls.style.opacity = '1';
         }
       }}
       onMouseLeave={(e) => {
+        if (isHeadline) return; // ヘッドラインはホバー効果なし
         const controls = e.currentTarget.querySelector('.component-controls') as HTMLElement;
         if (controls && !isSelected) {
           controls.style.opacity = '0';
@@ -143,11 +155,11 @@ const SortableComponent: React.FC<SortableComponentProps> = ({
       }}
     >
       {/* Component Controls */}
-      <div 
+      {!isHeadline && <div 
         className="component-controls"
         style={{
           ...controlsStyle,
-          opacity: isSelected ? 1 : 0,
+          opacity: (isSelected && !isHeadline) ? 1 : 0,
         }}
       >
         {/* アクセシビリティチェックボタン（左端） */}
@@ -199,10 +211,10 @@ const SortableComponent: React.FC<SortableComponentProps> = ({
         >
           <Trash2 size={12} />
         </button>
-      </div>
+      </div>}
 
       {/* Selection Indicator */}
-      {isSelected && (
+      {isSelected && !isHeadline && (
         <div style={selectionIndicatorStyle}>
           <Eye size={12} />
           Selected

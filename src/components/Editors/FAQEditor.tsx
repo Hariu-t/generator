@@ -16,12 +16,6 @@ const FAQEditor: React.FC<FAQEditorProps> = ({ component }) => {
     });
   };
 
-  const handleStyleChange = (key: string, value: any) => {
-    updateComponent(component.id, {
-      style: { ...component.style, [key]: value }
-    });
-  };
-
   const handleFAQChange = (index: number, field: string, value: string) => {
     const newFAQs = [...(component.props.faqs || [])];
     newFAQs[index] = { ...newFAQs[index], [field]: value };
@@ -130,49 +124,6 @@ const FAQEditor: React.FC<FAQEditorProps> = ({ component }) => {
         </div>
       </div>
 
-      <div>
-        <h3 className="text-sm font-medium text-gray-900 mb-3">スタイル</h3>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              テーマ
-            </label>
-            <select
-              value={component.style?.theme || 'light'}
-              onChange={(e) => handleStyleChange('theme', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="light">ライト</option>
-              <option value="dark">ダーク</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              背景色
-            </label>
-            <input
-              type="color"
-              value={component.style?.backgroundColor || '#f9fafb'}
-              onChange={(e) => handleStyleChange('backgroundColor', e.target.value)}
-              className="w-full h-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              文字色
-            </label>
-            <input
-              type="color"
-              value={component.style?.textColor || '#111827'}
-              onChange={(e) => handleStyleChange('textColor', e.target.value)}
-              className="w-full h-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

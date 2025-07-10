@@ -1,13 +1,11 @@
 import React from 'react';
 import { ComponentData } from '../../types';
 import KVComponent from '../Components/KVComponent';
-import FeaturesComponent from '../Components/FeaturesComponent';
-import CTAComponent from '../Components/CTAComponent';
-import TestimonialsComponent from '../Components/TestimonialsComponent';
 import FAQComponent from '../Components/FAQComponent';
 import FooterComponent from '../Components/FooterComponent';
 import PricingComponent from '../Components/PricingComponent';
 import AppIntroComponent from '../Components/AppIntroComponent';
+import HeadlineComponent from '../Components/HeadlineComponent';
 
 interface ComponentRendererProps {
   component: ComponentData;
@@ -22,13 +20,9 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({ component }) => {
   switch (component.type) {
     case 'kv':
       return <KVComponent {...commonProps} />;
-    case 'features':
-      return <FeaturesComponent {...commonProps} />;
-    case 'cta':
-      return <CTAComponent {...commonProps} />;
-    case 'testimonials':
-      return <TestimonialsComponent {...commonProps} />;
-    case 'faq':
+    case 'headline':
+      return <HeadlineComponent {...commonProps} />;
+    case 'test':
       return <FAQComponent {...commonProps} />;
     case 'footer':
       return <FooterComponent {...commonProps} />;

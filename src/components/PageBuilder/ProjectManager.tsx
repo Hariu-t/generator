@@ -356,15 +356,15 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
                 保存されたプロジェクトがありません
               </h3>
               <p style={{ marginBottom: '16px' }}>
-                現在のページを保存して、後で編集を続けることができます。
+                現在のページを保存して、後で編集を再開することが出来ます。
               </p>
-              <button
+              {/* <button
                 onClick={() => setShowSaveForm(true)}
                 style={primaryButtonStyle}
               >
                 <Plus size={16} />
                 最初のプロジェクトを保存
-              </button>
+              </button> */}
             </div>
           ) : (
             <div style={projectGridStyle}>

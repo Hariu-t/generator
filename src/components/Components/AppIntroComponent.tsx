@@ -16,8 +16,6 @@ const AppIntroComponent: React.FC<AppIntroComponentProps> = ({ component }) => {
     textColor, 
     headlineColor, 
     descriptionColor, 
-    buttonBackgroundColor, 
-    buttonTextColor,
     cardBackgroundColor,
     cardTextColor,
     accentColor
@@ -219,11 +217,6 @@ const AppIntroComponent: React.FC<AppIntroComponentProps> = ({ component }) => {
     color: headlineColor || textColor || '#333333',
   };
 
-  const imageContainerStyle = {
-    textAlign: 'center' as const,
-    marginTop: '50px',
-  };
-
   return (
     <section style={containerStyle} className="baseColor">
       <div style={sectionInnerStyle}>
@@ -245,9 +238,8 @@ const AppIntroComponent: React.FC<AppIntroComponentProps> = ({ component }) => {
               <div style={innerFlexStyle}>
                 <div style={{ marginRight: '20px' }}>
                   <img 
-                    src="https://images.pexels.com/photos/3184287/pexels-photo-3184287.jpeg?auto=compress&cs=tinysrgb&w=120" 
-                    alt="スカパー！番組配信" 
-                    style={{ width: '120px', height: 'auto' }}
+                    src="/program/st/promo/generator_common/img/streamingApp_logo.svg" 
+                    alt="スカパー！番組配信"
                   />
                 </div>
                 <p style={{
@@ -265,16 +257,14 @@ const AppIntroComponent: React.FC<AppIntroComponentProps> = ({ component }) => {
             <div style={appItemStyle}>
               <a href="https://itunes.apple.com/jp/app/id1059697991/" target="_blank" rel="noopener noreferrer">
                 <img 
-                  src="https://images.pexels.com/photos/3184288/pexels-photo-3184288.jpeg?auto=compress&cs=tinysrgb&w=200" 
-                  alt="App Store" 
-                  style={{ width: '200px', height: 'auto' }}
+                  src="/program/st/promo/generator_common/img/downloadBtn_appstore.svg" 
+                  alt="App Store"
                 />
               </a>
               <a href="https://play.google.com/store/apps/details?id=com.yomumiru" target="_blank" rel="noopener noreferrer">
                 <img 
-                  src="https://images.pexels.com/photos/3184289/pexels-photo-3184289.jpeg?auto=compress&cs=tinysrgb&w=200" 
-                  alt="Google Play" 
-                  style={{ width: '200px', height: 'auto' }}
+                  src="/program/st/promo/generator_common/img/downloadBtn_googleplay.svg" 
+                  alt="Google Play"
                 />
               </a>
             </div>
@@ -316,18 +306,18 @@ const AppIntroComponent: React.FC<AppIntroComponentProps> = ({ component }) => {
 
         <h4 style={h4Style}>基本プランなら、50chのうち37chが番組配信も楽しめる！</h4>
 
-        <div style={imageContainerStyle}>
-          <img 
-            src="https://images.pexels.com/photos/3184454/pexels-photo-3184454.jpeg?auto=compress&cs=tinysrgb&w=800" 
-            alt="番組配信チャンネル一覧" 
-            style={{ 
-              maxWidth: '100%', 
-              height: 'auto',
-              borderRadius: '8px',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-            }}
-          />
-        </div>
+        <p className='img osusumePoint'>
+          <picture>
+            <source
+              media="(max-width: 768px)"
+              srcSet="/program/st/promo/generator_common/img/streamingArea_img_sp.png"
+            />
+            <img
+              src="/program/st/promo/generator_common/img/streamingArea_img.png"
+              alt="番組配信チャンネル一覧" style={{ width: '100%' }}
+            />
+          </picture>
+        </p>
       </div>
 
       <style>

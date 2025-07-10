@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import { X, Settings, Edit, Palette } from 'lucide-react';
 import { usePageStore } from '../../store/usePageStore';
 import KVEditor from '../Editors/KVEditor';
-import FeaturesEditor from '../Editors/FeaturesEditor';
-import CTAEditor from '../Editors/CTAEditor';
-import TestimonialsEditor from '../Editors/TestimonialsEditor';
 import FAQEditor from '../Editors/FAQEditor';
 import FooterEditor from '../Editors/FooterEditor';
 import PricingEditor from '../Editors/PricingEditor';
 import AppIntroEditor from '../Editors/AppIntroEditor';
 import StyleEditor from '../Editors/StyleEditor';
+import HeadlineEditor from '../Editors/HeadlineEditor';
 
 const PropertiesPanel: React.FC = () => {
   const { selectedComponentId, pageData, selectComponent } = usePageStore();
@@ -170,13 +168,7 @@ const PropertiesPanel: React.FC = () => {
     switch (selectedComponent.type) {
       case 'kv':
         return <KVEditor component={selectedComponent} />;
-      case 'features':
-        return <FeaturesEditor component={selectedComponent} />;
-      case 'cta':
-        return <CTAEditor component={selectedComponent} />;
-      case 'testimonials':
-        return <TestimonialsEditor component={selectedComponent} />;
-      case 'faq':
+      case 'test':
         return <FAQEditor component={selectedComponent} />;
       case 'footer':
         return <FooterEditor component={selectedComponent} />;
@@ -197,12 +189,6 @@ const PropertiesPanel: React.FC = () => {
     switch (type) {
       case 'kv':
         return 'KV';
-      case 'features':
-        return '特徴';
-      case 'cta':
-        return 'CTA';
-      case 'testimonials':
-        return 'お客様の声';
       case 'faq':
         return 'FAQ';
       case 'footer':
@@ -210,7 +196,7 @@ const PropertiesPanel: React.FC = () => {
       case 'pricing':
         return '料金';
       case 'app-intro':
-        return 'アプリ紹介';
+        return '番組配信';
       default:
         return type.charAt(0).toUpperCase() + type.slice(1);
     }
@@ -225,26 +211,16 @@ const PropertiesPanel: React.FC = () => {
         if (pattern === 'carousel') return 'KV カルーセル型';
         if (pattern === 'cinematic') return 'KV シネマティック型';
         if (pattern === 'card') return 'KV カード型';
-        if (pattern === 'program-hero') return 'KV 番組ヒーロー型';
+        if (pattern === 'program-hero') return 'KV-1';
         return 'KV';
-      case 'features':
-        // 画像があるかどうかで判定
-        const hasImages = component.props.features?.some((f: any) => f.image);
-        return hasImages ? '2カラム特徴' : '3カラム特徴';
-      case 'cta':
-        // 特徴があるかどうかで判定
-        const hasFeatures = component.props.features && component.props.features.length > 0;
-        return hasFeatures ? 'CTA（特徴付き）' : 'シンプルCTA';
-      case 'testimonials':
-        return 'お客様の声';
-      case 'faq':
-        return 'よくある質問';
+      case 'test':
+        return 'テスト';
       case 'footer':
         return 'フッター';
       case 'pricing':
         return '料金表示';
       case 'app-intro':
-        return '番組配信紹介';
+        return '番組配信とは';
       default:
         return `${getComponentDisplayName(component.type)}コンポーネント`;
     }

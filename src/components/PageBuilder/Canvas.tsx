@@ -7,6 +7,7 @@ import ComponentRenderer from './ComponentRenderer';
 import AccessibilityChecker from './AccessibilityChecker';
 import Header from '../Layout/Header';
 import Footer from '../Layout/Footer';
+import { generateGlobalStylesCSS, generateComponentStyleCSS } from '../../utils/globalStylesHelper';
 
 const Canvas: React.FC = () => {
   const { pageData, reorderComponents, viewMode, previewMode, selectedComponentId } = usePageStore();
@@ -101,6 +102,26 @@ const Canvas: React.FC = () => {
     checkAccessibilityIssues();
   }, [selectedComponent?.style?.backgroundColor, selectedComponent?.style?.textColor, selectedComponent?.id]);
 
+  // 動的スタイルの生成
+  const dynamicStyles = `
+    ${generateGlobalStylesCSS(pageData.globalStyles)}
+    ${pageData.components.map(component => 
+      component.style ? `
+        [data-component-id="${component.id}"] {
+          ${component.style.backgroundColor ? `--component-background-color: ${component.style.backgroundColor};` : ''}
+          ${component.style.textColor ? `--component-text-color: ${component.style.textColor};` : ''}
+          ${component.style.headlineColor ? `--component-headline-color: ${component.style.headlineColor};` : ''}
+          ${component.style.descriptionColor ? `--component-description-color: ${component.style.descriptionColor};` : ''}
+          ${component.style.buttonBackgroundColor ? `--component-button-bg-color: ${component.style.buttonBackgroundColor};` : ''}
+          ${component.style.buttonTextColor ? `--component-button-text-color: ${component.style.buttonTextColor};` : ''}
+          ${component.style.cardBackgroundColor ? `--component-card-bg-color: ${component.style.cardBackgroundColor};` : ''}
+          ${component.style.cardTextColor ? `--component-card-text-color: ${component.style.cardTextColor};` : ''}
+          ${component.style.accentColor ? `--component-accent-color: ${component.style.accentColor};` : ''}
+        }
+      ` : ''
+    ).join('')}
+  `;
+
   const canvasStyle: React.CSSProperties = {
     flex: 1,
     backgroundColor: '#f9fafb',
@@ -171,11 +192,17 @@ const Canvas: React.FC = () => {
     marginRight: '8px',
   };
 
-  if (pageData.components.length === 0) {
+  if (pageData.components.filter(c => c.type !== 'headline').length === 0) {
     return (
       <div style={canvasStyle}>
         <div style={canvasContentStyle}>
           <Header />
+          {/* 必須ヘッドラインコンポーネント */}
+          {pageData.components.find(c => c.type === 'headline') && (
+            <ComponentRenderer 
+              component={pageData.components.find(c => c.type === 'headline')!} 
+            />
+          )}
           <div style={emptyCanvasStyle}>
             <div style={emptyContentStyle}>
               <div style={emptyIconStyle}>
@@ -184,7 +211,7 @@ const Canvas: React.FC = () => {
                 </svg>
               </div>
               <h3 style={emptyTitleStyle}>ページの構築を開始</h3>
-              <p style={emptyDescStyle}>サイドバーからコンポーネントを選択してページに追加してください</p>
+              <p style={emptyDescStyle}>サイドバーからコンポーネントを選択してページに追加してください。</p>
               <div style={hintsStyle}>
                 <div style={hintItemStyle}>
                   <div style={{ ...hintDotStyle, backgroundColor: '#3b82f6' }}></div>
@@ -208,7 +235,13 @@ const Canvas: React.FC = () => {
       <div style={canvasStyle}>
         <div style={canvasContentStyle}>
           <Header />
-          {pageData.components.map((component) => (
+          {/* 必須ヘッドラインコンポーネント */}
+          {pageData.components.find(c => c.type === 'headline') && (
+            <ComponentRenderer 
+              component={pageData.components.find(c => c.type === 'headline')!} 
+            />
+          )}
+          {pageData.components.filter(c => c.type !== 'headline').map((component) => (
             <ComponentRenderer key={component.id} component={component} />
           ))}
           <Footer />
@@ -219,11 +252,20 @@ const Canvas: React.FC = () => {
 
   return (
     <div style={canvasStyle}>
+      {/* 動的スタイルの適用 */}
+      <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
+      
       <div style={canvasContentStyle}>
         <Header />
+        {/* 必須ヘッドラインコンポーネント */}
+        {pageData.components.find(c => c.type === 'headline') && (
+          <ComponentRenderer 
+            component={pageData.components.find(c => c.type === 'headline')!} 
+          />
+        )}
         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={pageData.components.map(c => c.id)} strategy={verticalListSortingStrategy}>
-            {pageData.components.map((component) => (
+            {pageData.components.filter(c => c.type !== 'headline').map((component) => (
               <div key={component.id} style={{ position: 'relative' }}>
                 <SortableComponent 
                   component={component}

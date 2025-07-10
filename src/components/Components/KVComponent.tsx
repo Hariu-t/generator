@@ -11,7 +11,26 @@ interface KVComponentProps {
 
 const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
   const { pageData } = usePageStore();
-  const { headline, description, ctaText, ctaUrl, backgroundImage, pattern = 'carousel', carouselItems = [], cardItems = [], mediaItems = [], title, cast, broadcastInfo, ctaButtons, additionalInfo } = component.props;
+  const { 
+    headline, 
+    description,
+    ctaText, 
+    ctaUrl, 
+    backgroundImage, 
+    pattern = 'default', 
+    carouselItems = [], 
+    cardItems = [], 
+    mediaItems = [], 
+    title, 
+    cast, 
+    broadcastInfo, 
+    ctaButtons, 
+    additionalInfo,
+    expandedDescription,
+    showMoreText = 'もっと見る',
+    showLessText = '閉じる'
+  } = component.props;
+  
   const { 
     backgroundColor, 
     textColor, 
@@ -32,6 +51,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isAutoSliding, setIsAutoSliding] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
   // デフォルトのカルーセルアイテム
@@ -108,8 +128,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
     },
     {
       type: 'video',
-      url: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      poster: 'https://images.pexels.com/photos/3184288/pexels-photo-3184288.jpeg?auto=compress&cs=tinysrgb&w=800',
+      url: 'https://www.youtube.com/embed/XVVXQsv7o8I',
       alt: '予告編'
     },
     {
@@ -122,6 +141,24 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
   const activeCarouselItems = carouselItems.length > 0 ? carouselItems : defaultCarouselItems;
   const activeCardItems = cardItems.length > 0 ? cardItems : defaultCardItems;
   const activeMediaItems = mediaItems.length > 0 ? mediaItems : defaultMediaItems;
+
+  // YouTube URLを埋め込み形式に変換
+  const convertToEmbedUrl = (url: string): string => {
+    if (!url) return '';
+    
+    // 既に埋め込み形式の場合はそのまま返す
+    if (url.includes('youtube.com/embed/')) {
+      return url;
+    }
+    
+    // 通常のYouTube URLを埋め込み形式に変換
+    const videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+    if (videoIdMatch) {
+      return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
+    }
+    
+    return url;
+  };
 
   // カルーセル用の自動スライド
   useEffect(() => {
@@ -141,8 +178,6 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
         if (!isVideoPlaying) {
           setCurrentMediaIndex((prev) => {
             const newIndex = (prev + 1) % activeMediaItems.length;
-            // 動画の場合は一時停止
-            pauseAllVideos();
             return newIndex;
           });
         }
@@ -151,51 +186,8 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
     }
   }, [pattern, activeMediaItems.length, isAutoSliding, isVideoPlaying]);
 
-  // 動画制御関数
-  const pauseAllVideos = () => {
-    videoRefs.current.forEach((video) => {
-      if (video) {
-        video.pause();
-      }
-    });
-    setIsVideoPlaying(false);
-  };
-
-  const playCurrentVideo = () => {
-    const currentVideo = videoRefs.current[currentMediaIndex];
-    if (currentVideo && activeMediaItems[currentMediaIndex]?.type === 'video') {
-      currentVideo.play();
-      setIsVideoPlaying(true);
-      setIsAutoSliding(false); // 動画再生中は自動スライドを停止
-    }
-  };
-
-  const toggleVideoPlayback = () => {
-    const currentVideo = videoRefs.current[currentMediaIndex];
-    if (currentVideo && activeMediaItems[currentMediaIndex]?.type === 'video') {
-      if (isVideoPlaying) {
-        currentVideo.pause();
-        setIsVideoPlaying(false);
-        setIsAutoSliding(true); // 動画停止時は自動スライドを再開
-      } else {
-        currentVideo.play();
-        setIsVideoPlaying(true);
-        setIsAutoSliding(false); // 動画再生中は自動スライドを停止
-      }
-    }
-  };
-
-  const toggleMute = () => {
-    const currentVideo = videoRefs.current[currentMediaIndex];
-    if (currentVideo) {
-      currentVideo.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
   // メディアスライド変更時の処理
   const changeMediaSlide = (newIndex: number) => {
-    pauseAllVideos(); // 全ての動画を停止
     setCurrentMediaIndex(newIndex);
     setIsAutoSliding(true); // 手動変更時は自動スライドを再開
   };
@@ -222,6 +214,324 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
     backgroundColor: backgroundColor || baseColor,
     color: textColor || undefined,
   };
+
+  // パターン4: 番組ヒーロー型（新規追加）
+  if (pattern === 'program-hero') {
+    return (
+      <div style={containerStyle} className="py-12 sm:py-16 baseColor">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+            {/* 左側：メディアスライダー */}
+            <div className="relative">
+              {activeMediaItems && activeMediaItems.length > 0 && (
+                <>
+                  {/* 現在のメディアアイテムを表示 */}
+                  <div style={{
+                    width: '100%',
+                    height: '400px',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    position: 'relative'
+                  }}>
+                    {activeMediaItems[currentMediaIndex].type === 'video' ? (
+                      <iframe
+                        src={convertToEmbedUrl(activeMediaItems[currentMediaIndex].url)}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          border: 'none'
+                        }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <img
+                        src={activeMediaItems[currentMediaIndex].url}
+                        alt={activeMediaItems[currentMediaIndex].alt}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  {/* ナビゲーションボタン */}
+                  {activeMediaItems.length > 1 && (
+                    <>
+                      <button
+                        onClick={prevMediaSlide}
+                        style={{
+                          position: 'absolute',
+                          left: '16px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          backgroundColor: 'rgba(0,0,0,0.5)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '48px',
+                          height: '48px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          backdropFilter: 'blur(10px)',
+                          zIndex: 10
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.7)';
+                          e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                          e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                        }}
+                      >
+                        <ChevronLeft size={20} />
+                      </button>
+                      
+                      <button
+                        onClick={nextMediaSlide}
+                        style={{
+                          position: 'absolute',
+                          right: '16px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          backgroundColor: 'rgba(0,0,0,0.5)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '48px',
+                          height: '48px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          backdropFilter: 'blur(10px)',
+                          zIndex: 10
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.7)';
+                          e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                          e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                        }}
+                      >
+                        <ChevronRight size={20} />
+                      </button>
+                    </>
+                  )}
+
+                  {/* ドットインジケーター */}
+                  {activeMediaItems.length > 1 && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '16px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      gap: '8px',
+                      zIndex: 10
+                    }}>
+                      {activeMediaItems.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => changeMediaSlide(index)}
+                          style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            border: 'none',
+                            backgroundColor: index === currentMediaIndex ? 'white' : 'rgba(255,255,255,0.5)',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            backdropFilter: 'blur(10px)'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (index !== currentMediaIndex) {
+                              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.8)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (index !== currentMediaIndex) {
+                              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.5)';
+                            }
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* メディア数インジケーター */}
+                  {activeMediaItems.length > 1 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '16px',
+                      left: '16px',
+                      backgroundColor: 'rgba(0,0,0,0.7)',
+                      color: 'white',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      backdropFilter: 'blur(10px)'
+                    }}>
+                      {currentMediaIndex + 1} / {activeMediaItems.length}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* 右側：番組情報 */}
+            <div className="space-y-6">
+              {/* タイトル */}
+              <div>
+                <h1 
+                  className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4"
+                  style={{ color: headlineColor || textColor || '#333' }}
+                  data-component-headline
+                >
+                  {title || 'ブラックリスト ファイナル・シーズン'}
+                </h1>
+                
+                {/* 放送情報バッジ */}
+                {broadcastInfo && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {(broadcastInfo.badges || []).map((badge: any, index: number) => (
+                      <span
+                        key={index}
+                        className="inline-block px-3 py-1 text-xs font-bold rounded-full mr-2 mb-2"
+                        style={{ 
+                          backgroundColor: index === 0 ? badge.color : mainColor,
+                          color: 'white'
+                        }}
+                      >
+                        {badge.text}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 説明文（アコーディオン対応） */}
+              <div>
+                <p 
+                  className="text-lg leading-relaxed"
+                  style={{ color: descriptionColor || textColor || '#666' }}
+                  data-component-description
+                >
+                  {description || '世界で最も危険な犯罪者たちのリストを持つ元政府エージェント、レイモンド・レディントンが、FBIと協力して凶悪犯を追い詰める。'}
+                </p>
+                
+                {/* 展開可能な詳細説明 */}
+                {expandedDescription && (
+                  <div>
+                    {isExpanded && (
+                      <p 
+                        className="text-lg leading-relaxed mt-4"
+                        style={{ color: descriptionColor || textColor || '#666' }}
+                      >
+                        {expandedDescription}
+                      </p>
+                    )}
+                    <button
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      className="mt-2 text-sm font-medium hover:underline"
+                      style={{ color: accentColor }}
+                    >
+                      {isExpanded ? showLessText : showMoreText}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* 放送・出演情報 */}
+              <div className="space-y-3">
+                {broadcastInfo?.schedule && (
+                  <div className="flex items-center text-sm" style={{ color: textColor || '#333' }}>
+                    <Calendar className="w-5 h-5 mr-3 text-gray-500" />
+                    <span>{broadcastInfo.schedule}</span>
+                  </div>
+                )}
+                
+                {broadcastInfo?.duration && (
+                  <div className="flex items-center text-sm" style={{ color: textColor || '#333' }}>
+                    <Play className="w-5 h-5 mr-3 text-gray-500" />
+                    <span>{broadcastInfo.duration}</span>
+                  </div>
+                )}
+                
+                {cast && (
+                  <div className="flex items-start text-sm" style={{ color: textColor || '#333' }}>
+                    <Users className="w-5 h-5 mr-3 mt-0.5 text-gray-500 flex-shrink-0" />
+                    <span>{cast}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* CTAボタン */}
+              {ctaButtons && ctaButtons.length > 0 && (
+                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                  {ctaButtons.map((button: any, index: number) => (
+                    <a
+                      key={index}
+                      href={button.url}
+                      className={`inline-flex items-center justify-center px-8 py-4 rounded-lg text-lg font-medium transition-all duration-200 ${
+                        button.type === 'primary'
+                          ? 'text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
+                          : 'bg-white border-2 hover:bg-gray-50'
+                      }`}
+                      style={
+                        button.type === 'primary' 
+                          ? { 
+                              backgroundColor: buttonBackgroundColor || mainColor,
+                              color: buttonTextColor || '#ffffff'
+                            }
+                          : {
+                              color: mainColor,
+                              borderColor: mainColor
+                            }
+                      }
+                    >
+                      {button.type === 'primary' && <Play className="w-5 h-5 mr-2" />}
+                      {button.text}
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              {/* 追加情報 */}
+              {additionalInfo && additionalInfo.length > 0 && (
+                <div 
+                  className="mt-8 p-6 rounded-lg"
+                  style={{
+                    backgroundColor: backgroundColor ? 'rgba(255,255,255,0.1)' : base2Color,
+                    color: textColor || '#374151'
+                  }}
+                >
+                  <div className="space-y-2">
+                    {additionalInfo.map((info: any, index: number) => (
+                      <div key={index} className="flex justify-between items-center text-sm">
+                        <span className="font-medium">{info.label}:</span>
+                        <span>{info.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // パターン1: カルーセル・プレゼンテーション（情報整理型）
   if (pattern === 'carousel') {
@@ -952,312 +1262,6 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
             >
               {ctaText || 'すべてのコンテンツを見る'}
             </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // パターン4: 番組ヒーロー型（新規追加）
-  if (pattern === 'program-hero') {
-    return (
-      <div style={containerStyle} className="py-12 sm:py-16 baseColor">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-            {/* 左側：メディアスライダー */}
-            <div className="relative">
-              {activeMediaItems && activeMediaItems.length > 0 && (
-                <div className="relative aspect-video bg-gray-100 rounded-xl overflow-hidden shadow-2xl">
-                  {/* 現在のメディア表示 */}
-                  {activeMediaItems[currentMediaIndex]?.type === 'video' ? (
-                    <div className="relative w-full h-full">
-                      <video
-                        ref={(el) => (videoRefs.current[currentMediaIndex] = el)}
-                        src={activeMediaItems[currentMediaIndex].url}
-                        poster={activeMediaItems[currentMediaIndex].poster}
-                        className="w-full h-full object-cover"
-                        muted={isMuted}
-                        onPlay={() => setIsVideoPlaying(true)}
-                        onPause={() => setIsVideoPlaying(false)}
-                        onEnded={() => {
-                          setIsVideoPlaying(false);
-                          setIsAutoSliding(true); // 動画終了時は自動スライドを再開
-                        }}
-                      />
-                      
-                      {/* 動画コントロール */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <button
-                          onClick={toggleVideoPlayback}
-                          className="bg-black bg-opacity-50 text-white p-4 rounded-full hover:bg-opacity-70 transition-all"
-                        >
-                          {isVideoPlaying ? <Pause size={32} /> : <Play size={32} />}
-                        </button>
-                      </div>
-                      
-                      {/* 音量コントロール */}
-                      <button
-                        onClick={toggleMute}
-                        className="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
-                      >
-                        {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                      </button>
-                    </div>
-                  ) : (
-                    <img
-                      src={activeMediaItems[currentMediaIndex]?.url}
-                      alt={activeMediaItems[currentMediaIndex]?.alt || title}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                  
-                  {/* メディアナビゲーション矢印 */}
-                  {activeMediaItems.length > 1 && (
-                    <>
-                      <button
-                        onClick={prevMediaSlide}
-                        style={{
-                          position: 'absolute',
-                          left: '16px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          backgroundColor: 'rgba(0,0,0,0.5)',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: '48px',
-                          height: '48px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          backdropFilter: 'blur(10px)',
-                          zIndex: 10
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.7)';
-                          e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)';
-                          e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
-                        }}
-                      >
-                        <ChevronLeft size={20} />
-                      </button>
-                      
-                      <button
-                        onClick={nextMediaSlide}
-                        style={{
-                          position: 'absolute',
-                          right: '16px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          backgroundColor: 'rgba(0,0,0,0.5)',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: '48px',
-                          height: '48px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          backdropFilter: 'blur(10px)',
-                          zIndex: 10
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.7)';
-                          e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.5)';
-                          e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
-                        }}
-                      >
-                        <ChevronRight size={20} />
-                      </button>
-                      
-                      {/* ドットインジケーター */}
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '16px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        display: 'flex',
-                        gap: '8px',
-                        zIndex: 10
-                      }}>
-                        {activeMediaItems.map((_, index) => (
-                          <button
-                            key={index}
-                            onClick={() => changeMediaSlide(index)}
-                            style={{
-                              width: '12px',
-                              height: '12px',
-                              borderRadius: '50%',
-                              border: 'none',
-                              backgroundColor: index === currentMediaIndex ? 'white' : 'rgba(255,255,255,0.5)',
-                              cursor: 'pointer',
-                              transition: 'all 0.3s ease',
-                              backdropFilter: 'blur(10px)'
-                            }}
-                            onMouseEnter={(e) => {
-                              if (index !== currentMediaIndex) {
-                                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.8)';
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (index !== currentMediaIndex) {
-                                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.5)';
-                              }
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  )}
-
-                  {/* メディア数インジケーター */}
-                  {activeMediaItems.length > 1 && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '16px',
-                      left: '16px',
-                      backgroundColor: 'rgba(0,0,0,0.7)',
-                      color: 'white',
-                      padding: '4px 8px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      backdropFilter: 'blur(10px)'
-                    }}>
-                      {currentMediaIndex + 1} / {activeMediaItems.length}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* 右側：番組情報 */}
-            <div className="space-y-6">
-              {/* タイトル */}
-              <div>
-                <h1 
-                  className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4"
-                  style={{ color: headlineColor || textColor || '#333' }}
-                >
-                  {title || 'ブラックリスト ファイナル・シーズン'}
-                </h1>
-                
-                {/* 放送情報バッジ */}
-                {broadcastInfo && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {broadcastInfo.status && (
-                      <span 
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
-                        style={{ backgroundColor: mainColor }}
-                      >
-                        {broadcastInfo.status}
-                      </span>
-                    )}
-                    {broadcastInfo.category && (
-                      <span 
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white"
-                        style={{ backgroundColor: accentColor }}
-                      >
-                        {broadcastInfo.category}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* 説明文 */}
-              <p 
-                className="text-lg leading-relaxed"
-                style={{ color: descriptionColor || textColor || '#666' }}
-              >
-                {description || '世界で最も危険な犯罪者たちのリストを持つ元政府エージェント、レイモンド・レディントンが、FBIと協力して凶悪犯を追い詰める。'}
-              </p>
-
-              {/* 放送・出演情報 */}
-              <div className="space-y-3">
-                {broadcastInfo?.schedule && (
-                  <div className="flex items-center text-sm" style={{ color: textColor || '#333' }}>
-                    <Calendar className="w-5 h-5 mr-3 text-gray-500" />
-                    <span>{broadcastInfo.schedule}</span>
-                  </div>
-                )}
-                
-                {broadcastInfo?.duration && (
-                  <div className="flex items-center text-sm" style={{ color: textColor || '#333' }}>
-                    <Play className="w-5 h-5 mr-3 text-gray-500" />
-                    <span>{broadcastInfo.duration}</span>
-                  </div>
-                )}
-                
-                {cast && (
-                  <div className="flex items-start text-sm" style={{ color: textColor || '#333' }}>
-                    <Users className="w-5 h-5 mr-3 mt-0.5 text-gray-500 flex-shrink-0" />
-                    <span>{cast}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* CTAボタン */}
-              {ctaButtons && ctaButtons.length > 0 && (
-                <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                  {ctaButtons.map((button: any, index: number) => (
-                    <a
-                      key={index}
-                      href={button.url}
-                      className={`inline-flex items-center justify-center px-8 py-4 rounded-lg text-lg font-medium transition-all duration-200 ${
-                        button.type === 'primary'
-                          ? 'text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
-                          : 'bg-white border-2 hover:bg-gray-50'
-                      }`}
-                      style={
-                        button.type === 'primary' 
-                          ? { 
-                              backgroundColor: buttonBackgroundColor || mainColor,
-                              color: buttonTextColor || '#ffffff'
-                            }
-                          : {
-                              color: mainColor,
-                              borderColor: mainColor
-                            }
-                      }
-                    >
-                      {button.type === 'primary' && <Play className="w-5 h-5 mr-2" />}
-                      {button.text}
-                    </a>
-                  ))}
-                </div>
-              )}
-
-              {/* 追加情報 */}
-              {additionalInfo && additionalInfo.length > 0 && (
-                <div 
-                  className="mt-8 p-6 rounded-lg"
-                  style={{
-                    backgroundColor: backgroundColor ? 'rgba(255,255,255,0.1)' : base2Color,
-                    color: textColor || '#374151'
-                  }}
-                >
-                  <div className="space-y-2">
-                    {additionalInfo.map((info: any, index: number) => (
-                      <div key={index} className="flex justify-between items-center text-sm">
-                        <span className="font-medium">{info.label}:</span>
-                        <span>{info.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>

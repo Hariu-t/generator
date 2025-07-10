@@ -8,14 +8,10 @@ interface GlobalSettingsPanelProps {
 }
 
 const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClose }) => {
-  const { pageData, updateGlobalSettings, updateGlobalStyles } = usePageStore();
+  const { pageData, updateGlobalSettings } = usePageStore();
 
   const handleSettingChange = (key: string, value: string | boolean) => {
     updateGlobalSettings({ [key]: value });
-  };
-
-  const handleStyleChange = (key: string, value: string) => {
-    updateGlobalStyles({ [key]: value });
   };
 
   if (!isOpen) return null;
@@ -128,23 +124,17 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
   };
 
   const colorInputStyle: React.CSSProperties = {
-    width: '60px',
-    height: '40px',
+    width: '50px',
+    height: '50px',
+    padding: '0',
     border: '1px solid #d1d5db',
     borderRadius: '8px',
     cursor: 'pointer',
-    outline: 'none',
   };
 
   const colorValueStyle: React.CSSProperties = {
-    flex: 1,
-    padding: '8px 12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '12px',
-    fontFamily: 'monospace',
-    backgroundColor: '#f9fafb',
-    color: '#374151',
+    ...inputStyle,
+    width: '120px',
   };
 
   const helpTextStyle: React.CSSProperties = {
@@ -154,10 +144,7 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
   };
 
   const colorDescriptionStyle: React.CSSProperties = {
-    fontSize: '12px',
-    color: '#6b7280',
-    marginTop: '4px',
-    lineHeight: '1.4',
+    ...helpTextStyle,
   };
 
   const footerStyle: React.CSSProperties = {
@@ -227,7 +214,7 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
                 type="text"
                 value={pageData.globalSettings.title}
                 onChange={(e) => handleSettingChange('title', e.target.value)}
-                placeholder="例: 素晴らしい商品 - 公式サイト"
+                placeholder="例: タイトルを挿入"
                 style={inputStyle}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#2563eb';
@@ -239,7 +226,7 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
                 }}
               />
               <p style={helpTextStyle}>
-                ブラウザのタブに表示されるタイトルです（推奨: 60文字以内）
+                ※ブラウザのタブに表示されるタイトルです。「｜スカパー！: スポーツ＆音楽ライブ、アイドル、アニメ、ドラマ、映画など」が自動的に追加されます。
               </p>
             </div>
 
@@ -261,7 +248,7 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
                 }}
               />
               <p style={helpTextStyle}>
-                検索結果に表示される説明文です（推奨: 160文字以内）
+                ※検索結果に表示される説明文です（推奨: 160文字以内）
               </p>
             </div>
 
@@ -283,7 +270,7 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
                 }}
               />
               <p style={helpTextStyle}>
-                カンマ区切りでキーワードを入力してください
+                ※カンマ区切りでキーワードを入力してください
               </p>
             </div>
 
@@ -305,13 +292,13 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
                 }}
               />
               <p style={helpTextStyle}>
-                SNSでシェアされた時に表示される画像です（推奨サイズ: 1200x630px）
+                ※SNSでシェアされた時に表示される画像です（推奨サイズ: 1200x630px）
               </p>
             </div>
           </div>
 
           {/* 共通スタイル設定セクション */}
-          <div style={sectionStyle}>
+          {/* <div style={sectionStyle}>
             <h3 style={sectionTitleStyle}>
               <Palette size={20} color="#4b5563" style={{ marginRight: '8px' }} />
               共通スタイル設定
@@ -323,13 +310,13 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
                 <input
                   type="color"
                   value={pageData.globalStyles?.mainColor || '#dc2626'}
-                  onChange={(e) => handleStyleChange('mainColor', e.target.value)}
+                  onChange={(e) => handleSettingChange('mainColor', e.target.value)}
                   style={colorInputStyle}
                 />
                 <input
                   type="text"
                   value={pageData.globalStyles?.mainColor || '#dc2626'}
-                  onChange={(e) => handleStyleChange('mainColor', e.target.value)}
+                  onChange={(e) => handleSettingChange('mainColor', e.target.value)}
                   style={colorValueStyle}
                   placeholder="#dc2626"
                 />
@@ -345,13 +332,13 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
                 <input
                   type="color"
                   value={pageData.globalStyles?.baseColor || '#f8fafc'}
-                  onChange={(e) => handleStyleChange('baseColor', e.target.value)}
+                  onChange={(e) => handleSettingChange('baseColor', e.target.value)}
                   style={colorInputStyle}
                 />
                 <input
                   type="text"
                   value={pageData.globalStyles?.baseColor || '#f8fafc'}
-                  onChange={(e) => handleStyleChange('baseColor', e.target.value)}
+                  onChange={(e) => handleSettingChange('baseColor', e.target.value)}
                   style={colorValueStyle}
                   placeholder="#f8fafc"
                 />
@@ -367,13 +354,13 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
                 <input
                   type="color"
                   value={pageData.globalStyles?.base2Color || '#f1f5f9'}
-                  onChange={(e) => handleStyleChange('base2Color', e.target.value)}
+                  onChange={(e) => handleSettingChange('base2Color', e.target.value)}
                   style={colorInputStyle}
                 />
                 <input
                   type="text"
                   value={pageData.globalStyles?.base2Color || '#f1f5f9'}
-                  onChange={(e) => handleStyleChange('base2Color', e.target.value)}
+                  onChange={(e) => handleSettingChange('base2Color', e.target.value)}
                   style={colorValueStyle}
                   placeholder="#f1f5f9"
                 />
@@ -389,13 +376,13 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
                 <input
                   type="color"
                   value={pageData.globalStyles?.accentColor || '#3b82f6'}
-                  onChange={(e) => handleStyleChange('accentColor', e.target.value)}
+                  onChange={(e) => handleSettingChange('accentColor', e.target.value)}
                   style={colorInputStyle}
                 />
                 <input
                   type="text"
                   value={pageData.globalStyles?.accentColor || '#3b82f6'}
-                  onChange={(e) => handleStyleChange('accentColor', e.target.value)}
+                  onChange={(e) => handleSettingChange('accentColor', e.target.value)}
                   style={colorValueStyle}
                   placeholder="#3b82f6"
                 />
@@ -421,7 +408,7 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
                 💡 これらの色は全コンポーネントで共通して使用されます。変更すると、ページ全体のデザインが統一されます。
               </p>
             </div>
-          </div>
+          </div> */}
 
           <div style={sectionStyle}>
             <h3 style={sectionTitleStyle}>
@@ -447,37 +434,10 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
                 }}
               />
               <p style={helpTextStyle}>
-                HTML出力時に作成されるフォルダ名です。空の場合はindex.htmlがルートに出力されます。
+                ※HTML出力時に作成されるフォルダ名です。空の場合はindex.htmlがルートに出力されます。
               </p>
             </div>
           </div>
-        </div>
-
-        <div style={footerStyle}>
-          <button
-            onClick={onClose}
-            style={cancelButtonStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f9fafb';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#ffffff';
-            }}
-          >
-            キャンセル
-          </button>
-          <button
-            onClick={onClose}
-            style={saveButtonStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#1d4ed8';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#2563eb';
-            }}
-          >
-            保存
-          </button>
         </div>
       </div>
     </div>

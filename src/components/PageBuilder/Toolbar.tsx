@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+// アイコンライブラリ インポート
 import { 
   Eye, 
   EyeOff, 
@@ -437,10 +438,10 @@ HTMLファイルには、ページ設定で設定した共通スタイル（main
         <div style={leftSectionStyle}>
           <div style={logoSectionStyle}>
             <div style={logoIconStyle}>
-              <Settings size={16} color="#ffffff" />
+              <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px' }}>LP</span>
             </div>
             <div>
-              <h1 style={logoTextStyle}>LP Builder</h1>
+              <h1 style={logoTextStyle}>ジェネレータ</h1>
               {getCurrentProjectName() && (
                 <div style={projectNameStyle}>
                   {getCurrentProjectName()}

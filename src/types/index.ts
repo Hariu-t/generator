@@ -7,14 +7,12 @@ export interface ComponentData {
 
 export type ComponentType = 
   | 'kv'
-  | 'features'
-  | 'cta'
-  | 'testimonials'
-  | 'faq'
+  | 'test'
   | 'footer'
   | 'about'
   | 'pricing'
   | 'contact'
+  | 'headline'
   | 'app-intro';
 
 export interface ComponentStyle {
@@ -88,7 +86,6 @@ export interface DesignPattern {
   style: ComponentStyle;
 }
 
-// 新しく追加: プロジェクト関連の型定義
 export interface SavedProject {
   id: string;
   name: string;
