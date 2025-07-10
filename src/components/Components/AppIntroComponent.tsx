@@ -29,232 +29,38 @@ const AppIntroComponent: React.FC<AppIntroComponentProps> = ({ component }) => {
 
   const containerStyle = {
     backgroundColor: backgroundColor || baseColor,
-    color: textColor || '#333333',
-    padding: '120px 0',
-  };
-
-  const sectionInnerStyle = {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '0 20px',
-  };
-
-  const titleStyle = {
-    fontSize: '30px',
-    fontWeight: 500,
-    textAlign: 'center' as const,
-    marginBottom: '24px',
-    color: headlineColor || textColor || '#333333',
-  };
-
-  const textStyle = {
-    fontSize: '16px',
-    lineHeight: 1.8,
-    textAlign: 'center' as const,
-    color: descriptionColor || textColor || '#333333',
-  };
-
-  const annotationStyle = {
-    fontSize: '14px',
-    lineHeight: 1,
-    margin: '20px 0 50px',
-    textAlign: 'center' as const,
-    color: descriptionColor || textColor || '#666666',
-  };
-
-  const viewingMethod2Style = {
-    border: '2px solid #D3D3D3',
-    background: cardBackgroundColor || base2Color,
-    borderRadius: '12px',
-    padding: '35px 0',
-    maxWidth: '760px',
-    width: '100%',
-    margin: '0 auto',
-  };
-
-  const viewingBalloonStyle = {
-    color: accentColor || globalAccentColor,
-    fontSize: '16px',
-    fontWeight: 500,
-    lineHeight: 'normal',
-    position: 'relative' as const,
-    background: '#fff',
-    border: `2px solid ${accentColor || globalAccentColor}`,
-    borderRadius: '5px',
-    textAlign: 'center' as const,
-    padding: '10px',
-    marginBottom: '20px',
-    maxWidth: '360px',
-    width: '100%',
-    margin: '0 auto 20px',
-  };
-
-  const balloonAfterStyle = {
-    content: '""',
-    position: 'absolute' as const,
-    top: '100%',
-    left: '12%',
-    borderColor: 'rgba(255, 255, 255, 0)',
-    borderTopColor: '#fff',
-    borderWidth: '10px',
-    borderStyle: 'solid',
-    marginLeft: '-10px',
-  };
-
-  const balloonBeforeStyle = {
-    content: '""',
-    position: 'absolute' as const,
-    top: '100%',
-    left: '12%',
-    borderColor: `rgba(0, 153, 255, 0)`,
-    borderTopColor: accentColor || globalAccentColor,
-    borderWidth: '13px',
-    borderStyle: 'solid',
-    marginLeft: '-13px',
-  };
-
-  const viewingFlexStyle = {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    gap: '40px',
-    flexWrap: 'wrap' as const,
-  };
-
-  const innerFlexStyle = {
-    display: 'flex',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    gap: '20px',
-  };
-
-  const appItemStyle = {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: '10px',
-  };
-
-  const viewingNoteStyle = {
-    fontSize: '14px',
-    fontWeight: 400,
-    lineHeight: 1.8,
-    maxWidth: 'max-content',
-    margin: '20px auto 0',
-    color: cardTextColor || textColor || '#000',
-    listStyle: 'none',
-    padding: 0,
-  };
-
-  const viewingPointStyle = {
-    borderTop: '3px solid #222',
-    paddingTop: '30px',
-    maxWidth: '660px',
-    width: '100%',
-    margin: '30px auto 0',
-  };
-
-  const viewingPointTitleStyle = {
-    fontSize: '24px',
-    fontWeight: 500,
-    lineHeight: 1.35,
-    textAlign: 'center' as const,
-    marginBottom: '20px',
-    color: cardTextColor || textColor || '#000',
-  };
-
-  const viewingPointFlexStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '20px',
-    flexWrap: 'wrap' as const,
-  };
-
-  const viewingPointItemStyle = {
-    background: '#fff',
-    borderRadius: '5px',
-    border: '1px solid #D3D3D3',
-    padding: '21px 32px 30px',
-    width: 'calc(50% - 10px)',
-    minWidth: '280px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    justifyContent: 'space-between',
-  };
-
-  const pointTitleStyle = {
-    color: accentColor || globalAccentColor,
-    fontSize: '18px',
-    fontWeight: 500,
-    lineHeight: 1.8,
-    textAlign: 'center' as const,
-    borderBottom: '1px solid #D3D3D3',
-    paddingBottom: '15px',
-  };
-
-  const pointTextStyle = {
-    flexGrow: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '16px',
-    fontWeight: 500,
-    lineHeight: 1.8,
-    textAlign: 'center' as const,
-    letterSpacing: '-0.01rem',
-    marginTop: '15px',
-    color: cardTextColor || textColor || '#000',
-  };
-
-  const h4Style = {
-    fontSize: '30px',
-    lineHeight: 1,
-    fontWeight: 500,
-    marginTop: '50px',
-    marginBottom: '41px',
-    textAlign: 'center' as const,
-    color: headlineColor || textColor || '#333333',
   };
 
   return (
-    <section style={containerStyle} className="baseColor">
-      <div style={sectionInnerStyle}>
-        <h3 style={titleStyle}>スカパー！番組配信とは</h3>
-        <p style={textStyle}>
+    <section id='streamingArea' style={containerStyle} className="baseColor">
+      <div className='sectionInner'>
+        <h3>スカパー！番組配信とは</h3>
+        <p className='text'>
           スカパー！ご加入のお客さまは、スマホ・タブレット・PCなどでも<br />
           追加料金なしで契約商品をご視聴いただけます。
         </p>
-        <p style={annotationStyle}>※ご契約している商品でも一部視聴できないチャンネル・番組がございます。</p>
+        <p className='annotion'>※ご契約している商品でも一部視聴できないチャンネル・番組がございます。</p>
 
-        <div style={viewingMethod2Style} className="base2Color">
-          <div style={viewingFlexStyle}>
-            <div>
-              <div style={viewingBalloonStyle} className="accentColor">
+        <div className='viewingMethod2'>
+          <div className="viewindFlex">
+            <div className='viewingItem'>
+              <div className='viewingBallon'>
                 {balloonText || 'ブラックリストをマイリスト登録すれば便利！'}
-                <div style={balloonAfterStyle}></div>
-                <div style={balloonBeforeStyle}></div>
               </div>
-              <div style={innerFlexStyle}>
-                <div style={{ marginRight: '20px' }}>
+              <div className='innerFlex'>
+                <p className='img'>
                   <img 
                     src="/program/st/promo/generator_common/img/streamingApp_logo.svg" 
                     alt="スカパー！番組配信"
                   />
-                </div>
-                <p style={{
-                  fontSize: '18px',
-                  fontWeight: 500,
-                  lineHeight: 1.8,
-                  textAlign: 'left' as const,
-                  color: cardTextColor || textColor || '#000',
-                }}>
+                </p>
+                <p className='text'>
                   スカパー！番組配信を<br />
                   見るならアプリがおすすめ！
                 </p>
               </div>
             </div>
-            <div style={appItemStyle}>
+            <div className='viewingItem app'>
               <a href="https://itunes.apple.com/jp/app/id1059697991/" target="_blank" rel="noopener noreferrer">
                 <img 
                   src="/program/st/promo/generator_common/img/downloadBtn_appstore.svg" 
@@ -270,41 +76,41 @@ const AppIntroComponent: React.FC<AppIntroComponentProps> = ({ component }) => {
             </div>
           </div>
           
-          <ul style={viewingNoteStyle}>
+          <ul className='viewingNote'>
             <li>※Androidタブレットは、動作保証外のため正しく動作しない/表示されない場合があります。</li>
           </ul>
           
-          <div style={viewingPointStyle}>
-            <p style={viewingPointTitleStyle}>スカパー！番組アプリなら</p>
-            <div style={viewingPointFlexStyle}>
-              <div style={viewingPointItemStyle}>
-                <p style={pointTitleStyle} className="accentColor">point1</p>
-                <div style={pointTextStyle}>
+          <div className='viewingPoint'>
+            <p className='viewingPoint_tit'>スカパー！番組アプリなら</p>
+            <div className='viewingPoint_flex'>
+              <div className='viewingPoint_flexItem'>
+                <p className='pointTit'>point1</p>
+                <div className='pointText'>
                   <p>
                     番組配信の視聴はもちろん、<br />
-                    <span style={{ color: accentColor || globalAccentColor }} className="accentColor">気になる番組が探しやすい！</span>
+                    <span>気になる番組が探しやすい！</span>
                   </p>
                 </div>
               </div>
-              <div style={viewingPointItemStyle}>
-                <p style={pointTitleStyle} className="accentColor">point2</p>
-                <div style={pointTextStyle}>
+              <div className='viewingPoint_flexItem'>
+                <p className='pointTit'>point2</p>
+                <div className='pointText'>
                   <p>
                     気になった番組をマイリストに<br />
-                    登録すれば、<span style={{ color: accentColor || globalAccentColor }} className="accentColor">配信・放送前に通知が<br />
+                    登録すれば、<span>配信・放送前に通知が<br />
                     来るので見逃す心配なし！</span>
                   </p>
                 </div>
               </div>
             </div>
-            <ul style={viewingNoteStyle}>
+            <ul className='viewingNote'>
               <li>※スカパー！番組配信は、WEBブラウザでもご視聴いただけます。</li>
               <li>※dボタン・FireTV・AndroidTV・Net-VISIONでテレビでもご視聴いただけます。（ご利用には、テレビとインターネット回線の接続が必要です。）</li>
             </ul>
           </div>
         </div>
 
-        <h4 style={h4Style}>基本プランなら、50chのうち37chが番組配信も楽しめる！</h4>
+        <h4>基本プランなら、50chのうち37chが番組配信も楽しめる！</h4>
 
         <p className='img osusumePoint'>
           <picture>
@@ -322,82 +128,522 @@ const AppIntroComponent: React.FC<AppIntroComponentProps> = ({ component }) => {
 
       <style>
         {`
+          @media (min-width: 769px) {
+            #streamingArea {
+              padding: 120px 0;
+            }
+            #streamingArea .text {
+              font-size: 16px;
+              line-height: 1.8;
+              text-align: center;
+            }
+            #streamingArea .annotion {
+              font-size: 14px;
+              line-height: 1;
+              margin-top: 24px;
+              text-align: center;
+              margin: 20px 0 50px;
+            }
+            #streamingArea h4 {
+              font-size: 30px;
+              line-height: 1;
+              font-weight: 500;
+              margin-bottom: 41px;
+              text-align: center;
+            }
+
+            #streamingArea .viewingMethod2 {
+              border: 2px solid #D3D3D3;
+              background: #F6F6F6;
+              border-radius: 12px;
+              padding: 35px 0;
+              max-width: 760px;
+              width: 100%;
+              margin: 0 auto;
+            }
+            #streamingArea .viewingMethod2 + h4,
+            #streamingArea .viewingMethod2 + .img.osusumePoint {
+              margin-top: 50px;
+            }
+
+            #streamingArea .viewingMethod2 .viewingBallon {
+              color: #0099FF;
+              font-size: 16px;
+              font-weight: 500;
+              line-height: normal;
+              position: relative;
+              background: #fff;
+              border: 2px solid #0099FF;
+              border-radius: 5px;
+              text-align: center;
+              padding: 10px;
+              margin-bottom: 20px;
+              max-width: 360px;
+              width: 100%;
+            }
+            #streamingArea .viewingMethod2 .viewingBallon:after, #streamingArea .viewingMethod2 .viewingBallon:before {
+              top: 100%;
+              left: 12%;
+              border: solid transparent;
+              content: "";
+              height: 0;
+              width: 0;
+              position: absolute;
+              pointer-events: none;
+            }
+            #streamingArea .viewingMethod2 .viewingBallon:after {
+              border-color: rgba(255, 255, 255, 0);
+              border-top-color: #fff;
+              border-width: 10px;
+              margin-left: -10px;
+            }
+            #streamingArea .viewingMethod2 .viewingBallon:before {
+              border-color: rgba(0, 153, 255, 0);
+              border-top-color: #0099FF;
+              border-width: 13px;
+              margin-left: -13px;
+            }
+
+            #streamingArea .viewingMethod2 .viewindFlex {
+              display: flex;
+              justify-content: center;
+              align-items: flex-start;
+            }
+            #streamingArea .viewingMethod2 .viewindFlex .viewingItem:not(:last-child) {
+              margin-right: 40px;
+            }
+            #streamingArea .viewingMethod2 .viewindFlex .viewingItem.app {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: flex-start;
+            }
+            #streamingArea .viewingMethod2 .viewindFlex .viewingItem.app a:not(:last-child) {
+              margin-bottom: 10px;
+            }
+            #streamingArea .viewingMethod2 .viewindFlex .innerFlex {
+              display: flex;
+              justify-content: flex-start;
+              align-items: center;
+            }
+            #streamingArea .viewingMethod2 .viewindFlex .innerFlex .img {
+              margin-right: 20px;
+            }
+            #streamingArea .viewingMethod2 .viewindFlex .innerFlex .text {
+              font-size: 18px;
+              font-weight: 500;
+              line-height: 1.8;
+              text-align: left;
+              color: #000;
+            }
+            #streamingArea .viewingMethod2 .viewingNote {
+              font-size: 14px;
+              font-weight: 400;
+              line-height: 1.8;
+              max-width: max-content;
+              margin: 20px auto 0;
+              color: #000;
+            }
+
+            #streamingArea .viewingMethod2 .viewingPoint {
+              border-top: 3px solid #222;
+              padding-top: 30px;
+              max-width: 660px;
+              width: 100%;
+              margin: 30px auto 0;
+            }
+            #streamingArea .viewingMethod2 .viewingPoint .viewingPoint_tit {
+              font-size: 24px;
+              font-weight: 500;
+              line-height: 1.35;
+              text-align: center;
+              margin-bottom: 20px;
+              color: #000!important;
+            }
+            #streamingArea .viewingMethod2 .viewingPoint .viewingPoint_flex {
+              display: flex;
+              justify-content: space-between;
+            }
+            #streamingArea .viewingMethod2 .viewingPoint .viewingPoint_flex .viewingPoint_flexItem:not(:last-child){
+              margin-right: 20px;
+            }
+            #streamingArea .viewingMethod2 .viewingPoint .viewingPoint_flex .viewingPoint_flexItem {
+              background: #fff;
+              border-radius: 5px;
+              border: 1px solid #D3D3D3;
+              padding: 21px 32px 30px;
+              width: calc(100%/2 - 10px);
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+            }
+            #streamingArea .viewingMethod2 .viewingPoint .viewingPoint_flex .viewingPoint_flexItem .pointTit {
+              color: #0099FF;
+              font-size: 18px;
+              font-weight: 500;
+              line-height: 1.8;
+              text-align: center;
+              border-bottom: 1px solid #D3D3D3;
+              padding-bottom: 15px;
+            }
+            #streamingArea .viewingMethod2 .viewingPoint .viewingPoint_flex .viewingPoint_flexItem .pointText{
+              flex-grow: 1;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 16px;
+              font-weight: 500;
+              line-height: 1.8;
+              text-align: center;
+              letter-spacing: -0.01rem;
+              margin-top: 15px;
+              color: #000;
+            }
+            #streamingArea .viewingMethod2 .viewingPoint .viewingPoint_flex .viewingPoint_flexItem .pointText span{
+              color: #0099FF;
+            }
+
+
+            #streamingArea .viewingMethod {
+              margin-top: 100px;
+            }
+            #streamingArea .viewingMethod .tit {
+              display: flex;
+              width: 100%;
+              min-height: 80px;
+              justify-content: center;
+              align-items: center;
+              font-size: 26px;
+              line-height: 1.3;
+              font-weight: bold;
+              background: #C3000F;
+              text-align: center;
+              margin: 0 0 50px;
+            }
+            #streamingArea .viewingMethod .flexWrapper {
+              display: flex;
+              justify-content: center;
+              text-align: center;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box {
+              max-width: 384px;
+              width: 100%;
+              margin: 0 auto;
+              box-sizing: initial;
+              padding: 0 5px;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box:not(:last-child) {
+              position: relative;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box:not(:last-child)::after {
+              content: "";
+              background: #fff;
+              width: 3px;
+              height: 100%;
+              position: absolute;
+              right: 0;
+              top: 0;
+              bottom: 0;
+              margin: auto;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box .img {
+              margin-bottom: 32px;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box .img img {
+              max-width: 126px;
+              height: auto;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box .textExplain {
+              font-size: 18px;
+              line-height: 1.8;
+              font-weight: 500;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box .annotation {
+              font-size: 14px;
+              line-height: 1;
+              margin: 20px 0 0;
+            }
+            #streamingArea .viewingMethod .streamingInfo {
+              text-align: center;
+              margin: 40px 0 0;
+            }
+            #streamingArea .viewingMethod .streamingInfo p.text {
+              font-size: 18px;
+              line-height: 1.8;
+              font-weight: 500;
+              margin: 0 0 30px;
+            }
+            #streamingArea .viewingMethod .streamingInfo .streamingIcon a {
+              margin: 0 auto;
+            }
+          }
+
+          @media (min-width: 769px) and (max-width: 900px){
+            #streamingArea .viewingMethod .flexWrapper .box {
+              max-width: 42.66vw;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box:not(:last-child)::after {
+              width: 0.33vw;
+              height: 100%;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box .img {
+              margin-bottom: 3.55vw;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box .img img {
+              max-width: 14vw;
+              height: auto;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box .textExplain {
+              font-size: 2vw;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box .annotation {
+              font-size: 1.55vw;
+              margin: 2.22vw 0 0;
+            }
+          }
+
           @media (max-width: 768px) {
-            .viewing-method-2 {
-              padding: 8vw 4vw !important;
+            #streamingArea {
+              padding: 24vw 0;
             }
-            .viewing-balloon {
-              font-size: 4vw !important;
-              border-width: 0.53vw !important;
-              border-radius: 1.33vw !important;
-              padding: 1.73vw !important;
-              margin-bottom: 4.53vw !important;
+            #streamingArea .text {
+              font-size: 4vw;
+              line-height: 1.8;
+              text-align: left;
             }
-            .viewing-balloon:after {
-              border-width: 2.66vw !important;
-              margin-left: -2.66vw !important;
+            #streamingArea .annotion {
+              font-size: 3.46vw;
+              line-height: 1.8;
+              text-align: left;
+              margin: 4vw 0 9.33vw;
             }
-            .viewing-balloon:before {
-              border-width: 3.46vw !important;
-              margin-left: -3.46vw !important;
+            #streamingArea h4 {
+              font-size: 5.33vw;
+              line-height: 1.8;
+              font-weight: 500;
+              margin-top: 9.33vw;
+              margin-bottom: 8vw;
+              text-align: center;
             }
-            .viewing-flex {
-              flex-direction: column !important;
-              gap: 5.33vw !important;
+            #streamingArea .viewingMethod2 + .img.osusumePoint {
+              margin-top: 9.33vw;
             }
-            .inner-flex {
-              gap: 2.66vw !important;
+            #streamingArea .img {
+              display: flex;
+              justify-content: center;
             }
-            .inner-flex img {
-              width: 16vw !important;
+
+
+            #streamingArea .viewingMethod2 .viewingBallon {
+              color: #0099FF;
+              background: #fff;
+              font-size: 4vw;
+              font-weight: 500;
+              line-height: normal;
+              position: relative;
+              border: 0.53vw solid #0099FF;
+              border-radius: 1.33vw;
+              text-align: center;
+              padding: 1.73vw;
+              margin-bottom: 4.53vw;
             }
-            .inner-flex p {
-              font-size: 4.8vw !important;
-              line-height: 1.6 !important;
+            #streamingArea .viewingMethod2 .viewingBallon:after, #streamingArea .viewingMethod2 .viewingBallon:before {
+              top: 100%;
+              left: 8vw;
+              border: solid transparent;
+              content: "";
+              height: 0;
+              width: 0;
+              position: absolute;
+              pointer-events: none;
             }
-            .app-item {
-              flex-direction: row !important;
-              gap: 2.66vw !important;
+            #streamingArea .viewingMethod2 .viewingBallon:after {
+              border-color: rgba(255, 255, 255, 0);
+              border-top-color: #fff;
+              border-width: 2.66vw;
+              margin-left: -2.66vw;
             }
-            .app-item a {
-              width: calc(50% - 1.33vw) !important;
+            #streamingArea .viewingMethod2 .viewingBallon:before {
+              border-color: rgba(0, 153, 255, 0);
+              border-top-color: #0099FF;
+              border-width: 3.46vw;
+              margin-left: -3.46vw;
             }
-            .viewing-point {
-              margin-top: 16.53vw !important;
+            #streamingArea .viewingMethod2 {
+              border: 0.53vw solid #D3D3D3;
+              background: #F6F6F6;
+              border-radius: 3.2vw;
+              padding: 8vw 4vw;
             }
-            .viewing-point::before {
+            #streamingArea .viewingMethod2 .viewindFlex .viewingItem:not(:last-child) {
+              margin-bottom: 5.33vw;
+            }
+            #streamingArea .viewingMethod2 .viewindFlex .viewingItem.app {
+              display: flex;
+            }
+            #streamingArea .viewingMethod2 .viewindFlex .viewingItem.app a:not(:last-child) {
+              margin-right: 2.66vw;
+            }
+            #streamingArea .viewingMethod2 .viewindFlex .innerFlex {
+              display: flex;
+              justify-content: flex-start;
+              align-items: center;
+            }
+            #streamingArea .viewingMethod2 .viewindFlex .innerFlex .img {
+              margin-right: 2.66vw;
+              width: 16vw;
+              height: auto;
+            }
+            #streamingArea .viewingMethod2 .viewindFlex .innerFlex .text {
+              font-size: 4.8vw;
+              font-weight: 500;
+              line-height: 1.6;
+              text-align: left;
+              letter-spacing: -0.01rem;
+              color: #000;
+            }
+            #streamingArea .viewingMethod2 .viewingNote {
+              font-size: 3.46vw;
+              font-weight: 400;
+              line-height: 1.8;
+              margin-top: 5.33vw;
+              color: #000;
+            }
+            #streamingArea .viewingItem.app{
+              display: flex;
+              justify-content: space-between;
+            }
+            #streamingArea .viewingItem.app a:not(:last-child){
+              margin-right: 2.66vw;
+            }
+            #streamingArea .viewingItem.app a{
+              width: calc(100%/2 - 1.33vw);
+            }
+
+            #streamingArea .viewingMethod2 .viewingPoint {
+              margin-top: 16.53vw;
+              position: relative;
+            }
+            #streamingArea .viewingMethod2 .viewingPoint::before{
               content: "";
               position: absolute;
               top: -8vw;
               left: -4.33vw;
               width: calc(100vw - 10.66vw);
+              margin: 0 auto;
               height: 0.53vw;
               background: #222;
             }
-            .viewing-point-title {
-              font-size: 5.6vw !important;
-              margin-bottom: 5.33vw !important;
+            #streamingArea .viewingMethod2 .viewingPoint .viewingPoint_tit {
+              font-size: 5.6vw;
+              font-weight: 500;
+              line-height: 1.35;
+              text-align: center;
+              margin-bottom: 5.33vw;
+              color: #000!important;
             }
-            .viewing-point-flex {
-              flex-direction: column !important;
-              gap: 3.33vw !important;
+            #streamingArea .viewingMethod2 .viewingPoint .viewingPoint_flex .viewingPoint_flexItem:not(:last-child){
+              margin-bottom: 3.33vw;
             }
-            .viewing-point-item {
-              width: 100% !important;
-              min-width: auto !important;
-              padding: 4.66vw 3.33vw 6.66vw !important;
-              border-radius: 1.33vw !important;
-              border-width: 0.13vw !important;
+            #streamingArea .viewingMethod2 .viewingPoint .viewingPoint_flex .viewingPoint_flexItem {
+              background: #fff;
+              border-radius: 1.33vw;
+              border: 0.13vw solid #707070;
+              padding: 4.66vw 3.33vw 6.66vw;
             }
-            .point-title {
-              font-size: 4.8vw !important;
-              padding-bottom: 4vw !important;
-              border-bottom-width: 0.26vw !important;
+            #streamingArea .viewingMethod2 .viewingPoint .viewingPoint_flex .viewingPoint_flexItem .pointTit {
+              color: #0099FF;
+              font-size: 4.8vw;
+              text-align: center;
+              border-bottom: 0.26vw solid #D3D3D3;
+              padding-bottom: 4vw;
             }
-            .point-text {
-              font-size: 4.26vw !important;
-              line-height: 1.6 !important;
-              margin-top: 4vw !important;
+            #streamingArea .viewingMethod2 .viewingPoint .viewingPoint_flex .viewingPoint_flexItem .pointText{
+              font-size: 4.26vw;
+              font-weight: 500;
+              line-height: 1.6;
+              text-align: center;
+              margin-top: 4vw;
+              color: #000;
+            }
+            #streamingArea .viewingMethod2 .viewingPoint .viewingPoint_flex .viewingPoint_flexItem .pointText span{
+              color: #0099FF;
+            }
+
+
+            #streamingArea .viewingMethod {
+              margin-top: 16vw;
+            }
+            #streamingArea .viewingMethod .tit {
+              font-size: 5.33vw;
+              line-height: 1.5;
+              font-weight: bold;
+              background: #C3000F;
+              padding: 4.53vw 0 5.2vw;
+              text-align: center;
+              margin: 0 0 9.33vw;
+            }
+            #streamingArea .viewingMethod .flexWrapper {
+              display: flex;
+              flex-direction: column;
+              text-align: center;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box {
+              width: 100%;
+              margin: 0 auto;
+              box-sizing: initial;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box:not(:last-child) {
+              padding-bottom: 60px;
+              margin-bottom: 60px;
+              position: relative;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box:not(:last-child)::after {
+              content: "";
+              display: inline-block;
+              position: absolute;
+              bottom: 0;
+              right: 0;
+              left: 0;
+              margin: auto;
+              width: 89.33vw;
+              height: 0.8vw;
+              background: #fff;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box .flexInner {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              gap: 5.33vw;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box .img img {
+              width: 26.66vw;
+              height: auto;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box .textExplain {
+              max-width: 57.33vw;
+              font-size: 4.8vw;
+              line-height: 1.8;
+              font-weight: 400;
+              text-align: left;
+            }
+            #streamingArea .viewingMethod .flexWrapper .box .annotation {
+              font-size: 3.46vw;
+              line-height: 1.7;
+              margin: 4vw 0 0;
+            }
+            #streamingArea .viewingMethod .streamingInfo {
+              text-align: center;
+              margin: 13.33vw 0 0;
+            }
+            #streamingArea .viewingMethod .streamingInfo p.text {
+              font-size: 4.8vw;
+              line-height: 1.8;
+              font-weight: 500;
+              margin: 0 0 8vw;
+            }
+            #streamingArea .viewingMethod .streamingInfo .streamingIcon a {
+              margin: 0 auto;
             }
           }
         `}

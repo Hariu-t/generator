@@ -167,14 +167,11 @@ export const componentTemplates: ComponentTemplate[] = [
     thumbnail: '/program/st/promo/generator_common/img/thumbnail_pricing-1.jpg',
     category: '料金',
     defaultProps: {
-      title: 'サービスを利用するには',
-      subtitle: 'ご加入月は0円で人気サービスが楽しめる！',
+      showMustReadBox: true,
       mainPlan: {
-        description: 'ブラックリストをはじめ、マークのある番組が全部見放題！',
+        description: 'ブラックリスト',
         name: 'スカパー！基本プラン',
-        priceLabel: '初回視聴料',
         price: '1,980',
-        unit: '円（税込）',
         note: '※翌月以降は3,960円/月（税込）',
         hasDetails: true,
         detailsLabel: '初回視聴料1,980円(税込)の注意事項'
@@ -183,16 +180,12 @@ export const componentTemplates: ComponentTemplate[] = [
         {
           description: '○○（番組・特集・アーティスト名など）が見られる、スーパー！ドラマTVなど5チャンネルがえらべる',
           name: 'スーパー！セレクト5',
-          priceLabel: '視聴料',
           price: '1,100',
-          unit: '円/月（税込）'
         },
         {
           description: '○○（番組・特集・アーティスト名など）が見られる、スーパー！ドラマTVなど5チャンネルがえらべる',
           name: 'スーパー！セレクト5',
-          priceLabel: '視聴料',
           price: '1,100',
-          unit: '円/月（税込）'
         }
       ]
     }

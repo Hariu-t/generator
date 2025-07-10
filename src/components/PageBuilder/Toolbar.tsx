@@ -74,8 +74,39 @@ const Toolbar: React.FC = () => {
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width">
     <title>${globalSettings.title}</title>
+
+    <!-- Google Tag Manager 2021/03-->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-K73Z39');</script>
+    <!-- End Google Tag Manager 2021/03 -->
+
+    <!-- User Insight PCDF Code Start : skyperfectv.co.jp -->
+    <script type="text/javascript">
+    var _uic = _uic ||{}; var _uih = _uih ||{};_uih['id'] = 50825;
+    _uih['lg_id'] = '';
+    _uih['fb_id'] = '';
+    _uih['tw_id'] = '';
+    _uih['uigr_1'] = ''; _uih['uigr_2'] = ''; _uih['uigr_3'] = ''; _uih['uigr_4'] = ''; _uih['uigr_5'] = '';
+    _uih['uigr_6'] = ''; _uih['uigr_7'] = ''; _uih['uigr_8'] = ''; _uih['uigr_9'] = ''; _uih['uigr_10'] = '';
+    _uic['security_type'] = 1;
+
+    /* DO NOT ALTER BELOW THIS LINE */
+    (function() {
+    var bi = document.createElement('script');bi.type = 'text/javascript'; bi.async = true;
+    bi.src = '//cs.nakanohito.jp/b3/bi.js';
+    var s = document.getElementsByTagName('script')[0];s.parentNode.insertBefore(bi, s);
+    })();
+    </script>
+    <!-- User Insight PCDF Code End : skyperfectv.co.jp -->
+
     <meta name="description" content="${globalSettings.description}">
     ${globalSettings.keywords ? `<meta name="keywords" content="${globalSettings.keywords}">` : ''}
     
@@ -84,16 +115,16 @@ const Toolbar: React.FC = () => {
     <meta property="og:description" content="${globalSettings.description}">
     <meta property="og:type" content="website">
     ${globalSettings.ogImage ? `<meta property="og:image" content="${globalSettings.ogImage}">` : ''}
+    <meta property="og:site_name" content="スカパー！: スポーツ＆音楽ライブ、アイドル、アニメ、ドラマ、映画など">
+    <meta property="og:locale" content="ja_JP">
     
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="${globalSettings.title}">
-    <meta name="twitter:description" content="${globalSettings.description}">
-    ${globalSettings.ogImage ? `<meta name="twitter:image" content="${globalSettings.ogImage}">` : ''}
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
-    <link rel="stylesheet" href="../assets/common.css">
+    <!-- ICON -->
+    <link rel="shortcut icon" href="/global/assets/images/fav/favicon.ico" type="image/vnd.microsoft.icon">
+    <link rel="apple-touch-icon" href="/global/assets/images/fav/apple-touch-icon.png">
+    <link rel="stylesheet" href="/static_r1/common_r1/css/wrd_main.css" type="text/css" media="screen,print">
+    <link rel="stylesheet" href="/static_r1/common_r1/css/import.css" type="text/css" media="(min-width:769px)">
+    <link rel="stylesheet" href="/static_r1/common_r1/s/css/import.css" type="text/css" media="(max-width:768px)">
+    <link href="/global/assets/css/global.css" rel="stylesheet">
     
     <!-- 共通スタイル -->
     <style>
@@ -101,55 +132,53 @@ const Toolbar: React.FC = () => {
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header style="background-color: #ffffff; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); border-bottom: 1px solid #e5e7eb; position: sticky; top: 0; z-index: 50;">
-        <div style="max-width: 1200px; margin: 0 auto; padding: 0 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; height: 64px;">
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                        <span style="color: #ffffff; font-weight: bold; font-size: 14px;">LP</span>
-                    </div>
-                    <div style="margin-left: 12px;">
-                        <h1 style="font-size: 18px; font-weight: 600; color: #111827;">Your Company</h1>
-                    </div>
-                </div>
-                <nav style="display: none; gap: 32px;">
-                    <a href="#" style="color: #374151; text-decoration: none; padding: 8px 12px; font-size: 14px; font-weight: 500;">ホーム</a>
-                    <a href="#" style="color: #374151; text-decoration: none; padding: 8px 12px; font-size: 14px; font-weight: 500;">機能</a>
-                    <a href="#" style="color: #374151; text-decoration: none; padding: 8px 12px; font-size: 14px; font-weight: 500;">料金</a>
-                    <a href="#" style="color: #374151; text-decoration: none; padding: 8px 12px; font-size: 14px; font-weight: 500;">お問い合わせ</a>
-                </nav>
-                <div style="display: none; align-items: center; gap: 16px;">
-                    <a href="#" class="mainColor" style="padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none;">無料で始める</a>
-                </div>
-            </div>
+  <!-- Google Tag Manager (noscript) 2021/3 -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-K73Z39"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) 2021/3 -->
+
+  <!-- .l-header include -->
+  <div id="header">
+  </div>
+  <!-- /.l-header include -->
+
+  <div class="l-container" id="j-container">
+    <!-- .l-side include -->
+    <div id="side">
+    </div>
+    <!-- /.l-side include -->
+
+    <div class="l-container__main" id="j-container-main">
+      <main>
+        <div id="mainContents" class="mainContents baseColor">
+
+          <!-- Main Content -->
+          ${componentsHTML}
+
         </div>
-    </header>
+      </main>
+    </div>
+  </div>
 
-    <!-- Main Content -->
-    ${componentsHTML}
+  <!-- Footer -->
+  <footer id="footer">
+      <!-- パンくず -->
+      <div class="c-breadcrumb">
+          <div class="c-breadcrumb__logo"><a href="/"><img src="/global/assets/images/logo/logo_white.svg" alt="スカパー！"></a>
+          </div>
+          <ul class="c-breadcrumb-list">
+          <li><a href="/program/">番組を探す</a></li>
+          <li><a href="/program/special">特集ページ</a></li>
+          <li><span>シリーズ10年の歴史がついに完結！ジェームズ・スぺイダー主演「ブラックリスト ファイナル・シーズン」独占日本初放送！</span></li>
+      </ul>
+      </div>
+      <!-- /パンくず -->
+      <!-- .l-footer include -->
+      <!-- /.l-footer include -->
+  </footer>
 
-    <!-- Footer -->
-    <footer style="background-color: #111827; color: #ffffff;">
-        <div style="max-width: 1200px; margin: 0 auto; padding: 48px 16px;">
-            <div style="display: grid; grid-template-columns: 1fr; gap: 32px;">
-                <div style="grid-column: span 1;">
-                    <div style="display: flex; align-items: center; margin-bottom: 16px;">
-                        <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                            <span style="color: #ffffff; font-weight: bold; font-size: 14px;">LP</span>
-                        </div>
-                        <h3 style="font-size: 20px; font-weight: 700;">Your Company</h3>
-                    </div>
-                    <p style="color: #d1d5db; margin-bottom: 24px; max-width: 400px;">モダンなビジネスのための素晴らしいデジタル体験を構築しています。</p>
-                </div>
-            </div>
-            <div style="border-top: 1px solid #1f2937; margin-top: 32px; padding-top: 32px; text-align: center; color: #9ca3af;">
-                <p>© 2024 Your Company. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
-    <script src="../assets/common.js"></script>
+  <script src="/global/assets/js/global.js"></script>
+  <script src="/global/assets/js/jquery.min.js"></script>
 </body>
 </html>`;
 
@@ -231,13 +260,10 @@ HTMLファイルと${Object.keys(images).length}個の画像ファイルが出�
 【ディレクトリ構造の設定方法】
 以下のフォルダ構造を作成してください：
 
-├── assets/
-│   ├── common.css (スタイルファイル)
-│   └── common.js (JavaScriptファイル)
-└── ${directoryName}/
-    ├── index.html (ダウンロードしたHTMLファイル)
-    └── img/ (画像ファイル用フォルダ)
-        ${Object.keys(images).map(filename => `├── ${filename}`).join('\n        ')}
+${directoryName}/
+  ├── index.html (ダウンロードしたHTMLファイル)
+  └── img/ (画像ファイル用フォルダ)
+      ${Object.keys(images).map(filename => `├── ${filename}`).join('\n        ')}
 
 【設定手順】
 1. プロジェクトのルートディレクトリに「assets」フォルダを作成

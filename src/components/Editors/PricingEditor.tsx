@@ -154,6 +154,7 @@ const PricingEditor: React.FC<PricingEditorProps> = ({ component }) => {
     borderRadius: '4px',
     cursor: 'pointer',
     outline: 'none',
+    padding: '2px 4px',
   };
 
   const colorValueStyle: React.CSSProperties = {
@@ -261,66 +262,6 @@ const PricingEditor: React.FC<PricingEditorProps> = ({ component }) => {
 
   return (
     <div style={containerStyle}>
-      {/* 基本設定 */}
-      <div style={sectionStyle}>
-        <h3 style={sectionTitleStyle}>基本設定</h3>
-        
-        <div style={fieldStyle}>
-          <label style={labelStyle}>タイトル</label>
-          <input
-            type="text"
-            value={component.props.title || ''}
-            onChange={(e) => handlePropChange('title', e.target.value)}
-            style={inputStyle}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#2563eb';
-              e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#d1d5db';
-              e.target.style.boxShadow = 'none';
-            }}
-          />
-        </div>
-
-        <div style={fieldStyle}>
-          <label style={labelStyle}>サブタイトル（赤いバナー）</label>
-          <input
-            type="text"
-            value={component.props.subtitle || ''}
-            onChange={(e) => handlePropChange('subtitle', e.target.value)}
-            style={inputStyle}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#2563eb';
-              e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#d1d5db';
-              e.target.style.boxShadow = 'none';
-            }}
-          />
-          {/* サブタイトルの個別スタイル設定 */}
-          <div style={colorInputContainerStyle}>
-            <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '60px' }}>背景色:</label>
-            <input
-              type="color"
-              value={component.style?.mainPlanBackgroundColor || '#dc2626'}
-              onChange={(e) => handleStyleChange('mainPlanBackgroundColor', e.target.value)}
-              style={colorInputStyle}
-            />
-            <input
-              type="text"
-              value={component.style?.mainPlanBackgroundColor || '#dc2626'}
-              onChange={(e) => handleStyleChange('mainPlanBackgroundColor', e.target.value)}
-              style={colorValueStyle}
-              placeholder="#dc2626"
-            />
-          </div>
-          <div style={styleNoteStyle}>
-            サブタイトルバナーの背景色を個別に設定できます。
-          </div>
-        </div>
-      </div>
 
       {/* メインプラン */}
       <div style={sectionStyle}>
@@ -377,9 +318,6 @@ const PricingEditor: React.FC<PricingEditorProps> = ({ component }) => {
                 style={colorValueStyle}
                 placeholder="#3b82f6"
               />
-            </div>
-            <div style={styleNoteStyle}>
-              メインプランボックスの背景色を個別に設定できます。
             </div>
           </div>
 
@@ -453,9 +391,6 @@ const PricingEditor: React.FC<PricingEditorProps> = ({ component }) => {
                 placeholder="#3b82f6"
               />
             </div>
-            <div style={styleNoteStyle}>
-              価格数字の文字色を個別に設定できます。
-            </div>
           </div>
 
           <div style={fieldStyle}>
@@ -476,55 +411,18 @@ const PricingEditor: React.FC<PricingEditorProps> = ({ component }) => {
             />
           </div>
 
-          {/* 注釈管理 */}
           <div style={fieldStyle}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <label style={labelStyle}>注釈</label>
-              <button
-                onClick={addAnnotation}
-                style={{
-                  ...addButtonStyle,
-                  fontSize: '12px',
-                  padding: '4px 8px',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#1d4ed8';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#2563eb';
-                }}
-              >
-                <Plus size={12} style={{ marginRight: '4px' }} />
-                追加
-              </button>
-            </div>
-            {(component.props.mainPlan?.annotations || []).map((annotation: string, index: number) => (
-              <div key={index} style={itemCardStyle}>
-                <div style={itemHeaderStyle}>
-                  <span style={itemIndexStyle}>注釈 {index + 1}</span>
-                  <button
-                    onClick={() => removeAnnotation(index)}
-                    style={deleteButtonStyle}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#fef2f2';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  value={annotation}
-                  onChange={(e) => handleAnnotationChange(index, e.target.value)}
-                  style={itemInputStyle}
-                  placeholder="注釈を入力..."
-                />
-              </div>
-            ))}
+            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={!!component.props.showMustReadBox}
+                onChange={(e) => handlePropChange('showMustReadBox', e.target.checked)}
+                style={{ marginRight: '8px', height: '16px', width: '16px' }}
+              />
+              <span style={{ ...labelStyle, marginBottom: 0 }}>注意事項ボックスを表示する</span>
+            </label>
           </div>
+
         </div>
       </div>
 
@@ -555,7 +453,7 @@ const PricingEditor: React.FC<PricingEditorProps> = ({ component }) => {
               <textarea
                 value={plan.description || ''}
                 onChange={(e) => handleAdditionalPlanChange(index, 'description', e.target.value)}
-                rows={2}
+                rows={1}
                 style={textareaStyle}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#2563eb';
