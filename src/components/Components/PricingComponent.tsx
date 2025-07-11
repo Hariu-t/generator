@@ -30,7 +30,8 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
     cardTextColor,
     mainPlanBackgroundColor,
     mainPlanBoxColor,
-    priceColor
+    mainPlanTextColor,
+    priceColor,
   } = component.style || {};
 
   // 共通スタイルの取得
@@ -79,7 +80,8 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
 
   // メインプランのスタイル（個別設定適用）
   const mainPlanStyle = {
-    backgroundColor: mainPlanBoxColor || globalAccentColor,
+    backgroundColor: mainPlanBoxColor || '#3b82f6',
+    color: mainPlanTextColor || '#ffffff',
   };
 
   // 固定の価格比較ボックスデータ
@@ -137,7 +139,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
 
         <div className='priceTable'>
           <div className='priceBox thisMonth mainColor'>
-            <p className='tit accentColor'>ご加入月</p>
+            <p className='tit accentColorBg'>ご加入月</p>
             <div className='fee viewingFee'>
             <p className='flag'>視聴料</p>
             <p><span className='fontLearge fontRobot'>0</span><span className='fontMedium'>円</span>(税込)</p>
@@ -172,12 +174,15 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
                 {mainPlan.description}をはじめ、<span><img src='/program/st/promo/generator_common/img/kihon_logo.gif' alt='基本プラン' className='guard'/></span>マークのある番組が全部見放題！
               </p>
               <div className="viewingFee">
-                <div className="flag" style={mainPlanStyle}>
-                  {mainPlan.name}
-                </div>
+                <div className="flag" style={{ 
+                      backgroundColor: mainPlanStyle.backgroundColor || '#3b82f6' , 
+                      color: mainPlanStyle.color || '#ffffff' 
+                    }}>
+                {mainPlan.name}
+              </div>
                 <div className="price">
                   初回視聴料
-                    <span className="fontLearge fontRobot" style={{ color: priceColor || globalAccentColor }}>
+                    <span className="fontLearge fontRobot" style={{ color: priceColor || '#3b82f6' }}>
                       {mainPlan.price}
                     </span>
                     円<span className="fontSmall">（税込）</span>
@@ -244,12 +249,15 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
                   {plan.description}
                 </p>
                 <div className="viewingFee">
-                  <div className="flag" style={{ backgroundColor: plan.backgroundColor || accentColor || globalAccentColor }}>
+                  <div className="flag" style={{ 
+                      backgroundColor: plan.backgroundColor || '#FABE00',
+                      color: plan.textColor || '#000000'
+                    }}>
                     {plan.name}
                   </div>
                   <p className="price">
                     視聴料
-                    <span className="fontLearge fontRobot" style={{ color: plan.priceColor || accentColor || globalAccentColor }}>
+                    <span className="fontLearge fontRobot" style={{ color: plan.priceColor || '#FABE00' }}>
                       {plan.price}
                     </span>
                     <span className="text-lg ml-1" style={mainTextStyle}>
@@ -262,27 +270,9 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
           </div>
         )}
 
-        {/* アクションボタン（固定） */}
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
-          {fixedButtons.map((button, index) => (
-            <a
-              key={index}
-              href={button.url}
-              className={`inline-flex items-center justify-center px-8 py-4 rounded-lg text-lg font-medium transition-all duration-200 min-w-80 text-center ${
-                button.type === 'primary' 
-                  ? 'text-white shadow-lg hover:shadow-xl' 
-                  : 'bg-white border-2 hover:bg-gray-50'
-              }`}
-              style={
-                button.type === 'primary' 
-                  ? { backgroundColor: mainColor }
-                  : { color: globalAccentColor, borderColor: globalAccentColor }
-              }
-            >
-              {button.text}
-              {button.type === 'secondary' && <ArrowRight size={20} className="ml-2" />}
-            </a>
-          ))}
+        <div className="flexWrapper">
+            <div className="c-btn c-btn--blueline"><a href="/plan/channel/basic/">各チャンネルの<br/>料金一覧はこちら</a></div>
+            <div className="c-btn c-btn--blueline"><a href="/plan/pack/basic/">各プラン・セットの<br/>料金一覧はこちら</a></div>
         </div>
       </div>
 

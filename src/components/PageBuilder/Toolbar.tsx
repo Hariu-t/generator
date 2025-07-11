@@ -21,6 +21,7 @@ import {
 import { usePageStore } from '../../store/usePageStore';
 import { prepareImagesForExport } from '../../utils/imageHandler';
 import { generateGlobalStylesCSS } from '../../utils/globalStylesHelper';
+import { generateComponentHTML } from '../../utils/htmlGenerator';
 import GlobalSettingsPanel from './GlobalSettingsPanel';
 import ProjectManager from './ProjectManager';
 
@@ -47,20 +48,10 @@ const Toolbar: React.FC = () => {
   const [showProjectManager, setShowProjectManager] = useState(false);
 
   const exportHTML = () => {
-    // 現在の状態を保存（プレビューモード、選択されたコンポーネントなど）
-    const currentPreviewMode = previewMode;
-    const currentViewMode = viewMode;
-    const currentShowComponentLibrary = showComponentLibrary;
-    const currentShowPropertiesPanel = showPropertiesPanel;
-
-    // Get all components HTML
-    const componentsHTML = pageData.components.map(component => {
-      // This would render each component to HTML string
-      // For now, we'll create a simple structure
-      return `<div data-component="${component.type}" data-id="${component.id}">
-        <!-- ${component.type} component would be rendered here -->
-      </div>`;
-    }).join('\n');
+    // Generate actual HTML for all components
+    const componentsHTML = pageData.components.map(component => 
+      generateComponentHTML(component, pageData.globalStyles)
+    ).join('\n');
 
     const { globalSettings } = pageData;
     
@@ -131,7 +122,7 @@ const Toolbar: React.FC = () => {
       ${globalStylesCSS}
     </style>
 </head>
-<body>
+<body class="fw">
   <!-- Google Tag Manager (noscript) 2021/3 -->
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-K73Z39"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -179,6 +170,50 @@ const Toolbar: React.FC = () => {
 
   <script src="/global/assets/js/global.js"></script>
   <script src="/global/assets/js/jquery.min.js"></script>
+
+  <script>
+    // FAQ toggle functionality
+    function toggleFAQ(index) {
+      const answer = document.getElementById('faq-answer-' + index);
+      const icon = document.getElementById('faq-icon-' + index);
+      
+      if (answer.style.display === 'none' || answer.style.display === '') {
+        answer.style.display = 'block';
+        icon.style.transform = 'rotate(180deg)';
+      } else {
+        answer.style.display = 'none';
+        icon.style.transform = 'rotate(0deg)';
+      }
+    }
+    
+    // Expandable content functionality
+    function toggleExpanded(componentId) {
+      const expandedDiv = document.getElementById('expanded-desc-' + componentId);
+      const toggleBtn = document.getElementById('toggle-btn-' + componentId);
+      
+      if (expandedDiv.style.display === 'none' || expandedDiv.style.display === '') {
+        expandedDiv.style.display = 'block';
+        toggleBtn.textContent = '閉じる';
+      } else {
+        expandedDiv.style.display = 'none';
+        toggleBtn.textContent = 'もっと見る';
+      }
+    }
+    
+    // Smooth scrolling for anchor links
+    document.addEventListener('DOMContentLoaded', function() {
+      const links = document.querySelectorAll('a[href^="#"]');
+      links.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+    });
+  </script>
 </body>
 </html>`;
 

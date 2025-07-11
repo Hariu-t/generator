@@ -61,7 +61,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
         buttonTextColor: backup.buttonTextColor || '#ffffff',
         cardBackgroundColor: backup.cardBackgroundColor || '#f9fafb',
         cardTextColor: backup.cardTextColor || '#374151',
-        accentColor: backup.accentColor || '#3b82f6',
+        accentColor: backup.accentColor || '#E60012',
       };
 
       // undefinedの値を除去
@@ -74,7 +74,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
           ...component.style,
           ...cleanedStyle,
           isDarkMode: false,
-          lightModeBackup: undefined, // バックアップをクリア
+          lightModeBackup: undefined,
         }
       });
     }
@@ -209,6 +209,13 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
     lineHeight: '1.4',
   };
 
+  const styleNoteStyle: React.CSSProperties = {
+    fontSize: '12px',
+    color: '#6b7280',
+    marginTop: '4px',
+    lineHeight: '1.4',
+  };
+
   const isDarkMode = component.style?.isDarkMode || false;
 
   return (
@@ -267,6 +274,22 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
               placeholder="#dc2626"
             />
           </div>
+          <div style={colorInputContainerStyle}>
+            <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '80px' }}>テキスト色:</label>
+            <input
+              type="color"
+              value={pageData.globalStyles?.mainColorText || '#ffffff'}
+              onChange={(e) => handleGlobalStyleChange('mainColorText', e.target.value)}
+              style={colorInputStyle}
+            />
+            <input
+              type="text"
+              value={pageData.globalStyles?.mainColorText || '#ffffff'}
+              onChange={(e) => handleGlobalStyleChange('mainColorText', e.target.value)}
+              style={colorValueStyle}
+              placeholder="#ffffff"
+            />
+          </div>
           <p style={colorDescriptionStyle}>
             主要なアクション要素（ボタン、リンクなど）に使用される色です。
           </p>
@@ -287,6 +310,22 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
               onChange={(e) => handleGlobalStyleChange('baseColor', e.target.value)}
               style={colorValueStyle}
               placeholder="#f8fafc"
+            />
+          </div>
+          <div style={colorInputContainerStyle}>
+            <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '80px' }}>テキスト色:</label>
+            <input
+              type="color"
+              value={pageData.globalStyles?.baseColorText || '#333333'}
+              onChange={(e) => handleGlobalStyleChange('baseColorText', e.target.value)}
+              style={colorInputStyle}
+            />
+            <input
+              type="text"
+              value={pageData.globalStyles?.baseColorText || '#333333'}
+              onChange={(e) => handleGlobalStyleChange('baseColorText', e.target.value)}
+              style={colorValueStyle}
+              placeholder="#333333"
             />
           </div>
           <p style={colorDescriptionStyle}>
@@ -311,6 +350,22 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
               placeholder="#f1f5f9"
             />
           </div>
+          <div style={colorInputContainerStyle}>
+            <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '80px' }}>テキスト色:</label>
+            <input
+              type="color"
+              value={pageData.globalStyles?.base2ColorText || '#333333'}
+              onChange={(e) => handleGlobalStyleChange('base2ColorText', e.target.value)}
+              style={colorInputStyle}
+            />
+            <input
+              type="text"
+              value={pageData.globalStyles?.base2ColorText || '#333333'}
+              onChange={(e) => handleGlobalStyleChange('base2ColorText', e.target.value)}
+              style={colorValueStyle}
+              placeholder="#333333"
+            />
+          </div>
           <p style={colorDescriptionStyle}>
             カードやパネルの背景色として使用される補助的な基本色です。
           </p>
@@ -321,21 +376,115 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
           <div style={colorInputContainerStyle}>
             <input
               type="color"
-              value={pageData.globalStyles?.accentColor || '#3b82f6'}
+              value={pageData.globalStyles?.accentColor || '#E60012'}
               onChange={(e) => handleGlobalStyleChange('accentColor', e.target.value)}
               style={colorInputStyle}
             />
             <input
               type="text"
-              value={pageData.globalStyles?.accentColor || '#3b82f6'}
+              value={pageData.globalStyles?.accentColor || '#E60012'}
               onChange={(e) => handleGlobalStyleChange('accentColor', e.target.value)}
               style={colorValueStyle}
-              placeholder="#3b82f6"
+              placeholder="#E60012"
+            />
+          </div>
+          <div style={colorInputContainerStyle}>
+            <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '80px' }}>テキスト色:</label>
+            <input
+              type="color"
+              value={pageData.globalStyles?.accentColorText || '#ffffff'}
+              onChange={(e) => handleGlobalStyleChange('accentColorText', e.target.value)}
+              style={colorInputStyle}
+            />
+            <input
+              type="text"
+              value={pageData.globalStyles?.accentColorText || '#ffffff'}
+              onChange={(e) => handleGlobalStyleChange('accentColorText', e.target.value)}
+              style={colorValueStyle}
+              placeholder="#ffffff"
             />
           </div>
           <p style={colorDescriptionStyle}>
-            強調表示やアイコン、装飾要素に使用されるアクセント色です。
+            強調表示に使用されるアクセント色です。
           </p>
+        </div>
+
+        <div style={fieldStyle}>
+          <label style={labelStyle}>commonColor（共通テキストカラー）</label>
+          <div style={colorInputContainerStyle}>
+            <div
+              style={{
+                ...colorInputStyle,
+                backgroundColor: pageData.globalStyles?.commonColor || '#000000',
+                cursor: 'default',
+              }}
+            />
+            <select
+              value={pageData.globalStyles?.commonColor || '#000000'}
+              onChange={(e) => handleGlobalStyleChange('commonColor', e.target.value)}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '14px',
+                outline: 'none',
+                backgroundColor: '#ffffff',
+                transition: 'border-color 0.15s ease-in-out',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#2563eb';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#d1d5db';
+              }}
+            >
+              <option value="#000000">黒</option>
+              <option value="#ffffff">白</option>
+            </select>
+          </div>
+          <div style={styleNoteStyle}>
+            ページ全体で使用される基本的なテキスト色です。背景色に応じて選択してください。
+          </div>
+        </div>
+
+        <div style={fieldStyle}>
+          <label style={labelStyle}>commonColorBg（共通背景カラー）</label>
+          <div style={colorInputContainerStyle}>
+            <div
+              style={{
+                ...colorInputStyle,
+                backgroundColor: pageData.globalStyles?.commonColorBg || '#ffffff',
+                cursor: 'default',
+              }}
+            />
+            <select
+              value={pageData.globalStyles?.commonColorBg || '#ffffff'}
+              onChange={(e) => handleGlobalStyleChange('commonColorBg', e.target.value)}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '14px',
+                outline: 'none',
+                backgroundColor: '#ffffff',
+                transition: 'border-color 0.15s ease-in-out',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#2563eb';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#d1d5db';
+              }}
+            >
+              <option value="#ffffff">白</option>
+              <option value="#000000">黒</option>
+            </select>
+          </div>
+          <div style={styleNoteStyle}>
+            ページ全体で使用される基本的な背景色です。コンテンツの可読性に応じて選択してください。
+          </div>
         </div>
 
         <div style={infoBoxStyle}>

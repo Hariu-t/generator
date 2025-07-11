@@ -273,7 +273,7 @@ const PricingEditor: React.FC<PricingEditorProps> = ({ component }) => {
             <textarea
               value={component.props.mainPlan?.description || ''}
               onChange={(e) => handleMainPlanChange('description', e.target.value)}
-              rows={2}
+              rows={1}
               style={textareaStyle}
               onFocus={(e) => {
                 e.target.style.borderColor = '#2563eb';
@@ -319,43 +319,24 @@ const PricingEditor: React.FC<PricingEditorProps> = ({ component }) => {
                 placeholder="#3b82f6"
               />
             </div>
-          </div>
 
-          <div style={gridStyle}>
-            <div>
-              <label style={labelStyle}>価格ラベル</label>
+            <div style={colorInputContainerStyle}>
+              <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '60px' }}>文字色:</label>
               <input
-                type="text"
-                value={component.props.mainPlan?.priceLabel || ''}
-                onChange={(e) => handleMainPlanChange('priceLabel', e.target.value)}
-                style={inputStyle}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#2563eb';
-                  e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#d1d5db';
-                  e.target.style.boxShadow = 'none';
-                }}
+                  type="color"
+                  value={component.style?.mainPlanTextColor || '#ffffff'}
+                  onChange={(e) => handleStyleChange('mainPlanTextColor', e.target.value)}
+                  style={colorInputStyle}
+              />
+              <input
+                  type="text"
+                  value={component.style?.mainPlanTextColor || '#ffffff'}
+                  onChange={(e) => handleStyleChange('mainPlanTextColor', e.target.value)}
+                  style={colorValueStyle}
+                  placeholder="#ffffff"
               />
             </div>
-            <div>
-              <label style={labelStyle}>単位（固定）</label>
-              <input
-                type="text"
-                value={component.props.mainPlan?.unit || '円（税込）'}
-                readOnly
-                style={{
-                  ...inputStyle,
-                  backgroundColor: '#f3f4f6',
-                  color: '#6b7280',
-                  cursor: 'not-allowed'
-                }}
-              />
-              <div style={styleNoteStyle}>
-                単位は固定のため変更できません。
-              </div>
-            </div>
+
           </div>
 
           <div style={fieldStyle}>
@@ -474,11 +455,11 @@ const PricingEditor: React.FC<PricingEditorProps> = ({ component }) => {
                 onChange={(e) => handleAdditionalPlanChange(index, 'name', e.target.value)}
                 style={inputStyle}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#2563eb';
+                  e.target.style.borderColor = '#FABE00';
                   e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
                 }}
                 onBlur={(e) => {
-                  e.target.style.borderColor = '#d1d5db';
+                  e.target.style.borderColor = '#000000';
                   e.target.style.boxShadow = 'none';
                 }}
               />
@@ -487,57 +468,38 @@ const PricingEditor: React.FC<PricingEditorProps> = ({ component }) => {
                 <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '60px' }}>背景色:</label>
                 <input
                   type="color"
-                  value={plan.backgroundColor || component.style?.accentColor || '#3b82f6'}
+                  value={plan.backgroundColor || component.style?.accentColor || '#FABE00'}
                   onChange={(e) => handleAdditionalPlanChange(index, 'backgroundColor', e.target.value)}
                   style={colorInputStyle}
                 />
                 <input
                   type="text"
-                  value={plan.backgroundColor || component.style?.accentColor || '#3b82f6'}
+                  value={plan.backgroundColor || component.style?.accentColor || '#FABE00'}
                   onChange={(e) => handleAdditionalPlanChange(index, 'backgroundColor', e.target.value)}
                   style={colorValueStyle}
                   placeholder="#3b82f6"
                 />
               </div>
-              <div style={styleNoteStyle}>
-                このプランボックスの背景色を個別に設定できます。
-              </div>
-            </div>
 
-            <div style={gridStyle}>
-              <div>
-                <label style={labelStyle}>価格ラベル</label>
+              <div style={colorInputContainerStyle}>
+                <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '60px' }}>文字色:</label>
                 <input
-                  type="text"
-                  value={plan.priceLabel || ''}
-                  onChange={(e) => handleAdditionalPlanChange(index, 'priceLabel', e.target.value)}
-                  style={inputStyle}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#2563eb';
-                    e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#d1d5db';
-                    e.target.style.boxShadow = 'none';
-                  }}
+                    type="color"
+                    value={plan.textColor || '#000000'}
+                    onChange={(e) => handleAdditionalPlanChange(index, 'textColor', e.target.value)}
+                    style={colorInputStyle}
+                />
+                <input
+                    type="text"
+                    value={plan.textColor || '#000000'}
+                    onChange={(e) => handleAdditionalPlanChange(index, 'textColor', e.target.value)}
+                    style={colorValueStyle}
+                    placeholder="#ffffff"
                 />
               </div>
-              <div>
-                <label style={labelStyle}>単位（固定）</label>
-                <input
-                  type="text"
-                  value={plan.unit || '円/月（税込）'}
-                  readOnly
-                  style={{
-                    ...inputStyle,
-                    backgroundColor: '#f3f4f6',
-                    color: '#6b7280',
-                    cursor: 'not-allowed'
-                  }}
-                />
-                <div style={styleNoteStyle}>
-                  単位は固定のため変更できません。
-                </div>
+
+              <div style={styleNoteStyle}>
+                このプランボックスの背景色と文字色を個別に設定できます。
               </div>
             </div>
 
@@ -562,13 +524,13 @@ const PricingEditor: React.FC<PricingEditorProps> = ({ component }) => {
                 <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '60px' }}>文字色:</label>
                 <input
                   type="color"
-                  value={plan.priceColor || component.style?.accentColor || '#3b82f6'}
+                  value={plan.priceColor || component.style?.accentColor || '#FABE00'}
                   onChange={(e) => handleAdditionalPlanChange(index, 'priceColor', e.target.value)}
                   style={colorInputStyle}
                 />
                 <input
                   type="text"
-                  value={plan.priceColor || component.style?.accentColor || '#3b82f6'}
+                  value={plan.priceColor || component.style?.accentColor || '#FABE00'}
                   onChange={(e) => handleAdditionalPlanChange(index, 'priceColor', e.target.value)}
                   style={colorValueStyle}
                   placeholder="#3b82f6"
@@ -597,82 +559,6 @@ const PricingEditor: React.FC<PricingEditorProps> = ({ component }) => {
             プラン追加
           </button>
         </div>
-      </div>
-
-      {/* 注意事項（アコーディオン形式） */}
-      <div style={sectionStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <h3 style={sectionTitleStyle}>注意事項（アコーディオン形式）</h3>
-          <button
-            onClick={addNotice}
-            style={addButtonStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#1d4ed8';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#2563eb';
-            }}
-          >
-            <Plus size={16} style={{ marginRight: '8px' }} />
-            注意事項追加
-          </button>
-        </div>
-
-        {(component.props.notices || []).map((notice: any, index: number) => (
-          <div key={index} style={itemCardStyle}>
-            <div style={itemHeaderStyle}>
-              <span style={itemIndexStyle}>注意事項 {index + 1}</span>
-              <button
-                onClick={() => removeNotice(index)}
-                style={deleteButtonStyle}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#fef2f2';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                <Trash2 size={12} />
-              </button>
-            </div>
-
-            <div style={{ marginBottom: '8px' }}>
-              <label style={{ ...labelStyle, fontSize: '11px' }}>タイトル</label>
-              <input
-                type="text"
-                value={notice.title || ''}
-                onChange={(e) => handleNoticeChange(index, 'title', e.target.value)}
-                style={itemInputStyle}
-                placeholder="注意事項のタイトル"
-              />
-            </div>
-
-            <div>
-              <label style={{ ...labelStyle, fontSize: '11px' }}>内容</label>
-              <textarea
-                value={notice.content || ''}
-                onChange={(e) => handleNoticeChange(index, 'content', e.target.value)}
-                rows={3}
-                style={itemTextareaStyle}
-                placeholder="注意事項の詳細内容"
-              />
-            </div>
-          </div>
-        ))}
-
-        {(component.props.notices || []).length === 0 && (
-          <div style={{
-            padding: '16px',
-            backgroundColor: '#f9fafb',
-            borderRadius: '6px',
-            border: '1px solid #e5e7eb',
-            textAlign: 'center',
-            color: '#6b7280',
-            fontSize: '14px'
-          }}>
-            注意事項が設定されていません。「注意事項追加」ボタンで追加してください。
-          </div>
-        )}
       </div>
     </div>
   );

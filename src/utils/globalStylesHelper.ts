@@ -25,6 +25,9 @@ export const applyGlobalStyles = (
     case 'accentColor':
       styles.color = globalStyles.accentColor;
       break;
+    case 'commonColor':
+      styles.color = globalStyles.commonColor;
+      break;
     default:
       break;
   }
@@ -41,27 +44,60 @@ export const generateGlobalStylesCSS = (globalStyles: GlobalStyles | undefined):
   return `
     :root {
       --main-color: ${globalStyles.mainColor};
+      --main-color-text: ${globalStyles.mainColorText};
       --base-color: ${globalStyles.baseColor};
+      --base-color-text: ${globalStyles.baseColorText};
       --base2-color: ${globalStyles.base2Color};
+      --base2-color-text: ${globalStyles.base2ColorText};
       --accent-color: ${globalStyles.accentColor};
+      --accent-color-text: ${globalStyles.accentColorText};
+      --common-color: ${globalStyles.commonColor};
+      --common-color-bg: ${globalStyles.commonColorBg};
     }
     
     /* 全コンポーネントに適用される共通スタイル */
     .mainColor {
       background-color: var(--main-color) !important;
-      color: #ffffff !important;
+      color: var(--main-color-text) !important;
+    }
+    
+    .mainColorBg {
+      background-color: var(--main-color) !important;
     }
     
     .baseColor {
+      background-color: var(--base-color) !important;
+      color: var(--base-color-text) !important;
+    }
+    
+    .baseColorBg {
       background-color: var(--base-color) !important;
     }
     
     .base2Color {
       background-color: var(--base2-color) !important;
+      color: var(--base2-color-text) !important;
+    }
+    
+    .base2ColorBg {
+      background-color: var(--base2-color) !important;
     }
     
     .accentColor {
-      color: var(--accent-color) !important;
+      background-color: var(--accent-color) !important;
+      color: var(--accent-color-text) !important;
+    }
+    
+    .accentColorBg {
+      background-color: var(--accent-color) !important;
+    }
+    
+    .commonColor {
+      color: var(--common-color) !important;
+    }
+    
+    .commonColorBg {
+      background-color: var(--common-color-bg) !important;
     }
     
     /* ボタンなどのホバー効果 */
@@ -69,12 +105,49 @@ export const generateGlobalStylesCSS = (globalStyles: GlobalStyles | undefined):
       filter: brightness(0.9);
     }
     
+    .mainColorBg:hover {
+      filter: brightness(0.9);
+    }
+    
     .baseColor:hover {
+      filter: brightness(0.95);
+    }
+    
+    .baseColorBg:hover {
       filter: brightness(0.95);
     }
     
     .base2Color:hover {
       filter: brightness(0.95);
+    }
+    
+    .base2ColorBg:hover {
+      filter: brightness(0.95);
+    }
+    
+    .accentColor:hover {
+      filter: brightness(0.9);
+    }
+    
+    .accentColorBg:hover {
+      filter: brightness(0.9);
+    }
+    
+    /* Text color only classes */
+    .mainColorText {
+      color: var(--main-color) !important;
+    }
+    
+    .baseColorText {
+      color: var(--base-color-text) !important;
+    }
+    
+    .base2ColorText {
+      color: var(--base2-color-text) !important;
+    }
+    
+    .accentColorText {
+      color: var(--accent-color) !important;
     }
     
     /* 全コンポーネントのスタイル適用 */
@@ -93,6 +166,14 @@ export const generateGlobalStylesCSS = (globalStyles: GlobalStyles | undefined):
     
     [data-style-accent-color] {
       color: var(--accent-color) !important;
+    }
+    
+    [data-style-common-color] {
+      color: var(--common-color) !important;
+    }
+    
+    [data-style-common-color-bg] {
+      background-color: var(--common-color-bg) !important;
     }
     
     /* 個別コンポーネントスタイルの適用 */
@@ -143,9 +224,15 @@ export const getGlobalStyleValue = (
     // デフォルト値を返す
     const defaults: GlobalStyles = {
       mainColor: '#dc2626',
+      mainColorText: '#ffffff',
       baseColor: '#f8fafc',
+      baseColorText: '#333333',
       base2Color: '#f1f5f9',
-      accentColor: '#3b82f6',
+      base2ColorText: '#333333',
+      accentColor: '#E60012',
+      accentColorText: '#ffffff',
+      commonColor: '#000000',
+      commonColorBg: '#ffffff',
     };
     return defaults[styleKey];
   }

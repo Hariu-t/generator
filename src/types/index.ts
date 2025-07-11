@@ -62,9 +62,15 @@ export interface PageData {
 // 共通スタイル設定の型定義
 export interface GlobalStyles {
   mainColor: string;
+  mainColorText: string;
   baseColor: string;
+  baseColorText: string;
   base2Color: string;
+  base2ColorText: string;
   accentColor: string;
+  accentColorText: string;
+  commonColor: string;
+  commonColorBg: string;
 }
 
 export type ViewMode = 'desktop' | 'tablet' | 'mobile';

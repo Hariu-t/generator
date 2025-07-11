@@ -54,13 +54,19 @@ const initialPageData: PageData = {
   globalSettings: {
     title: 'タイトルを挿入｜スカパー！: スポーツ＆音楽ライブ、アイドル、アニメ、ドラマ、映画など',
     description: 'ディスクリプションを挿入',
-    directory: '',
+    directory: 'test',
   },
   globalStyles: {
     mainColor: '#dc2626', // 赤系
+    mainColorText: '#ffffff', // メインカラーのテキスト色
     baseColor: '#f8fafc', // ライトグレー
+    baseColorText: '#333333', // ベースカラーのテキスト色
     base2Color: '#f1f5f9', // より薄いグレー
-    accentColor: '#3b82f6', // ブルー
+    base2ColorText: '#333333', // セカンダリベースカラーのテキスト色
+    accentColor: '#E60012', // ブルー
+    accentColorText: '#ffffff', // アクセントカラーのテキスト色
+    commonColor: '#000000', // 共通テキストカラー
+    commonColorBg: '#ffffff', // 共通背景カラー
   },
 };
 
