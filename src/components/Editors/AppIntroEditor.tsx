@@ -71,7 +71,7 @@ const AppIntroEditor: React.FC<AppIntroEditorProps> = ({ component }) => {
               type="text"
               value={component.props.balloonText || ''}
               onChange={(e) => handlePropChange('balloonText', e.target.value)}
-              placeholder="ブラックリストをマイリスト登録すれば便利！"
+              placeholder="ブラックリスト"
               style={inputStyle}
               onFocus={(e) => {
                 e.target.style.borderColor = '#2563eb';

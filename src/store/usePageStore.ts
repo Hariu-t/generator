@@ -57,14 +57,14 @@ const initialPageData: PageData = {
     directory: 'test',
   },
   globalStyles: {
-    mainColor: '#dc2626', // 赤系
-    mainColorText: '#ffffff', // メインカラーのテキスト色
+    mainColor: '#C3000F', // 赤系
+    mainColorSub: '#ffffff', // メインカラーのサブ色
     baseColor: '#f8fafc', // ライトグレー
-    baseColorText: '#333333', // ベースカラーのテキスト色
+    baseColorSub: '#333333', // ベースカラーのサブ色
     base2Color: '#f1f5f9', // より薄いグレー
-    base2ColorText: '#333333', // セカンダリベースカラーのテキスト色
+    base2ColorSub: '#333333', // セカンダリベースカラーのサブ色
     accentColor: '#E60012', // ブルー
-    accentColorText: '#ffffff', // アクセントカラーのテキスト色
+    accentColorSub: '#ffffff', // アクセントカラーのサブ色
     commonColor: '#000000', // 共通テキストカラー
     commonColorBg: '#ffffff', // 共通背景カラー
   },

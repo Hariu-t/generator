@@ -1,95 +1,6 @@
 import { ComponentTemplate } from '../types';
 
 export const componentTemplates: ComponentTemplate[] = [
-  // KV Components
-  // {
-  //   id: 'kv-carousel',
-  //   type: 'kv',
-  //   name: 'KV カルーセル型',
-  //   description: '複数コンテンツを効率的に紹介するカルーセル・プレゼンテーション型',
-  //   thumbnail: 'https://images.pexels.com/photos/1287145/pexels-photo-1287145.jpeg?auto=compress&cs=tinysrgb&w=400',
-  //   category: 'KV',
-  //   defaultProps: {
-  //     pattern: 'carousel',
-  //     headline: '注目のコンテンツ',
-  //     description: '厳選された話題のコンテンツをお楽しみください',
-  //     ctaText: '詳しくはこちら',
-  //     ctaUrl: '#',
-  //     carouselItems: [
-  //       {
-  //         image: 'https://images.pexels.com/photos/1287145/pexels-photo-1287145.jpeg?auto=compress&cs=tinysrgb&w=1920',
-  //         title: 'メインタイトル',
-  //         description: '説明文がここに入ります',
-  //         category: 'ドラマ',
-  //         status: '最新話配信中',
-  //         tags: ['#感動', '#ヒューマンドラマ']
-  //       },
-  //       {
-  //         image: 'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=1920',
-  //         title: 'サブタイトル 2',
-  //         description: '2番目のコンテンツの説明',
-  //         category: 'バラエティ',
-  //         status: '毎週更新',
-  //         tags: ['#エンタメ', '#笑い']
-  //       }
-  //     ]
-  //   }
-  // },
-  // {
-  //   id: 'kv-cinematic',
-  //   type: 'kv',
-  //   name: 'KV シネマティック型',
-  //   description: '映画のような強烈な視覚的インパクトで世界観を伝える',
-  //   thumbnail: 'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=400',
-  //   category: 'KV',
-  //   defaultProps: {
-  //     pattern: 'cinematic',
-  //     headline: 'ビジネスを変革する',
-  //     description: 'デジタル時代に対応した革新的なソリューション',
-  //     ctaText: '今すぐ視聴',
-  //     ctaUrl: '#',
-  //     backgroundImage: 'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=1920'
-  //   }
-  // },
-  // {
-  //   id: 'kv-card',
-  //   type: 'kv',
-  //   name: 'KV カード型',
-  //   description: '情報を整理されたカードデザインで見やすく配置',
-  //   thumbnail: 'https://images.pexels.com/photos/3184454/pexels-photo-3184454.jpeg?auto=compress&cs=tinysrgb&w=400',
-  //   category: 'KV',
-  //   defaultProps: {
-  //     pattern: 'card',
-  //     headline: 'おすすめコンテンツ',
-  //     description: '厳選されたコンテンツをカード形式で分かりやすく表示',
-  //     ctaText: 'すべてのコンテンツを見る',
-  //     ctaUrl: '#',
-  //     cardItems: [
-  //       {
-  //         image: 'https://images.pexels.com/photos/3184287/pexels-photo-3184287.jpeg?auto=compress&cs=tinysrgb&w=600',
-  //         title: 'コンテンツタイトル 1',
-  //         schedule: '毎週火曜 21:00-22:00',
-  //         genre: 'ドラマ',
-  //         rating: 4,
-  //         reviewCount: 1234,
-  //         cast: '田中太郎、山田花子 他',
-  //         description: '現代社会を舞台にした感動的なヒューマンドラマ。家族の絆と愛をテーマに描かれた心温まる物語です...',
-  //         isNew: true
-  //       },
-  //       {
-  //         image: 'https://images.pexels.com/photos/3184288/pexels-photo-3184288.jpeg?auto=compress&cs=tinysrgb&w=600',
-  //         title: 'コンテンツタイトル 2',
-  //         schedule: '毎週水曜 22:00-23:00',
-  //         genre: 'バラエティ',
-  //         rating: 5,
-  //         reviewCount: 2567,
-  //         cast: '佐藤次郎、鈴木花子 他',
-  //         description: '笑いあり涙ありの感動バラエティ番組。毎回ゲストを迎えて楽しいトークを繰り広げます...',
-  //         isNew: false
-  //       }
-  //     ]
-  //   }
-  // },
   {
     id: 'kv-1',
     type: 'kv',
@@ -104,59 +15,37 @@ export const componentTemplates: ComponentTemplate[] = [
       expandedDescription: 'レイモンド・"レッド"・レディントンは、シーズン1冒頭に世界で暗躍する凶悪犯罪者たちのリスト"ブラックリスト"を持参してFBIに自首した。彼の目的は、このリストに載った犯罪者たちを一人ずつ捕まえることだった。しかし、彼には一つだけ条件があった。それは、新人FBI捜査官エリザベス・キーンとだけ話をするということだった。',
       showMoreText: 'もっと見る',
       showLessText: '閉じる',
-      cast: 'ジェームズ・スペイダー、メーガン・ブーン、ディエゴ・クラテンホフ、ライアン・エッゴールド',
+      channelInfo: {
+        number: 'CS310',
+        name: 'スーパー！ドラマＴＶ　＃海外ドラマ☆エンタメ'
+      },
       broadcastInfo: {
-        schedule: '毎週金曜 21:00-22:00',
-        duration: '60分',
+        schedule: '7/25(火) 22:00～22:55 スタート<br>【二カ国語版】毎週(火) 22:00～ほか',
+        streamingBadgeText: '同時・見逃し',
         badges: [
-          { text: '最新話配信中', color: '#dc2626' },
           { text: 'ドラマ', color: '#3b82f6' }
         ]
       },
       mediaItems: [
         {
           type: 'image',
-          url: 'https://images.pexels.com/photos/3184287/pexels-photo-3184287.jpeg?auto=compress&cs=tinysrgb&w=800',
+          url: '/program/st/promo/generator_common/img/program01.jpg',
           alt: 'ブラックリスト メインビジュアル'
         },
         {
           type: 'video',
+          url: 'https://www.youtube.com/embed/XVVXQsv7o8I?rel=0&enablejsapi=1',
           alt: 'ブラックリスト 予告編'
         },
         {
           type: 'image',
-          url: 'https://images.pexels.com/photos/3184289/pexels-photo-3184289.jpeg?auto=compress&cs=tinysrgb&w=800',
+          url: '/program/st/promo/generator_common/img/program02.jpg',
           alt: 'ブラックリスト シーン3'
         }
       ],
-      ctaButtons: [
-        {
-          text: '今すぐ視聴',
-          url: '#',
-          type: 'primary'
-        },
-        {
-          text: '予告編を見る',
-          url: '#',
-          type: 'secondary'
-        }
-      ],
-      additionalInfo: [
-        {
-          label: '制作年',
-          value: '2023年'
-        },
-        {
-          label: 'ジャンル',
-          value: 'クライム・サスペンス'
-        },
-        {
-          label: '話数',
-          value: '全22話'
-        }
-      ]
     }
   },
+
 
   // 料金 Components
   {
@@ -200,7 +89,7 @@ export const componentTemplates: ComponentTemplate[] = [
     thumbnail: '/program/st/promo/generator_common/img/thumbnail_app-intro-1.jpg',
     category: '番組配信',
     defaultProps: {
-      balloonText: 'ブラックリストをマイリスト登録すれば便利！'
+      balloonText: 'ブラックリスト'
     }
   },
 

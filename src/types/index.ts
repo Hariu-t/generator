@@ -62,13 +62,13 @@ export interface PageData {
 // 共通スタイル設定の型定義
 export interface GlobalStyles {
   mainColor: string;
-  mainColorText: string;
+  mainColorSub: string;
   baseColor: string;
-  baseColorText: string;
+  baseColorSub: string;
   base2Color: string;
-  base2ColorText: string;
+  base2ColorSub: string;
   accentColor: string;
-  accentColorText: string;
+  accentColorSub: string;
   commonColor: string;
   commonColorBg: string;
 }

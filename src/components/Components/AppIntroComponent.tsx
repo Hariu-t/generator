@@ -32,7 +32,7 @@ const AppIntroComponent: React.FC<AppIntroComponentProps> = ({ component }) => {
   };
 
   return (
-    <section id='streamingArea' style={containerStyle} className="baseColor">
+    <section id='streamingArea' style={containerStyle} className="base-pattern-1">
       <div className='sectionInner'>
         <h3>スカパー！番組配信とは</h3>
         <p className='text'>
@@ -45,7 +45,7 @@ const AppIntroComponent: React.FC<AppIntroComponentProps> = ({ component }) => {
           <div className="viewindFlex">
             <div className='viewingItem'>
               <div className='viewingBallon'>
-                {balloonText || 'ブラックリストをマイリスト登録すれば便利！'}
+                {balloonText || 'ブラックリスト'}をマイリスト登録すれば便利！
               </div>
               <div className='innerFlex'>
                 <p className='img'>

@@ -44,52 +44,102 @@ export const generateGlobalStylesCSS = (globalStyles: GlobalStyles | undefined):
   return `
     :root {
       --main-color: ${globalStyles.mainColor};
-      --main-color-text: ${globalStyles.mainColorText};
+      --main-color-sub: ${globalStyles.mainColorSub};
       --base-color: ${globalStyles.baseColor};
-      --base-color-text: ${globalStyles.baseColorText};
+      --base-color-sub: ${globalStyles.baseColorSub};
       --base2-color: ${globalStyles.base2Color};
-      --base2-color-text: ${globalStyles.base2ColorText};
+      --base2-color-sub: ${globalStyles.base2ColorSub};
       --accent-color: ${globalStyles.accentColor};
-      --accent-color-text: ${globalStyles.accentColorText};
+      --accent-color-sub: ${globalStyles.accentColorSub};
       --common-color: ${globalStyles.commonColor};
       --common-color-bg: ${globalStyles.commonColorBg};
     }
     
-    /* 全コンポーネントに適用される共通スタイル */
-    .mainColor {
-      background-color: var(--main-color) !important;
-      color: var(--main-color-text) !important;
+    /* 各色をテキスト色として適用するクラス */
+    .mainColorText {
+      color: var(--main-color) !important;
     }
     
+    .mainColorSubText {
+      color: var(--main-color-sub) !important;
+    }
+    
+    .baseColorText {
+      color: var(--base-color) !important;
+    }
+    
+    .baseColorSubText {
+      color: var(--base-color-sub) !important;
+    }
+    
+    .base2ColorText {
+      color: var(--base2-color) !important;
+    }
+    
+    .base2ColorSubText {
+      color: var(--base2-color-sub) !important;
+    }
+    
+    .accentColorText {
+      color: var(--accent-color) !important;
+    }
+    
+    .accentColorSubText {
+      color: var(--accent-color-sub) !important;
+    }
+    
+    /* 各色を背景色として適用するクラス */
     .mainColorBg {
       background-color: var(--main-color) !important;
     }
     
-    .baseColor {
-      background-color: var(--base-color) !important;
-      color: var(--base-color-text) !important;
+    .mainColorSubBg {
+      background-color: var(--main-color-sub) !important;
     }
     
     .baseColorBg {
       background-color: var(--base-color) !important;
     }
     
-    .base2Color {
-      background-color: var(--base2-color) !important;
-      color: var(--base2-color-text) !important;
+    .baseColorSubBg {
+      background-color: var(--base-color-sub) !important;
     }
     
     .base2ColorBg {
       background-color: var(--base2-color) !important;
     }
     
-    .accentColor {
-      background-color: var(--accent-color) !important;
-      color: var(--accent-color-text) !important;
+    .base2ColorSubBg {
+      background-color: var(--base2-color-sub) !important;
     }
     
     .accentColorBg {
       background-color: var(--accent-color) !important;
+    }
+    
+    .accentColorSubBg {
+      background-color: var(--accent-color-sub) !important;
+    }
+    
+    /* 従来の組み合わせクラス（後方互換性のため） */
+    .mainColor {
+      background-color: var(--main-color) !important;
+      color: var(--main-color-sub) !important;
+    }
+    
+    .baseColor {
+      background-color: var(--base-color) !important;
+      color: var(--base-color-sub) !important;
+    }
+    
+    .base2Color {
+      background-color: var(--base2-color) !important;
+      color: var(--base2-color-sub) !important;
+    }
+    
+    .accentColor {
+      background-color: var(--accent-color) !important;
+      color: var(--accent-color-sub) !important;
     }
     
     .commonColor {
@@ -101,54 +151,38 @@ export const generateGlobalStylesCSS = (globalStyles: GlobalStyles | undefined):
     }
     
     /* ボタンなどのホバー効果 */
-    .mainColor:hover {
+    .mainColorBg:hover, .mainColor:hover {
       filter: brightness(0.9);
     }
     
-    .mainColorBg:hover {
+    .mainColorSubBg:hover {
       filter: brightness(0.9);
     }
     
-    .baseColor:hover {
+    .baseColorBg:hover, .baseColor:hover {
       filter: brightness(0.95);
     }
     
-    .baseColorBg:hover {
+    .baseColorSubBg:hover {
       filter: brightness(0.95);
     }
     
-    .base2Color:hover {
+    .base2ColorBg:hover, .base2Color:hover {
       filter: brightness(0.95);
     }
     
-    .base2ColorBg:hover {
+    .base2ColorSubBg:hover {
       filter: brightness(0.95);
     }
     
-    .accentColor:hover {
+    .accentColorBg:hover, .accentColor:hover {
       filter: brightness(0.9);
     }
     
-    .accentColorBg:hover {
+    .accentColorSubBg:hover {
       filter: brightness(0.9);
     }
     
-    /* Text color only classes */
-    .mainColorText {
-      color: var(--main-color) !important;
-    }
-    
-    .baseColorText {
-      color: var(--base-color-text) !important;
-    }
-    
-    .base2ColorText {
-      color: var(--base2-color-text) !important;
-    }
-    
-    .accentColorText {
-      color: var(--accent-color) !important;
-    }
     
     /* 全コンポーネントのスタイル適用 */
     [data-style-main-color] {
@@ -212,6 +246,82 @@ export const generateGlobalStylesCSS = (globalStyles: GlobalStyles | undefined):
     [data-component-accent] {
       color: var(--component-accent-color, inherit);
     }
+    
+    /* 柔軟な色指定システム */
+    /* mainColor系 */
+    .main-bg { background-color: var(--main-color) !important; }
+    .main-text { color: var(--main-color) !important; }
+    .main-sub-bg { background-color: var(--main-color-sub) !important; }
+    .main-sub-text { color: var(--main-color-sub) !important; }
+    
+    /* baseColor系 */
+    .base-bg { background-color: var(--base-color) !important; }
+    .base-text { color: var(--base-color) !important; }
+    .base-sub-bg { background-color: var(--base-color-sub) !important; }
+    .base-sub-text { color: var(--base-color-sub) !important; }
+    
+    /* base2Color系 */
+    .base2-bg { background-color: var(--base2-color) !important; }
+    .base2-text { color: var(--base2-color) !important; }
+    .base2-sub-bg { background-color: var(--base2-color-sub) !important; }
+    .base2-sub-text { color: var(--base2-color-sub) !important; }
+    
+    /* accentColor系 */
+    .accent-bg { background-color: var(--accent-color) !important; }
+    .accent-text { color: var(--accent-color) !important; }
+    .accent-sub-bg { background-color: var(--accent-color-sub) !important; }
+    .accent-sub-text { color: var(--accent-color-sub) !important; }
+    
+    /* 組み合わせパターン */
+    .main-pattern-1 {
+      background-color: var(--main-color) !important;
+      color: var(--main-color-sub) !important;
+    }
+    
+    .main-pattern-2 {
+      background-color: var(--main-color-sub) !important;
+      color: var(--main-color) !important;
+    }
+    
+    .base-pattern-1 {
+      background-color: var(--base-color) !important;
+      color: var(--base-color-sub) !important;
+    }
+    
+    .base-pattern-2 {
+      background-color: var(--base-color-sub) !important;
+      color: var(--base-color) !important;
+    }
+    
+    .base2-pattern-1 {
+      background-color: var(--base2-color) !important;
+      color: var(--base2-color-sub) !important;
+    }
+    
+    .base2-pattern-2 {
+      background-color: var(--base2-color-sub) !important;
+      color: var(--base2-color) !important;
+    }
+    
+    .accent-pattern-1 {
+      background-color: var(--accent-color) !important;
+      color: var(--accent-color-sub) !important;
+    }
+    
+    .accent-pattern-2 {
+      background-color: var(--accent-color-sub) !important;
+      color: var(--accent-color) !important;
+    }
+    
+    /* ホバー効果 */
+    .main-bg:hover, .main-pattern-1:hover { filter: brightness(0.9); }
+    .main-sub-bg:hover, .main-pattern-2:hover { filter: brightness(0.9); }
+    .base-bg:hover, .base-pattern-1:hover { filter: brightness(0.95); }
+    .base-sub-bg:hover, .base-pattern-2:hover { filter: brightness(0.95); }
+    .base2-bg:hover, .base2-pattern-1:hover { filter: brightness(0.95); }
+    .base2-sub-bg:hover, .base2-pattern-2:hover { filter: brightness(0.95); }
+    .accent-bg:hover, .accent-pattern-1:hover { filter: brightness(0.9); }
+    .accent-sub-bg:hover, .accent-pattern-2:hover { filter: brightness(0.9); }
   `;
 };
 
@@ -223,14 +333,14 @@ export const getGlobalStyleValue = (
   if (!globalStyles) {
     // デフォルト値を返す
     const defaults: GlobalStyles = {
-      mainColor: '#dc2626',
-      mainColorText: '#ffffff',
+      mainColor: '#C3000F',
+      mainColorSub: '#ffffff',
       baseColor: '#f8fafc',
-      baseColorText: '#333333',
+      baseColorSub: '#333333',
       base2Color: '#f1f5f9',
-      base2ColorText: '#333333',
+      base2ColorSub: '#333333',
       accentColor: '#E60012',
-      accentColorText: '#ffffff',
+      accentColorSub: '#ffffff',
       commonColor: '#000000',
       commonColorBg: '#ffffff',
     };

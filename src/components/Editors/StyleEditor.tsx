@@ -275,23 +275,23 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
             />
           </div>
           <div style={colorInputContainerStyle}>
-            <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '80px' }}>テキスト色:</label>
+            <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '80px' }}>サブ色:</label>
             <input
               type="color"
-              value={pageData.globalStyles?.mainColorText || '#ffffff'}
-              onChange={(e) => handleGlobalStyleChange('mainColorText', e.target.value)}
+              value={pageData.globalStyles?.mainColorSub || '#ffffff'}
+              onChange={(e) => handleGlobalStyleChange('mainColorSub', e.target.value)}
               style={colorInputStyle}
             />
             <input
               type="text"
-              value={pageData.globalStyles?.mainColorText || '#ffffff'}
-              onChange={(e) => handleGlobalStyleChange('mainColorText', e.target.value)}
+              value={pageData.globalStyles?.mainColorSub || '#ffffff'}
+              onChange={(e) => handleGlobalStyleChange('mainColorSub', e.target.value)}
               style={colorValueStyle}
               placeholder="#ffffff"
             />
           </div>
           <p style={colorDescriptionStyle}>
-            主要なアクション要素（ボタン、リンクなど）に使用される色です。
+            主要なアクション要素に使用される色です。各コンポーネントでテキスト色・背景色を選択できます。
           </p>
         </div>
 
@@ -313,23 +313,23 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
             />
           </div>
           <div style={colorInputContainerStyle}>
-            <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '80px' }}>テキスト色:</label>
+            <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '80px' }}>サブ色:</label>
             <input
               type="color"
-              value={pageData.globalStyles?.baseColorText || '#333333'}
-              onChange={(e) => handleGlobalStyleChange('baseColorText', e.target.value)}
+              value={pageData.globalStyles?.baseColorSub || '#333333'}
+              onChange={(e) => handleGlobalStyleChange('baseColorSub', e.target.value)}
               style={colorInputStyle}
             />
             <input
               type="text"
-              value={pageData.globalStyles?.baseColorText || '#333333'}
-              onChange={(e) => handleGlobalStyleChange('baseColorText', e.target.value)}
+              value={pageData.globalStyles?.baseColorSub || '#333333'}
+              onChange={(e) => handleGlobalStyleChange('baseColorSub', e.target.value)}
               style={colorValueStyle}
               placeholder="#333333"
             />
           </div>
           <p style={colorDescriptionStyle}>
-            セクションの背景色として使用される基本色です。
+            セクションで使用される基本色です。各コンポーネントでテキスト色・背景色を選択できます。
           </p>
         </div>
 
@@ -351,23 +351,23 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
             />
           </div>
           <div style={colorInputContainerStyle}>
-            <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '80px' }}>テキスト色:</label>
+            <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '80px' }}>サブ色:</label>
             <input
               type="color"
-              value={pageData.globalStyles?.base2ColorText || '#333333'}
-              onChange={(e) => handleGlobalStyleChange('base2ColorText', e.target.value)}
+              value={pageData.globalStyles?.base2ColorSub || '#333333'}
+              onChange={(e) => handleGlobalStyleChange('base2ColorSub', e.target.value)}
               style={colorInputStyle}
             />
             <input
               type="text"
-              value={pageData.globalStyles?.base2ColorText || '#333333'}
-              onChange={(e) => handleGlobalStyleChange('base2ColorText', e.target.value)}
+              value={pageData.globalStyles?.base2ColorSub || '#333333'}
+              onChange={(e) => handleGlobalStyleChange('base2ColorSub', e.target.value)}
               style={colorValueStyle}
               placeholder="#333333"
             />
           </div>
           <p style={colorDescriptionStyle}>
-            カードやパネルの背景色として使用される補助的な基本色です。
+            カードやパネルで使用される補助的な基本色です。各コンポーネントでテキスト色・背景色を選択できます。
           </p>
         </div>
 
@@ -389,23 +389,23 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ component }) => {
             />
           </div>
           <div style={colorInputContainerStyle}>
-            <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '80px' }}>テキスト色:</label>
+            <label style={{ ...labelStyle, fontSize: '11px', marginBottom: 0, minWidth: '80px' }}>サブ色:</label>
             <input
               type="color"
-              value={pageData.globalStyles?.accentColorText || '#ffffff'}
-              onChange={(e) => handleGlobalStyleChange('accentColorText', e.target.value)}
+              value={pageData.globalStyles?.accentColorSub || '#ffffff'}
+              onChange={(e) => handleGlobalStyleChange('accentColorSub', e.target.value)}
               style={colorInputStyle}
             />
             <input
               type="text"
-              value={pageData.globalStyles?.accentColorText || '#ffffff'}
-              onChange={(e) => handleGlobalStyleChange('accentColorText', e.target.value)}
+              value={pageData.globalStyles?.accentColorSub || '#ffffff'}
+              onChange={(e) => handleGlobalStyleChange('accentColorSub', e.target.value)}
               style={colorValueStyle}
               placeholder="#ffffff"
             />
           </div>
           <p style={colorDescriptionStyle}>
-            強調表示に使用されるアクセント色です。
+            強調表示や装飾要素に使用されるアクセント色です。各コンポーネントでテキスト色・背景色を選択できます。
           </p>
         </div>
 

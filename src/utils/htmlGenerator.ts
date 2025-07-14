@@ -15,11 +15,11 @@ export const generateHeadlineHTML = (component: ComponentData, globalStyles: any
   const { backgroundColor, textColor, headlineColor } = component.style || {};
   
   const mainColor = getGlobalStyleValue(globalStyles, 'mainColor');
-  const mainColorText = getGlobalStyleValue(globalStyles, 'mainColorText');
+  const mainColorSub = getGlobalStyleValue(globalStyles, 'mainColorSub');
   
   const containerStyles = {
     'background-color': backgroundColor || mainColor,
-    color: textColor || mainColorText,
+    color: textColor || mainColorSub,
     'padding': '20px 0'
   };
   
@@ -34,7 +34,7 @@ export const generateHeadlineHTML = (component: ComponentData, globalStyles: any
     'font-weight': 'bold',
     'line-height': '1.4',
     'margin': '0',
-    'color': headlineColor || textColor || mainColorText
+    'color': headlineColor || textColor || mainColorSub
   };
   
   const displayText = text || 'シリーズ10年の歴史がついに完結！ジェームズ・スペイダー主演「ブラックリスト ファイナル・シーズン」独占日本初放送！';
@@ -328,15 +328,60 @@ export const generatePricingHTML = (component: ComponentData, globalStyles: any)
     </div>
   `).join('');
   
+  // 価格比較ボックスのHTML生成
+  const priceBoxesHTML = fixedPriceBoxes.map((box, index) => `
+    <div class="flex-1 max-w-sm mx-auto lg:mx-0 main-pattern-1" style="border-radius: 8px; overflow: hidden;">
+      <!-- ヘッダー -->
+      <div class="main-pattern-1 py-4 px-6 text-center font-medium text-lg" style="filter: brightness(1.1);">
+        ${box.period}
+      </div>
+      
+      <!-- 料金項目 -->
+      <div class="main-sub-text">
+        ${box.items.map((item, itemIndex) => `
+          <div class="flex justify-between items-center py-6 px-6 ${itemIndex === 0 ? 'border-b border-white border-opacity-30' : ''}">
+            <div class="flex items-center">
+              <span class="px-3 py-1 text-sm font-bold rounded main-pattern-2">
+                ${item.label}
+              </span>
+            </div>
+            <div class="text-right">
+              ${item.price ? `
+                <div class="flex items-baseline">
+                  <span class="text-4xl sm:text-5xl font-bold font-mono">
+                    ${item.price}
+                  </span>
+                  <span class="text-lg ml-1">${item.unit}</span>
+                </div>
+              ` : `
+                <div class="text-lg font-bold leading-tight">
+                  ${item.description}
+                </div>
+              `}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+  
   return `
     <div style="${generateInlineStyles(containerStyles)}">
       <div style="${generateInlineStyles(innerStyles)}">
         <h2 style="${generateInlineStyles(titleStyles)}">${title}</h2>
-        <div style="${generateInlineStyles(subtitleStyles)}">${subtitle}</div>
+        <div class="main-pattern-1" style="padding: 24px 32px; font-size: 24px; font-weight: bold; margin-bottom: 48px; border-radius: 8px; text-align: center;">${subtitle}</div>
+        
+        <!-- 価格比較テーブル -->
+        <div style="position: relative; margin-bottom: 64px;">
+          <div style="display: flex; justify-content: center; align-items: stretch; gap: 48px; margin-bottom: 32px; flex-wrap: wrap;">
+            ${priceBoxesHTML}
+          </div>
+        </div>
+        
         ${mainPlanHTML}
         ${additionalPlansHTML}
         <div style="display: flex; justify-content: center; align-items: center; gap: 24px; flex-wrap: wrap;">
-          <a href="#" style="background-color: ${mainColor}; color: white; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-size: 18px; font-weight: 500; min-width: 320px; text-align: center;">ご加入はこちら</a>
+          <a href="#" class="main-pattern-1" style="padding: 16px 32px; border-radius: 8px; text-decoration: none; font-size: 18px; font-weight: 500; min-width: 320px; text-align: center;">ご加入はこちら</a>
           <a href="#" style="background-color: white; color: ${accentColor}; border: 2px solid ${accentColor}; padding: 14px 30px; border-radius: 8px; text-decoration: none; font-size: 18px; font-weight: 500; min-width: 320px; text-align: center;">ご契約追加はこちら</a>
         </div>
       </div>
@@ -403,7 +448,7 @@ export const generateAppIntroHTML = (component: ComponentData, globalStyles: any
           <div style="display: flex; justify-content: center; align-items: flex-start; gap: 40px; flex-wrap: wrap;">
             <div>
               <div style="${generateInlineStyles(balloonStyles)}">
-                ${balloonText || 'ブラックリストをマイリスト登録すれば便利！'}
+                ${balloonText || 'ブラックリスト'}をマイリスト登録すれば便利！
               </div>
               <div style="display: flex; justify-content: flex-start; align-items: center; gap: 20px;">
                 <div style="margin-right: 20px;">
@@ -734,6 +779,7 @@ export const generateComponentHTML = (component: ComponentData, globalStyles: an
       return generatePricingHTML(component, globalStyles);
     case 'app-intro':
       return generateAppIntroHTML(component, globalStyles);
+      return generateCTAHTML(component, globalStyles);
     case 'test':
       return generateFAQHTML(component, globalStyles);
     default:

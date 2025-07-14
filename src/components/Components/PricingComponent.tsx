@@ -66,6 +66,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
   };
 
   const mainTextStyle = textColor ? { color: textColor } : {};
+  const headlineStyle = headlineColor ? { color: headlineColor } : mainTextStyle;
   const descriptionTextStyle = descriptionColor ? { color: descriptionColor } : mainTextStyle;
 
   // 価格ボックスのスタイル（共通スタイル適用）
@@ -84,7 +85,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
     color: mainPlanTextColor || '#ffffff',
   };
 
-  // 固定の価格比較ボックスデータ
+    // 固定の価格比較ボックスデータ
   const fixedPriceBoxes = [
     {
       period: 'ご加入月',
@@ -135,32 +136,32 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
     <section id='priceArea' className={`baseColor`} style={containerStyle}>
       <h3>番組を見るには</h3>
       <div className='priceInfo priceInfo1'>
-        <p className='subTitle alignBaseline mainColor'><span className='textLarge'>ご加入月は<span className='price'>0</span>円</span>で<br className='sp'/>人気番組が楽しめる！</p>
+        <p className='subTitle alignBaseline main-pattern-1'><span className='textLarge'>ご加入月は<span className='price'>0</span>円</span>で<br className='sp'/>人気番組が楽しめる！</p>
 
         <div className='priceTable'>
           <div className='priceBox thisMonth mainColor'>
-            <p className='tit accentColorBg'>ご加入月</p>
+            <p className='tit accent-pattern-1'>ご加入月</p>
             <div className='fee viewingFee'>
-            <p className='flag'>視聴料</p>
+            <p className='flag accent-pattern-2'>視聴料</p>
             <p><span className='fontLearge fontRobot'>0</span><span className='fontMedium'>円</span>(税込)</p>
             </div>
             <div className='fee BasicFee'>
-            <p className='flag'>基本料</p>
+            <p className='flag accent-pattern-2'>基本料</p>
             <p><span className='fontLearge fontRobot'>0</span><span className='fontMedium'>円</span>(税込)</p>
             </div>
           </div>
 
           <div className='priceBox nextMonth mainColor'>
-            <p className='tit accentColor'>翌月以降</p>
+            <p className='tit accent-pattern-1'>翌月以降</p>
             <div className='fee viewingFee'>
-            <p className='flag'>視聴料</p>
+            <p className='flag accent-pattern-2'>視聴料</p>
             <p className='text'>
                 選んだチャンネル、<br/>
                 プラン・セット料金
             </p>
             </div>
             <div className='fee BasicFee'>
-            <p className='flag'>基本料</p>
+            <p className='flag accent-pattern-2'>基本料</p>
             <p><span className='fontLearge fontRobot'>429</span><span className='fontMedium'>円</span>(税込)</p>
             </div>
           </div>
@@ -242,7 +243,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
 
         {/* 追加プラン */}
         {additionalPlans && additionalPlans.length > 0 && (
-          <div className="space-y-8 mb-12">
+          <div className="ChFeeWrapper">
             {additionalPlans.map((plan, index) => (
               <div key={index} className="chFee chFee_style">
                 <p className="tit" style={descriptionTextStyle}>
@@ -346,7 +347,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
             border-style: solid;
             border-top: 27px solid transparent;
             border-bottom: 27px solid transparent;
-            border-left: 20px solid #fff;
+            border-left: 20px solid var(--main-color)!important;
             border-right: 0;
           }
           #priceArea .priceTable .priceBox {
@@ -673,7 +674,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
             border-style: solid;
             border-top: 7.19vw solid transparent;
             border-bottom: 7.19vw solid transparent;
-            border-left: 5.33vw solid #fff;
+            border-left: 5.33vw solid var(--main-color)!important;
             border-right: 0;
           }
           #priceArea .priceTable .priceBox {
