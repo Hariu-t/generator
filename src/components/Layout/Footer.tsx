@@ -12,8 +12,8 @@ const Footer: React.FC = () => {
           <li><span>シリーズ10年の歴史がついに完結！ジェームズ・スぺイダー主演「ブラックリスト ファイナル・シーズン」独占日本初放送！</span></li>
       </ul>
       </div>
-      <script src="https://www.skyperfectv.co.jp/global/assets/js/global.js"></script>
-      <script src="https://www.skyperfectv.co.jp/global/assets/js/jquery.min.js"></script>
+      <script src="/global/assets/js/global.js"></script>
+      <script src="/global/assets/js/jquery.min.js"></script>
     </footer>
   );
 };

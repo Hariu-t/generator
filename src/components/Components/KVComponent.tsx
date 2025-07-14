@@ -217,13 +217,11 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                         e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
                       }}
                     >
-                      <span 
+                      <span className='arrow arrow-prev'
                         style={{
                           display: 'block',
                           width: '30px',
                           height: '30px',
-                          borderTop: '3px solid var(--base-color-sub) !important',
-                          borderLeft: '3px solid var(--base-color-sub) !important',
                           transform: 'rotate(-45deg)',
                         }}
                       ></span>
@@ -251,13 +249,11 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                         e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
                       }}
                     >
-                      <span 
+                      <span className='arrow arrow-next' 
                         style={{
                           display: 'block',
                           width: '30px',
                           height: '30px',
-                          borderTop: '3px solid var(--base-color-sub) !important',
-                          borderRight: '3px solid var(--base-color-sub) !important',
                           transform: 'rotate(45deg)',
                         }}
                       ></span>
@@ -541,6 +537,20 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
               height: max-content;
               margin: 0 auto;
               position: relative;
+            }
+            #kvArea .arrow{
+              display: block;
+              width: 30px;
+              height: 30px;
+              transform: rotate(-45deg);
+            }
+            #kvArea .arrow.arrow-prev{
+              border-top: 3px solid var(--base-color-sub) !important;
+              border-left: 3px solid var(--base-color-sub) !important;
+            }
+            #kvArea .arrow.arrow-next{
+              border-top: 3px solid var(--base-color-sub) !important;
+              border-right: 3px solid var(--base-color-sub) !important;
             }
 
             .streamingBox {
