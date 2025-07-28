@@ -37,6 +37,7 @@ interface PageStore {
   getCurrentProjectName: () => string | null;
   setCurrentProjectName: (name: string | null) => void;
   currentProjectName: string | null;
+  restoreFromBackup: () => boolean;
 }
 
 const initialPageData: PageData = {
@@ -70,11 +71,10 @@ const initialPageData: PageData = {
   },
 };
 
-// 共有ストレージのキー（すべてのユーザーが共通で使用）
 const SHARED_PROJECTS_STORAGE_KEY = 'lp-builder-shared-projects';
+const SHARED_PROJECTS_BACKUP_KEY = 'lp-builder-shared-projects-backup';
 const CURRENT_PROJECT_KEY = 'lp-builder-current-project';
 
-// 共有ストレージのヘルパー関数
 const getSharedProjects = (): SavedProject[] => {
   try {
     const stored = localStorage.getItem(SHARED_PROJECTS_STORAGE_KEY);
@@ -87,10 +87,22 @@ const getSharedProjects = (): SavedProject[] => {
 
 const saveSharedProjects = (projects: SavedProject[]): void => {
   try {
-    localStorage.setItem(SHARED_PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+    const projectsJson = JSON.stringify(projects);
+    localStorage.setItem(SHARED_PROJECTS_STORAGE_KEY, projectsJson);
+    localStorage.setItem(SHARED_PROJECTS_BACKUP_KEY, projectsJson);
   } catch (error) {
     console.error('Failed to save shared projects:', error);
   }
+};
+
+const getBackupProjects = (): SavedProject[] => {
+    try {
+        const stored = localStorage.getItem(SHARED_PROJECTS_BACKUP_KEY);
+        return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+        console.error('Failed to load backup projects:', error);
+        return [];
+    }
 };
 
 export const usePageStore = create<PageStore>((set, get) => ({
@@ -106,47 +118,23 @@ export const usePageStore = create<PageStore>((set, get) => ({
 
   addComponent: (component) => {
     set((state) => {
-      const newPageData = {
-        ...state.pageData,
-        components: [...state.pageData.components, component],
-      };
+      const newPageData = { ...state.pageData, components: [...state.pageData.components, component] };
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newPageData);
-      
-      return {
-        pageData: newPageData,
-        selectedComponentId: component.id,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
+      return { pageData: newPageData, selectedComponentId: component.id, history: newHistory, historyIndex: newHistory.length - 1 };
     });
-
-    // コンポーネント追加後に自動スクロール
     setTimeout(() => {
-      const componentElement = document.querySelector(`[data-component-id="${component.id}"]`);
-      if (componentElement) {
-        componentElement.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
-        });
-      }
+      document.querySelector(`[data-component-id="${component.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
   },
 
   updateComponent: (id, updates) => {
     set((state) => {
-      const newComponents = state.pageData.components.map((comp) =>
-        comp.id === id ? { ...comp, ...updates } : comp
-      );
+      const newComponents = state.pageData.components.map((comp) => comp.id === id ? { ...comp, ...updates } : comp);
       const newPageData = { ...state.pageData, components: newComponents };
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newPageData);
-      
-      return {
-        pageData: newPageData,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
+      return { pageData: newPageData, history: newHistory, historyIndex: newHistory.length - 1 };
     });
   },
 
@@ -156,13 +144,7 @@ export const usePageStore = create<PageStore>((set, get) => ({
       const newPageData = { ...state.pageData, components: newComponents };
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newPageData);
-      
-      return {
-        pageData: newPageData,
-        selectedComponentId: state.selectedComponentId === id ? null : state.selectedComponentId,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
+      return { pageData: newPageData, selectedComponentId: state.selectedComponentId === id ? null : state.selectedComponentId, history: newHistory, historyIndex: newHistory.length - 1 };
     });
   },
 
@@ -171,225 +153,112 @@ export const usePageStore = create<PageStore>((set, get) => ({
       const newComponents = [...state.pageData.components];
       const [removed] = newComponents.splice(fromIndex, 1);
       newComponents.splice(toIndex, 0, removed);
-      
       const newPageData = { ...state.pageData, components: newComponents };
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newPageData);
-      
-      return {
-        pageData: newPageData,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
+      return { pageData: newPageData, history: newHistory, historyIndex: newHistory.length - 1 };
     });
   },
 
-  selectComponent: (id) => {
-    set({ selectedComponentId: id });
-  },
-
-  setViewMode: (mode) => {
-    set({ viewMode: mode });
-  },
-
-  setPreviewMode: (enabled) => {
-    set({ previewMode: enabled, selectedComponentId: enabled ? null : get().selectedComponentId });
-  },
-
+  selectComponent: (id) => set({ selectedComponentId: id }),
+  setViewMode: (mode) => set({ viewMode: mode }),
+  setPreviewMode: (enabled) => set({ previewMode: enabled, selectedComponentId: enabled ? null : get().selectedComponentId }),
   updateGlobalSettings: (settings) => {
     set((state) => {
-      const newPageData = {
-        ...state.pageData,
-        globalSettings: { ...state.pageData.globalSettings, ...settings },
-      };
-      
-      // タイトルが変更された場合、自動的にサフィックスを追加
+      const newPageData = { ...state.pageData, globalSettings: { ...state.pageData.globalSettings, ...settings } };
       if (settings.title && !settings.title.includes('｜スカパー！:')) {
         newPageData.globalSettings.title = `${settings.title}｜スカパー！: スポーツ＆音楽ライブ、アイドル、アニメ、ドラマ、映画など`;
       }
-      
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newPageData);
-      
-      return {
-        pageData: newPageData,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
+      return { pageData: newPageData, history: newHistory, historyIndex: newHistory.length - 1 };
     });
   },
-
   updateGlobalStyles: (styles) => {
     set((state) => {
-      const newPageData = {
-        ...state.pageData,
-        globalStyles: { ...state.pageData.globalStyles, ...styles },
-      };
+      const newPageData = { ...state.pageData, globalStyles: { ...state.pageData.globalStyles, ...styles } };
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newPageData);
-      
-      return {
-        pageData: newPageData,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
+      return { pageData: newPageData, history: newHistory, historyIndex: newHistory.length - 1 };
     });
   },
-
-  undo: () => {
-    set((state) => {
-      if (state.historyIndex > 0) {
-        return {
-          pageData: state.history[state.historyIndex - 1],
-          historyIndex: state.historyIndex - 1,
-          selectedComponentId: null,
-        };
-      }
-      return state;
-    });
-  },
-
-  redo: () => {
-    set((state) => {
-      if (state.historyIndex < state.history.length - 1) {
-        return {
-          pageData: state.history[state.historyIndex + 1],
-          historyIndex: state.historyIndex + 1,
-          selectedComponentId: null,
-        };
-      }
-      return state;
-    });
-  },
-
+  undo: () => set((state) => state.historyIndex > 0 ? { pageData: state.history[state.historyIndex - 1], historyIndex: state.historyIndex - 1, selectedComponentId: null } : state),
+  redo: () => set((state) => state.historyIndex < state.history.length - 1 ? { pageData: state.history[state.historyIndex + 1], historyIndex: state.historyIndex + 1, selectedComponentId: null } : state),
   canUndo: () => get().historyIndex > 0,
   canRedo: () => get().historyIndex < get().history.length - 1,
-
   resetPage: () => {
     set((state) => {
-      // ヘッドラインコンポーネントは必須なので残す
-      const headlineComponent = {
-        id: 'headline-default',
-        type: 'headline' as const,
-        props: {
-          text: 'タイトルを挿入',
-          usePageTitle: true
-        },
-        style: { theme: 'light' as const, colorScheme: 'blue' as const },
-      };
-      
-      const resetPageData = {
-        ...initialPageData,
-        components: [headlineComponent]
-      };
-      
-      // リセット前の状態をhistoryに追加
+      const headlineComponent = { id: 'headline-default', type: 'headline' as const, props: { text: 'タイトルを挿入', usePageTitle: true }, style: { theme: 'light' as const, colorScheme: 'blue' as const } };
+      const resetPageData = { ...initialPageData, components: [headlineComponent] };
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(resetPageData);
-      
-      return {
-        pageData: resetPageData,
-        selectedComponentId: null,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-        currentProjectName: null, // プロジェクト名もリセット
-      };
+      return { pageData: resetPageData, selectedComponentId: null, history: newHistory, historyIndex: newHistory.length - 1, currentProjectName: null };
     });
   },
+  toggleComponentLibrary: () => set((state) => ({ showComponentLibrary: !state.showComponentLibrary })),
+  togglePropertiesPanel: () => set((state) => ({ showPropertiesPanel: !state.showPropertiesPanel })),
 
-  toggleComponentLibrary: () => {
-    set((state) => ({ showComponentLibrary: !state.showComponentLibrary }));
-  },
-
-  togglePropertiesPanel: () => {
-    set((state) => ({ showPropertiesPanel: !state.showPropertiesPanel }));
-  },
-
-  // プロジェクト保存機能（共有ストレージ）
-  saveProject: (name: string, category: string) => {
+  saveProject: (name, category) => {
     const state = get();
     const now = new Date().toISOString();
-    const projectId = `project-${Date.now()}`;
-    
-    const newProject: SavedProject = {
-      id: projectId,
-      name,
-      category,
-      pageData: state.pageData,
-      createdAt: now,
-      updatedAt: now,
-    };
-
+    const newProject: SavedProject = { id: `project-${Date.now()}`, name, category, pageData: state.pageData, createdAt: now, updatedAt: now };
     const existingProjects = getSharedProjects();
-    const existingProjectIndex = existingProjects.findIndex((p: SavedProject) => p.name === name);
-    
+    const existingProjectIndex = existingProjects.findIndex(p => p.name === name);
     let updatedProjects: SavedProject[];
     if (existingProjectIndex >= 0) {
       updatedProjects = [...existingProjects];
-      updatedProjects[existingProjectIndex] = {
-        ...existingProjects[existingProjectIndex],
-        pageData: state.pageData,
-        category: category,
-        updatedAt: now,
-      };
+      updatedProjects[existingProjectIndex] = { ...existingProjects[existingProjectIndex], pageData: state.pageData, category, updatedAt: now };
     } else {
       updatedProjects = [...existingProjects, newProject];
     }
-
     saveSharedProjects(updatedProjects);
-    
     set({ currentProjectName: name });
     localStorage.setItem(CURRENT_PROJECT_KEY, name);
   },
-
-  loadProject: (projectId: string) => {
+  
+  loadProject: (projectId) => {
     const projects = getSharedProjects();
-    const project = projects.find((p: SavedProject) => p.id === projectId);
-    
+    const project = projects.find(p => p.id === projectId);
     if (project) {
-      set((state) => {
+      set(state => {
         const newHistory = state.history.slice(0, state.historyIndex + 1);
         newHistory.push(project.pageData);
-        
-        return {
-          pageData: project.pageData,
-          selectedComponentId: null,
-          history: newHistory,
-          historyIndex: newHistory.length - 1,
-          currentProjectName: project.name,
-        };
+        return { pageData: project.pageData, selectedComponentId: null, history: newHistory, historyIndex: newHistory.length - 1, currentProjectName: project.name };
       });
-      
       localStorage.setItem(CURRENT_PROJECT_KEY, project.name);
     }
   },
 
-  deleteProject: (projectId: string) => {
+  deleteProject: (projectId) => {
     const projects = getSharedProjects();
-    const updatedProjects = projects.filter((p: SavedProject) => p.id !== projectId);
+    const updatedProjects = projects.filter(p => p.id !== projectId);
     saveSharedProjects(updatedProjects);
-    
-    const deletedProject = projects.find((p: SavedProject) => p.id === projectId);
+    const deletedProject = projects.find(p => p.id === projectId);
     if (deletedProject && get().currentProjectName === deletedProject.name) {
       set({ currentProjectName: null });
       localStorage.removeItem(CURRENT_PROJECT_KEY);
     }
   },
-
-  getSavedProjects: () => {
-    return getSharedProjects();
-  },
-
-  getCurrentProjectName: () => {
-    return get().currentProjectName;
-  },
-
-  setCurrentProjectName: (name: string | null) => {
+  
+  getSavedProjects: () => getSharedProjects(),
+  getCurrentProjectName: () => get().currentProjectName,
+  setCurrentProjectName: (name) => {
     set({ currentProjectName: name });
-    if (name) {
-      localStorage.setItem(CURRENT_PROJECT_KEY, name);
+    if (name) localStorage.setItem(CURRENT_PROJECT_KEY, name);
+    else localStorage.removeItem(CURRENT_PROJECT_KEY);
+  },
+
+  restoreFromBackup: () => {
+    const backupProjects = getBackupProjects();
+    if (backupProjects.length > 0) {
+        if (confirm('バックアップからプロジェクトを復元しますか？現在のプロジェクトリストは上書きされます。')) {
+            saveSharedProjects(backupProjects); // saveSharedProjects を使ってメインとバックアップの両方を更新
+            alert('バックアップからプロジェクトを復元しました。');
+            return true;
+        }
     } else {
-      localStorage.removeItem(CURRENT_PROJECT_KEY);
+        alert('利用可能なバックアップが見つかりませんでした。');
     }
+    return false;
   },
 }));

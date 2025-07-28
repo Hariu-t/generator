@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, Save, FolderOpen, Trash2, Calendar, FileText, Tag, ChevronDown } from 'lucide-react';
+import { X, Save, FolderOpen, Trash2, Calendar, FileText, Tag, ChevronDown, ArchiveRestore } from 'lucide-react';
 import { usePageStore } from '../../store/usePageStore';
 import { SavedProject } from '../../types';
 
@@ -14,7 +14,8 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
     loadProject, 
     deleteProject, 
     getSavedProjects, 
-    getCurrentProjectName 
+    getCurrentProjectName,
+    restoreFromBackup 
   } = usePageStore();
   
   const [projectName, setProjectName] = useState('');
@@ -23,16 +24,11 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  const categories = useMemo(() => {
-    return [...new Set(savedProjects.map(p => p.category).filter(Boolean))] as string[];
-  }, [savedProjects]);
-
+  const categories = useMemo(() => [...new Set(savedProjects.map(p => p.category).filter(Boolean))] as string[], [savedProjects]);
   const projectsByCategory = useMemo(() => {
     return savedProjects.reduce<Record<string, SavedProject[]>>((acc, project) => {
       const cat = project.category || '未分類';
-      if (!acc[cat]) {
-        acc[cat] = [];
-      }
+      if (!acc[cat]) acc[cat] = [];
       acc[cat].push(project);
       return acc;
     }, {});
@@ -51,10 +47,9 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
         setProjectName('');
         setCategory('');
       }
-      // Reset expanded state when modal opens
       setExpandedCategories(new Set());
     }
-  }, [isOpen, getSavedProjects, getCurrentProjectName]);
+  }, [isOpen, getCurrentProjectName]); // getSavedProjectsを依存配列から削除
 
   const handleSave = () => {
     const finalCategory = category.trim() || '未分類';
@@ -62,46 +57,28 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
       saveProject(projectName.trim(), finalCategory);
       setSavedProjects(getSavedProjects());
       setShowSaveForm(false);
-      // After saving, expand the category of the saved project
       setExpandedCategories(prev => new Set(prev).add(finalCategory));
     }
   };
 
-  const handleLoad = (projectId: string) => {
-    loadProject(projectId);
-    onClose();
-  };
-
-  const handleDelete = (projectId: string) => {
-    if (confirm('このプロジェクトを削除してもよろしいですか？')) {
-      deleteProject(projectId);
-      setSavedProjects(getSavedProjects());
+  const handleRestore = () => {
+    if (restoreFromBackup()) {
+      onClose();
+      setTimeout(() => {
+        alert("復元が完了しました。再度プロジェクト管理を開いてください。");
+      }, 100);
     }
   };
-  
-  const toggleCategory = (category: string) => {
-    setExpandedCategories(prev => {
-        const newSet = new Set(prev);
-        if (newSet.has(category)) {
-            newSet.delete(category);
-        } else {
-            newSet.add(category);
-        }
-        return newSet;
-    });
-  };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  };
-
-  const getProjectDescription = (project: SavedProject) => {
-    return `${project.pageData.components.length}個のコンポーネント • ${project.pageData.globalSettings.title}`;
-  };
+  const handleLoad = (projectId: string) => { loadProject(projectId); onClose(); };
+  const handleDelete = (projectId: string) => { if (confirm('このプロジェクトを削除してもよろしいですか？')) { deleteProject(projectId); setSavedProjects(getSavedProjects()); } };
+  const toggleCategory = (cat: string) => setExpandedCategories(prev => { const newSet = new Set(prev); if (newSet.has(cat)) newSet.delete(cat); else newSet.add(cat); return newSet; });
+  const formatDate = (date: string) => new Date(date).toLocaleString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const getProjectDescription = (p: SavedProject) => `${p.pageData.components.length}個のコンポーネント • ${p.pageData.globalSettings.title}`;
 
   if (!isOpen) return null;
 
-  // --- Styles ---
+  // --- Styles (omitted for brevity) ---
   const overlayStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' };
   const modalStyle: React.CSSProperties = { backgroundColor: '#ffffff', borderRadius: '12px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', width: '100%', maxWidth: '800px', margin: '16px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' };
   const headerStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px', borderBottom: '1px solid #e5e7eb', flexShrink: 0 };
@@ -129,6 +106,7 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
   const iconButtonStyle: React.CSSProperties = { padding: '4px', backgroundColor: 'transparent', border: 'none', borderRadius: '4px', cursor: 'pointer' };
   const emptyStateStyle: React.CSSProperties = { textAlign: 'center', padding: '48px 24px', color: '#6b7280' };
   const emptyIconStyle: React.CSSProperties = { width: '64px', height: '64px', color: '#d1d5db', margin: '0 auto 16px' };
+  const restoreButtonStyle: React.CSSProperties = { ...secondaryButtonStyle, backgroundColor: '#fefce8', color: '#a16207', border: '1px solid #facc15' };
 
   return (
     <div style={overlayStyle}>
@@ -137,13 +115,11 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
           <div style={headerContentStyle}><FolderOpen size={24} color="#2563eb" /><h2 style={headerTitleStyle}>プロジェクト管理</h2></div>
           <button onClick={onClose} style={closeButtonStyle}><X size={20} color="#6b7280" /></button>
         </div>
-
         <div style={contentStyle}>
           <div style={actionBarStyle}>
             <div style={currentProjectStyle}><FileText size={16} /><span>現在のプロジェクト: {getCurrentProjectName() || '未保存'}</span></div>
             <button onClick={() => setShowSaveForm(!showSaveForm)} style={primaryButtonStyle}><Save size={16} />{getCurrentProjectName() ? '上書き保存' : 'プロジェクトを保存'}</button>
           </div>
-
           {showSaveForm && (
             <div style={saveFormStyle}>
               <div style={inputGroupStyle}>
@@ -157,10 +133,12 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
           )}
-
           {savedProjects.length === 0 ? (
             <div style={emptyStateStyle}>
-              <FolderOpen style={emptyIconStyle} /><h3 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '8px' }}>保存されたプロジェクトがありません</h3><p>現在のページを保存して、後で編集を再開することが出来ます。</p>
+              <FolderOpen style={emptyIconStyle} />
+              <h3 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '8px' }}>保存されたプロジェクトがありません</h3>
+              <p style={{marginBottom: '16px'}}>現在のページを保存して、後で編集を再開することが出来ます。</p>
+              <button onClick={handleRestore} style={restoreButtonStyle}><ArchiveRestore size={16} />バックアップから復元</button>
             </div>
           ) : (
             <div style={projectListContainerStyle}>
@@ -172,18 +150,18 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
                   </div>
                   {expandedCategories.has(cat) && (
                     <div style={projectGridStyle}>
-                      {projectsByCategory[cat].map((project) => (
-                        <div key={project.id} style={projectCardStyle} onClick={() => handleLoad(project.id)}>
+                      {projectsByCategory[cat].map((p) => (
+                        <div key={p.id} style={projectCardStyle} onClick={() => handleLoad(p.id)}>
                           <div style={projectHeaderStyle}>
                             <div style={{ flex: 1, overflow: 'hidden' }}>
-                              <h3 style={projectTitleStyle}>{project.name}</h3>
-                              <p style={{...projectDescStyle, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{getProjectDescription(project)}</p>
+                              <h3 style={projectTitleStyle}>{p.name}</h3>
+                              <p style={{...projectDescStyle, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{getProjectDescription(p)}</p>
                               <div style={projectMetaStyle}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={12} /><span>更新: {formatDate(project.updatedAt)}</span></div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={12} /><span>更新: {formatDate(p.updatedAt)}</span></div>
                               </div>
                             </div>
                             <div style={projectActionsStyle}>
-                              <button onClick={(e) => { e.stopPropagation(); handleDelete(project.id); }} style={iconButtonStyle}><Trash2 size={16} color="#dc2626" /></button>
+                              <button onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }} style={iconButtonStyle}><Trash2 size={16} color="#dc2626" /></button>
                             </div>
                           </div>
                         </div>
