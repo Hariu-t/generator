@@ -95,6 +95,7 @@ export interface DesignPattern {
 export interface SavedProject {
   id: string;
   name: string;
+  category?: string;
   pageData: PageData;
   createdAt: string;
   updatedAt: string;
@@ -103,6 +104,7 @@ export interface SavedProject {
 export interface ProjectMetadata {
   id: string;
   name: string;
+  category?: string;
   createdAt: string;
   updatedAt: string;
   componentCount: number;

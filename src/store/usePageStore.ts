@@ -30,7 +30,8 @@ interface PageStore {
   togglePropertiesPanel: () => void;
   
   // プロジェクト保存機能（共有ストレージ）
-  saveProject: (name: string) => void;
+  // saveProject: (name: string) => void;
+  saveProject: (name: string, category: string) => void;
   loadProject: (projectId: string) => void;
   deleteProject: (projectId: string) => void;
   getSavedProjects: () => SavedProject[];
@@ -57,16 +58,16 @@ const initialPageData: PageData = {
     directory: 'test',
   },
   globalStyles: {
-    mainColor: '#C3000F', // 赤系
-    mainColorSub: '#ffffff', // メインカラーのサブ色
-    baseColor: '#f8fafc', // ライトグレー
-    baseColorSub: '#333333', // ベースカラーのサブ色
-    base2Color: '#f1f5f9', // より薄いグレー
-    base2ColorSub: '#333333', // セカンダリベースカラーのサブ色
-    accentColor: '#E60012', // ブルー
-    accentColorSub: '#ffffff', // アクセントカラーのサブ色
-    commonColor: '#000000', // 共通テキストカラー
-    commonColorBg: '#ffffff', // 共通背景カラー
+    mainColor: '#C3000F',
+    mainColorSub: '#ffffff',
+    baseColor: '#f8fafc',
+    baseColorSub: '#333333',
+    base2Color: '#f1f5f9',
+    base2ColorSub: '#333333',
+    accentColor: '#E60012',
+    accentColorSub: '#ffffff',
+    commonColor: '#000000',
+    commonColorBg: '#ffffff',
   },
 };
 
@@ -306,43 +307,36 @@ export const usePageStore = create<PageStore>((set, get) => ({
   },
 
   // プロジェクト保存機能（共有ストレージ）
-  saveProject: (name: string) => {
+  saveProject: (name: string, category: string) => {
     const state = get();
     const now = new Date().toISOString();
-    const projectId = `project-${Date.now()}`;
-    
     const newProject: SavedProject = {
-      id: projectId,
+      id: `project-${Date.now()}`,
       name,
+      category, // Add category
       pageData: state.pageData,
       createdAt: now,
       updatedAt: now,
     };
 
-    // 既存の共有プロジェクトを取得
     const existingProjects = getSharedProjects();
-    
-    // 同じ名前のプロジェクトがある場合は更新、ない場合は新規作成
     const existingProjectIndex = existingProjects.findIndex((p: SavedProject) => p.name === name);
-    
     let updatedProjects: SavedProject[];
     if (existingProjectIndex >= 0) {
-      // 既存プロジェクトを更新
+      // Update existing project if name matches
       updatedProjects = [...existingProjects];
       updatedProjects[existingProjectIndex] = {
-        ...existingProjects[existingProjectIndex],
+        ...updatedProjects[existingProjectIndex],
         pageData: state.pageData,
+        category: category, // Update category as well
         updatedAt: now,
       };
     } else {
-      // 新規プロジェクトを追加
+      // Add new project
       updatedProjects = [...existingProjects, newProject];
     }
 
-    // 共有ストレージに保存
     saveSharedProjects(updatedProjects);
-    
-    // 現在のプロジェクト名を設定
     set({ currentProjectName: name });
     localStorage.setItem(CURRENT_PROJECT_KEY, name);
   },
