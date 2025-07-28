@@ -30,7 +30,6 @@ interface PageStore {
   togglePropertiesPanel: () => void;
   
   // プロジェクト保存機能（共有ストレージ）
-  // saveProject: (name: string) => void;
   saveProject: (name: string, category: string) => void;
   loadProject: (projectId: string) => void;
   deleteProject: (projectId: string) => void;
@@ -310,10 +309,12 @@ export const usePageStore = create<PageStore>((set, get) => ({
   saveProject: (name: string, category: string) => {
     const state = get();
     const now = new Date().toISOString();
+    const projectId = `project-${Date.now()}`;
+    
     const newProject: SavedProject = {
-      id: `project-${Date.now()}`,
+      id: projectId,
       name,
-      category, // Add category
+      category,
       pageData: state.pageData,
       createdAt: now,
       updatedAt: now,
@@ -321,22 +322,22 @@ export const usePageStore = create<PageStore>((set, get) => ({
 
     const existingProjects = getSharedProjects();
     const existingProjectIndex = existingProjects.findIndex((p: SavedProject) => p.name === name);
+    
     let updatedProjects: SavedProject[];
     if (existingProjectIndex >= 0) {
-      // Update existing project if name matches
       updatedProjects = [...existingProjects];
       updatedProjects[existingProjectIndex] = {
-        ...updatedProjects[existingProjectIndex],
+        ...existingProjects[existingProjectIndex],
         pageData: state.pageData,
-        category: category, // Update category as well
+        category: category,
         updatedAt: now,
       };
     } else {
-      // Add new project
       updatedProjects = [...existingProjects, newProject];
     }
 
     saveSharedProjects(updatedProjects);
+    
     set({ currentProjectName: name });
     localStorage.setItem(CURRENT_PROJECT_KEY, name);
   },
@@ -347,7 +348,6 @@ export const usePageStore = create<PageStore>((set, get) => ({
     
     if (project) {
       set((state) => {
-        // 現在の状態をhistoryに追加してからロード
         const newHistory = state.history.slice(0, state.historyIndex + 1);
         newHistory.push(project.pageData);
         
@@ -369,7 +369,6 @@ export const usePageStore = create<PageStore>((set, get) => ({
     const updatedProjects = projects.filter((p: SavedProject) => p.id !== projectId);
     saveSharedProjects(updatedProjects);
     
-    // 削除したプロジェクトが現在のプロジェクトの場合、現在のプロジェクト名をクリア
     const deletedProject = projects.find((p: SavedProject) => p.id === projectId);
     if (deletedProject && get().currentProjectName === deletedProject.name) {
       set({ currentProjectName: null });
