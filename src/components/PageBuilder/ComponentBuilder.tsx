@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 interface PropField {
   id: string;
   name: string;
-  type: 'text' | 'textarea' | 'number' | 'boolean' | 'image' | 'array' | 'object';
+  type: 'text' | 'textarea' | 'link' | 'image' | 'color' | 'backgroundColor' | 'array' | 'visibility';
   label: string;
   defaultValue: any;
   description?: string;
@@ -66,7 +66,19 @@ const ComponentBuilder: React.FC = () => {
 
     setPropFields([...propFields, newField]);
 
-    const dataPropAttr = ` data-prop="${newPropName}" data-bind-type="${newPropType === 'image' ? 'src' : 'text'}"`;
+    const getBindType = (type: PropField['type']) => {
+      switch (type) {
+        case 'image': return 'src';
+        case 'link': return 'href';
+        case 'color': return 'color';
+        case 'backgroundColor': return 'background-color';
+        case 'visibility': return 'visibility';
+        case 'array': return 'array';
+        default: return 'text';
+      }
+    };
+
+    const dataPropAttr = ` data-prop="${newPropName}" data-bind-type="${getBindType(newPropType)}"`;
     const beforeText = htmlCode.substring(0, selectionRange.start);
     const afterText = htmlCode.substring(selectionRange.end);
 
@@ -497,13 +509,14 @@ export default ${componentName};`;
                   value={newPropType}
                   onChange={(e) => setNewPropType(e.target.value as PropField['type'])}
                 >
-                  <option value="text">テキスト</option>
-                  <option value="textarea">テキストエリア</option>
-                  <option value="number">数値</option>
-                  <option value="boolean">真偽値</option>
-                  <option value="image">画像URL</option>
-                  <option value="array">配列</option>
-                  <option value="object">オブジェクト</option>
+                  <option value="text">① テキスト編集</option>
+                  <option value="textarea">① テキスト編集（複数行）</option>
+                  <option value="link">② リンク編集</option>
+                  <option value="image">③ 画像編集（D&amp;D対応）</option>
+                  <option value="color">④ テキストカラー</option>
+                  <option value="backgroundColor">④ 背景カラー</option>
+                  <option value="array">⑤ 配列（li要素など）</option>
+                  <option value="visibility">⑥ 表示/非表示</option>
                 </select>
               </div>
             </div>

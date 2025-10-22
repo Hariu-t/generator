@@ -454,6 +454,183 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
     );
   };
 
+  const renderGenericEditor = () => {
+    return (
+      <div style={styles.container}>
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>コンテンツ</h3>
+
+          {Object.entries(component.props).map(([key, value]) => {
+            if (key === 'id') return null;
+
+            return (
+              <div key={key} style={styles.field}>
+                <label style={styles.label}>{key}</label>
+                {renderFieldByType(key, value)}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderFieldByType = (key: string, value: any) => {
+    if (typeof value === 'boolean') {
+      return (
+        <label style={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            checked={value}
+            onChange={(e) => handlePropChange(key, e.target.checked)}
+            style={styles.checkbox}
+          />
+          有効にする
+        </label>
+      );
+    }
+
+    if (typeof value === 'string' && value.match(/^https?:\/\//)) {
+      return (
+        <>
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => handlePropChange(key, e.target.value)}
+            style={styles.input}
+            placeholder="https://..."
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+          />
+          {key.toLowerCase().includes('image') && (
+            <ImageDropZone
+              currentImage={value}
+              onImageUpload={(result: ImageUploadResult) => {
+                handlePropChange(key, result.fullPath);
+              }}
+              fieldLabel={key}
+            />
+          )}
+        </>
+      );
+    }
+
+    if (typeof value === 'string' && value.startsWith('#')) {
+      return (
+        <div style={styles.colorInputContainer}>
+          <input
+            type="color"
+            value={value}
+            onChange={(e) => handlePropChange(key, e.target.value)}
+            style={styles.colorInput}
+          />
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => handlePropChange(key, e.target.value)}
+            style={styles.colorValue}
+            placeholder="#000000"
+          />
+        </div>
+      );
+    }
+
+    if (Array.isArray(value)) {
+      return (
+        <div>
+          {value.map((item, index) => (
+            <div key={index} style={styles.itemCard}>
+              <div style={styles.itemHeader}>
+                <span style={styles.itemIndex}>項目 {index + 1}</span>
+                {value.length > 1 && (
+                  <button
+                    onClick={() => {
+                      const newArray = value.filter((_, i) => i !== index);
+                      handlePropChange(key, newArray);
+                    }}
+                    style={styles.deleteButton}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+              {typeof item === 'object' ? (
+                Object.entries(item).map(([itemKey, itemValue]) => (
+                  <div key={itemKey} style={{ ...styles.field, marginBottom: '8px' }}>
+                    <label style={{ ...styles.label, fontSize: '11px' }}>{itemKey}</label>
+                    <input
+                      type="text"
+                      value={itemValue as string}
+                      onChange={(e) => {
+                        const newArray = [...value];
+                        newArray[index] = { ...newArray[index], [itemKey]: e.target.value };
+                        handlePropChange(key, newArray);
+                      }}
+                      style={styles.input}
+                      onFocus={handleFocus}
+                      onBlur={handleBlur}
+                    />
+                  </div>
+                ))
+              ) : (
+                <input
+                  type="text"
+                  value={item}
+                  onChange={(e) => {
+                    const newArray = [...value];
+                    newArray[index] = e.target.value;
+                    handlePropChange(key, newArray);
+                  }}
+                  style={styles.input}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                />
+              )}
+            </div>
+          ))}
+          <button
+            onClick={() => {
+              const newItem = typeof value[0] === 'object' ? {} : '';
+              handlePropChange(key, [...value, newItem]);
+            }}
+            style={styles.addButton}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+          >
+            <Plus size={14} style={{ marginRight: '4px' }} />
+            追加
+          </button>
+        </div>
+      );
+    }
+
+    if (typeof value === 'string' && value.length > 50) {
+      return (
+        <textarea
+          value={value}
+          onChange={(e) => handlePropChange(key, e.target.value)}
+          rows={4}
+          style={styles.textarea}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+        />
+      );
+    }
+
+    return (
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => handlePropChange(key, e.target.value)}
+        style={styles.input}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+      />
+    );
+  };
+
   const renderContentEditor = () => {
     switch (component.type) {
       case 'headline':
@@ -469,11 +646,7 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
       case 'app-intro':
         return renderAppIntroEditor();
       default:
-        return (
-          <div style={styles.container}>
-            <p style={{ fontSize: '14px', color: '#6b7280' }}>このコンポーネントタイプのエディターはありません。</p>
-          </div>
-        );
+        return renderGenericEditor();
     }
   };
 
