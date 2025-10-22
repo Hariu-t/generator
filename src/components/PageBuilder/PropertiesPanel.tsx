@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import { X, Settings, Edit, Palette } from 'lucide-react';
 import { usePageStore } from '../../store/usePageStore';
-import KVEditor from '../Editors/KVEditor';
-import FAQEditor from '../Editors/FAQEditor';
-import FooterEditor from '../Editors/FooterEditor';
-import PricingEditor from '../Editors/PricingEditor';
-import AppIntroEditor from '../Editors/AppIntroEditor';
-import StyleEditor from '../Editors/StyleEditor';
-import HeadlineEditor from '../Editors/HeadlineEditor';
+import UnifiedEditor from '../Editors/UnifiedEditor';
 
 const PropertiesPanel: React.FC = () => {
   const { selectedComponentId, pageData, selectComponent } = usePageStore();
@@ -164,26 +158,6 @@ const PropertiesPanel: React.FC = () => {
     );
   }
 
-  const renderContentEditor = () => {
-    switch (selectedComponent.type) {
-      case 'kv':
-        return <KVEditor component={selectedComponent} />;
-      case 'test':
-        return <FAQEditor component={selectedComponent} />;
-      case 'footer':
-        return <FooterEditor component={selectedComponent} />;
-      case 'pricing':
-        return <PricingEditor component={selectedComponent} />;
-      case 'app-intro':
-        return <AppIntroEditor component={selectedComponent} />;
-      default:
-        return (
-          <div style={{ padding: '16px' }}>
-            <p style={{ fontSize: '14px', color: '#6b7280' }}>このコンポーネントタイプのエディターはありません。</p>
-          </div>
-        );
-    }
-  };
 
   const getComponentDisplayName = (type: string) => {
     switch (type) {
@@ -279,9 +253,9 @@ const PropertiesPanel: React.FC = () => {
           </button>
         </div>
       </div>
-      
+
       <div style={contentStyle}>
-        {activeTab === 'content' ? renderContentEditor() : <StyleEditor component={selectedComponent} />}
+        <UnifiedEditor component={selectedComponent} mode={activeTab} />
       </div>
     </div>
   );

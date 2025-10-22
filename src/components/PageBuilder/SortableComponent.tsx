@@ -135,7 +135,6 @@ const SortableComponent: React.FC<SortableComponentProps> = ({
   return (
     <div
       ref={setNodeRef}
-      style={containerStyle}
       onClick={handleSelect}
       style={{...containerStyle, cursor: isHeadline ? 'default' : 'pointer'}}
       data-component-id={component.id}
