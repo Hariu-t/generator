@@ -5,11 +5,12 @@ import { supabase } from '../../lib/supabase';
 interface PropField {
   id: string;
   name: string;
-  type: 'text' | 'textarea' | 'link' | 'image' | 'color' | 'backgroundColor' | 'array' | 'visibility';
+  type: 'text' | 'textarea' | 'link' | 'image' | 'color' | 'backgroundColor' | 'colorBoth' | 'array' | 'visibility';
   label: string;
   defaultValue: any;
   description?: string;
   position?: { start: number; end: number };
+  elementPath?: string;
 }
 
 const ComponentBuilder: React.FC = () => {
@@ -54,14 +55,31 @@ const ComponentBuilder: React.FC = () => {
   const addPropertyFromSelection = () => {
     if (!selectedText || !selectionRange || !newPropName) return;
 
+    const getDefaultValue = (type: PropField['type'], text: string) => {
+      switch (type) {
+        case 'colorBoth':
+          return { color: '#000000', backgroundColor: '#ffffff' };
+        case 'color':
+        case 'backgroundColor':
+          return text.startsWith('#') ? text : '#000000';
+        case 'visibility':
+          return true;
+        case 'array':
+          return [text];
+        default:
+          return text;
+      }
+    };
+
     const newField: PropField = {
       id: `prop_${Date.now()}`,
       name: newPropName,
       type: newPropType,
       label: newPropName.charAt(0).toUpperCase() + newPropName.slice(1),
-      defaultValue: selectedText,
+      defaultValue: getDefaultValue(newPropType, selectedText),
       description: '',
       position: selectionRange,
+      elementPath: elementPath,
     };
 
     setPropFields([...propFields, newField]);
@@ -72,15 +90,29 @@ const ComponentBuilder: React.FC = () => {
         case 'link': return 'href';
         case 'color': return 'color';
         case 'backgroundColor': return 'background-color';
+        case 'colorBoth': return 'color-both';
         case 'visibility': return 'visibility';
         case 'array': return 'array';
         default: return 'text';
       }
     };
 
-    const dataPropAttr = ` data-prop="${newPropName}" data-bind-type="${getBindType(newPropType)}"`;
     const beforeText = htmlCode.substring(0, selectionRange.start);
     const afterText = htmlCode.substring(selectionRange.end);
+
+    const findElementTag = (beforeText: string) => {
+      const tagMatch = beforeText.match(/<([a-zA-Z][a-zA-Z0-9]*)(?:\s[^>]*)?>(?:(?!<\1).)*$/s);
+      if (tagMatch) {
+        const fullTagMatch = beforeText.match(/<([a-zA-Z][a-zA-Z0-9]*)([^>]*)>(?:(?!<\1).)*$/);
+        return fullTagMatch ? fullTagMatch[0] : null;
+      }
+      return null;
+    };
+
+    const elementTag = findElementTag(beforeText);
+    const elementPath = elementTag || `element-${Date.now()}`;
+
+    const dataPropAttr = ` data-prop="${newPropName}" data-bind-type="${getBindType(newPropType)}"`;
 
     const updatedHtml = beforeText + selectedText + afterText;
 
@@ -361,7 +393,7 @@ export default ${componentName};`;
             </div>
 
             <p style={styles.helpText}>
-              コード内のテキストを選択して、プロパティとして定義してください。
+              コード内のテキストを選択して、プロパティとして定義してください。同じ要素に複数のプロパティを定義できます（例：テキスト + カラー）。
             </p>
 
             {propFields.length === 0 ? (
@@ -373,19 +405,36 @@ export default ${componentName};`;
               </div>
             ) : (
               <div style={styles.propsList}>
-                {propFields.map((field) => (
-                  <div key={field.id} style={styles.propCard}>
-                    <div style={styles.propCardHeader}>
-                      <div style={styles.propBadge}>{field.type}</div>
-                      <span style={styles.propName}>data-prop="{field.name}"</span>
-                      <button
-                        style={styles.deleteButton}
-                        onClick={() => removePropField(field.id)}
-                        title="削除"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                {propFields.map((field) => {
+                  const sameElementProps = propFields.filter(
+                    p => p.elementPath === field.elementPath && p.id !== field.id
+                  );
+
+                  return (
+                    <div key={field.id} style={styles.propCard}>
+                      <div style={styles.propCardHeader}>
+                        <div style={styles.propBadge}>{field.type}</div>
+                        <span style={styles.propName}>data-prop="{field.name}"</span>
+                        <button
+                          style={styles.deleteButton}
+                          onClick={() => removePropField(field.id)}
+                          title="削除"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      {sameElementProps.length > 0 && (
+                        <div style={{
+                          padding: '8px',
+                          backgroundColor: '#e0f2fe',
+                          borderRadius: '4px',
+                          marginBottom: '12px',
+                          fontSize: '11px',
+                          color: '#0369a1',
+                        }}>
+                          <strong>同じ要素:</strong> {sameElementProps.map(p => p.name).join(', ')}
+                        </div>
+                      )}
                     <div style={styles.propCardBody}>
                       <div style={styles.propFieldRow}>
                         <div style={styles.propFieldHalf}>
@@ -409,16 +458,28 @@ export default ${componentName};`;
                       </div>
                       <div style={styles.propField}>
                         <label style={styles.propLabel}>デフォルト値</label>
-                        <input
-                          type="text"
-                          style={styles.propInput}
-                          value={field.defaultValue}
-                          onChange={(e) => updatePropField(field.id, { defaultValue: e.target.value })}
-                        />
+                        {field.type === 'colorBoth' ? (
+                          <div style={{ fontSize: '12px', color: '#6b7280', padding: '8px', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
+                            テキストカラー: {(field.defaultValue as any).color || '#000000'}<br />
+                            背景カラー: {(field.defaultValue as any).backgroundColor || '#ffffff'}
+                          </div>
+                        ) : field.type === 'array' ? (
+                          <div style={{ fontSize: '12px', color: '#6b7280', padding: '8px', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
+                            配列 ({Array.isArray(field.defaultValue) ? field.defaultValue.length : 0}個の要素)
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            style={styles.propInput}
+                            value={typeof field.defaultValue === 'object' ? JSON.stringify(field.defaultValue) : field.defaultValue}
+                            onChange={(e) => updatePropField(field.id, { defaultValue: e.target.value })}
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -513,8 +574,9 @@ export default ${componentName};`;
                   <option value="textarea">① テキスト編集（複数行）</option>
                   <option value="link">② リンク編集</option>
                   <option value="image">③ 画像編集（D&amp;D対応）</option>
-                  <option value="color">④ テキストカラー</option>
-                  <option value="backgroundColor">④ 背景カラー</option>
+                  <option value="color">④ テキストカラーのみ</option>
+                  <option value="backgroundColor">④ 背景カラーのみ</option>
+                  <option value="colorBoth">④ テキスト＆背景カラー両方</option>
                   <option value="array">⑤ 配列（li要素など）</option>
                   <option value="visibility">⑥ 表示/非表示</option>
                 </select>

@@ -515,6 +515,53 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
       );
     }
 
+    if (typeof value === 'object' && value !== null && ('color' in value || 'backgroundColor' in value)) {
+      return (
+        <div>
+          {value.color !== undefined && (
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ ...styles.label, fontSize: '11px' }}>テキストカラー</label>
+              <div style={styles.colorInputContainer}>
+                <input
+                  type="color"
+                  value={value.color}
+                  onChange={(e) => handlePropChange(key, { ...value, color: e.target.value })}
+                  style={styles.colorInput}
+                />
+                <input
+                  type="text"
+                  value={value.color}
+                  onChange={(e) => handlePropChange(key, { ...value, color: e.target.value })}
+                  style={styles.colorValue}
+                  placeholder="#000000"
+                />
+              </div>
+            </div>
+          )}
+          {value.backgroundColor !== undefined && (
+            <div>
+              <label style={{ ...styles.label, fontSize: '11px' }}>背景カラー</label>
+              <div style={styles.colorInputContainer}>
+                <input
+                  type="color"
+                  value={value.backgroundColor}
+                  onChange={(e) => handlePropChange(key, { ...value, backgroundColor: e.target.value })}
+                  style={styles.colorInput}
+                />
+                <input
+                  type="text"
+                  value={value.backgroundColor}
+                  onChange={(e) => handlePropChange(key, { ...value, backgroundColor: e.target.value })}
+                  style={styles.colorValue}
+                  placeholder="#000000"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     if (typeof value === 'string' && value.startsWith('#')) {
       return (
         <div style={styles.colorInputContainer}>
