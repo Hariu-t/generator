@@ -490,6 +490,75 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
       );
     }
 
+    if (typeof value === 'object' && value !== null && 'url' in value && 'text' in value) {
+      return (
+        <div>
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ ...styles.label, fontSize: '11px' }}>リンクURL</label>
+            <input
+              type="text"
+              value={value.url}
+              onChange={(e) => handlePropChange(key, { ...value, url: e.target.value })}
+              style={styles.input}
+              placeholder="https://example.com"
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+            />
+          </div>
+          <div>
+            <label style={{ ...styles.label, fontSize: '11px' }}>リンクテキスト</label>
+            <input
+              type="text"
+              value={value.text}
+              onChange={(e) => handlePropChange(key, { ...value, text: e.target.value })}
+              style={styles.input}
+              placeholder="クリックしてください"
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    if (typeof value === 'object' && value !== null && 'src' in value && 'alt' in value) {
+      return (
+        <div>
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ ...styles.label, fontSize: '11px' }}>画像パス</label>
+            <input
+              type="text"
+              value={value.src}
+              onChange={(e) => handlePropChange(key, { ...value, src: e.target.value })}
+              style={styles.input}
+              placeholder="/path/to/image.jpg"
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+            />
+            <ImageDropZone
+              currentImage={value.src}
+              onImageUpload={(result: ImageUploadResult) => {
+                handlePropChange(key, { ...value, src: result.fullPath });
+              }}
+              fieldLabel="画像"
+            />
+          </div>
+          <div>
+            <label style={{ ...styles.label, fontSize: '11px' }}>ALTテキスト</label>
+            <input
+              type="text"
+              value={value.alt}
+              onChange={(e) => handlePropChange(key, { ...value, alt: e.target.value })}
+              style={styles.input}
+              placeholder="画像の説明"
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+            />
+          </div>
+        </div>
+      );
+    }
+
     if (typeof value === 'string' && value.match(/^https?:\/\//)) {
       return (
         <>

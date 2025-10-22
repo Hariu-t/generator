@@ -91,6 +91,20 @@ const ComponentBuilder: React.FC = () => {
           return true;
         case 'array':
           return [text];
+        case 'link': {
+          const fullElement = selectedText.match(/<a[^>]*href=["']([^"']+)["'][^>]*>([^<]+)<\/a>/i);
+          if (fullElement) {
+            return { url: fullElement[1] || '', text: fullElement[2] || '' };
+          }
+          return { url: text.match(/^https?:\/\//) ? text : '', text: text.match(/^https?:\/\//) ? '' : text };
+        }
+        case 'image': {
+          const fullElement = selectedText.match(/<img[^>]*src=["']([^"']+)["'][^>]*alt=["']([^"']+)["'][^>]*>/i);
+          if (fullElement) {
+            return { src: fullElement[1] || '', alt: fullElement[2] || '' };
+          }
+          return { src: text, alt: '' };
+        }
         default:
           return text;
       }
@@ -111,8 +125,8 @@ const ComponentBuilder: React.FC = () => {
 
     const getBindType = (type: PropField['type']) => {
       switch (type) {
-        case 'image': return 'src';
-        case 'link': return 'href';
+        case 'image': return 'image-full';
+        case 'link': return 'link-full';
         case 'color': return 'color';
         case 'backgroundColor': return 'background-color';
         case 'colorBoth': return 'color-both';
@@ -383,8 +397,8 @@ export default ${componentName};`;
             </p>
             <ul style={{ fontSize: '12px', color: '#0369a1', margin: 0, paddingLeft: '20px', lineHeight: '1.6' }}>
               <li><strong>テキスト編集:</strong> テキスト部分のみ選択（例: "タイトル"）</li>
-              <li><strong>リンク編集:</strong> URL部分を選択（例: "https://example.com"）</li>
-              <li><strong>画像編集:</strong> 画像パスを選択（例: "/image.jpg"）</li>
+              <li><strong>リンク編集:</strong> aタグ全体を選択（例: "&lt;a href=\"...\"&gt;テキスト&lt;/a&gt;"）→ URL・テキスト両方編集可能</li>
+              <li><strong>画像編集:</strong> imgタグ全体を選択（例: "&lt;img src=\"...\" alt=\"...\" /&gt;"）→ パス・ALT両方編集可能</li>
               <li><strong>スタイル編集（カラーなど）:</strong> 要素タグ全体を選択（例: "&lt;h3&gt;テキスト&lt;/h3&gt;"）</li>
               <li><strong>配列編集:</strong> 繰り返し要素の親を選択（例: "&lt;ul&gt;...&lt;/ul&gt;"）</li>
             </ul>
@@ -491,6 +505,16 @@ export default ${componentName};`;
                           <div style={{ fontSize: '12px', color: '#6b7280', padding: '8px', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
                             テキストカラー: {(field.defaultValue as any).color || '#000000'}<br />
                             背景カラー: {(field.defaultValue as any).backgroundColor || '#ffffff'}
+                          </div>
+                        ) : field.type === 'link' ? (
+                          <div style={{ fontSize: '12px', color: '#6b7280', padding: '8px', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
+                            URL: {(field.defaultValue as any).url || ''}<br />
+                            テキスト: {(field.defaultValue as any).text || ''}
+                          </div>
+                        ) : field.type === 'image' ? (
+                          <div style={{ fontSize: '12px', color: '#6b7280', padding: '8px', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
+                            画像パス: {(field.defaultValue as any).src || ''}<br />
+                            ALT: {(field.defaultValue as any).alt || ''}
                           </div>
                         ) : field.type === 'array' ? (
                           <div style={{ fontSize: '12px', color: '#6b7280', padding: '8px', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
