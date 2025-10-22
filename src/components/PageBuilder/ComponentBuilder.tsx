@@ -44,16 +44,41 @@ const ComponentBuilder: React.FC = () => {
       setSelectionRange({ start, end });
       setShowPropModal(true);
 
-      const propName = selected
-        .replace(/[^a-zA-Z0-9]/g, '')
-        .toLowerCase()
-        .substring(0, 20);
-      setNewPropName(propName || 'prop');
+      const isHtmlTag = selected.match(/^<[^>]+>.*<\/[^>]+>$/);
+      const isStyleAttribute = selected.includes('style=') || selected.includes('class=');
+
+      let suggestedName = '';
+      if (isHtmlTag) {
+        const tagMatch = selected.match(/^<([a-zA-Z][a-zA-Z0-9]*)/);
+        suggestedName = tagMatch ? `${tagMatch[1]}Style` : 'elementStyle';
+      } else {
+        suggestedName = selected
+          .replace(/[^a-zA-Z0-9]/g, '')
+          .toLowerCase()
+          .substring(0, 20);
+      }
+
+      setNewPropName(suggestedName || 'prop');
     }
   };
 
   const addPropertyFromSelection = () => {
     if (!selectedText || !selectionRange || !newPropName) return;
+
+    const beforeText = htmlCode.substring(0, selectionRange.start);
+    const afterText = htmlCode.substring(selectionRange.end);
+
+    const findElementTag = (beforeText: string) => {
+      const tagMatch = beforeText.match(/<([a-zA-Z][a-zA-Z0-9]*)(?:\s[^>]*)?>(?:(?!<\1).)*$/s);
+      if (tagMatch) {
+        const fullTagMatch = beforeText.match(/<([a-zA-Z][a-zA-Z0-9]*)([^>]*)>(?:(?!<\1).)*$/);
+        return fullTagMatch ? fullTagMatch[0] : null;
+      }
+      return null;
+    };
+
+    const elementTag = findElementTag(beforeText);
+    const elementPath = elementTag || `element-${Date.now()}`;
 
     const getDefaultValue = (type: PropField['type'], text: string) => {
       switch (type) {
@@ -96,21 +121,6 @@ const ComponentBuilder: React.FC = () => {
         default: return 'text';
       }
     };
-
-    const beforeText = htmlCode.substring(0, selectionRange.start);
-    const afterText = htmlCode.substring(selectionRange.end);
-
-    const findElementTag = (beforeText: string) => {
-      const tagMatch = beforeText.match(/<([a-zA-Z][a-zA-Z0-9]*)(?:\s[^>]*)?>(?:(?!<\1).)*$/s);
-      if (tagMatch) {
-        const fullTagMatch = beforeText.match(/<([a-zA-Z][a-zA-Z0-9]*)([^>]*)>(?:(?!<\1).)*$/);
-        return fullTagMatch ? fullTagMatch[0] : null;
-      }
-      return null;
-    };
-
-    const elementTag = findElementTag(beforeText);
-    const elementPath = elementTag || `element-${Date.now()}`;
 
     const dataPropAttr = ` data-prop="${newPropName}" data-bind-type="${getBindType(newPropType)}"`;
 
@@ -361,6 +371,25 @@ export default ${componentName};`;
             既存のHTMLコードを貼り付けてください。その後、編集可能にしたいテキストを選択すると、プロパティとして定義できます。
           </p>
 
+          <div style={{
+            padding: '12px',
+            backgroundColor: '#f0f9ff',
+            borderRadius: '6px',
+            border: '1px solid #bae6fd',
+            marginBottom: '12px',
+          }}>
+            <p style={{ fontSize: '13px', color: '#0369a1', margin: '0 0 8px 0', fontWeight: 'bold' }}>
+              💡 選択方法ガイド
+            </p>
+            <ul style={{ fontSize: '12px', color: '#0369a1', margin: 0, paddingLeft: '20px', lineHeight: '1.6' }}>
+              <li><strong>テキスト編集:</strong> テキスト部分のみ選択（例: "タイトル"）</li>
+              <li><strong>リンク編集:</strong> URL部分を選択（例: "https://example.com"）</li>
+              <li><strong>画像編集:</strong> 画像パスを選択（例: "/image.jpg"）</li>
+              <li><strong>スタイル編集（カラーなど）:</strong> 要素タグ全体を選択（例: "&lt;h3&gt;テキスト&lt;/h3&gt;"）</li>
+              <li><strong>配列編集:</strong> 繰り返し要素の親を選択（例: "&lt;ul&gt;...&lt;/ul&gt;"）</li>
+            </ul>
+          </div>
+
           <textarea
             ref={textareaRef}
             style={styles.codeTextarea}
@@ -580,6 +609,11 @@ export default ${componentName};`;
                   <option value="array">⑤ 配列（li要素など）</option>
                   <option value="visibility">⑥ 表示/非表示</option>
                 </select>
+                <p style={styles.modalHint}>
+                  {selectedText.match(/^<[^>]+>.*<\/[^>]+>$/)
+                    ? '✓ 要素タグ全体が選択されています（スタイル編集に最適）'
+                    : 'ヒント: スタイル編集には要素タグ全体を選択してください（例: <h3>...</h3>）'}
+                </p>
               </div>
             </div>
 
