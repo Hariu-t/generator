@@ -1,28 +1,65 @@
-import React, { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, RefreshCw } from 'lucide-react';
 import { ComponentTemplate } from '../../types';
 import { componentTemplates } from '../../data/componentTemplates';
 import { usePageStore } from '../../store/usePageStore';
+import { supabase } from '../../lib/supabase';
 
 const ComponentLibrary: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [customTemplates, setCustomTemplates] = useState<ComponentTemplate[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const { addComponent, pageData } = usePageStore();
 
-  const categories = ['All', ...Array.from(new Set(componentTemplates.map(t => t.category)))];
+  const allTemplates = [...componentTemplates, ...customTemplates];
+  const categories = ['All', ...Array.from(new Set(allTemplates.map(t => t.category)))];
+
+  useEffect(() => {
+    loadCustomTemplates();
+  }, []);
+
+  const loadCustomTemplates = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('component_templates')
+        .select('*')
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      if (data) {
+        const templates: ComponentTemplate[] = data.map(item => ({
+          id: item.id,
+          name: item.display_name,
+          description: item.description || '',
+          category: item.category,
+          type: item.name.replace('Component', '').toLowerCase(),
+          thumbnail: item.thumbnail_url || '',
+          defaultProps: item.default_props || {},
+        }));
+        setCustomTemplates(templates);
+      }
+    } catch (error) {
+      console.error('Error loading custom templates:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // 使用済みコンポーネントIDを取得
   const usedComponentIds = pageData.components.map(component => {
     // コンポーネントIDから元のテンプレートIDを推定
     const componentType = component.type;
-    const matchingTemplate = componentTemplates.find(template => 
-      template.type === componentType && 
+    const matchingTemplate = allTemplates.find(template =>
+      template.type === componentType &&
       JSON.stringify(template.defaultProps) === JSON.stringify(component.props)
     );
     return matchingTemplate?.id || null;
   }).filter(Boolean);
 
-  const filteredTemplates = componentTemplates.filter(template => {
+  const filteredTemplates = allTemplates.filter(template => {
     const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          template.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || template.category === selectedCategory;
@@ -230,8 +267,29 @@ const ComponentLibrary: React.FC = () => {
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
-        <h2 style={titleStyle}>コンポーネント</h2>
-        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h2 style={{ ...titleStyle, marginBottom: 0 }}>コンポーネント</h2>
+          <button
+            onClick={loadCustomTemplates}
+            disabled={isLoading}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: isLoading ? '#e5e7eb' : '#f3f4f6',
+              border: '1px solid #d1d5db',
+              borderRadius: '6px',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '12px',
+            }}
+            title="カスタムコンポーネントを更新"
+          >
+            <RefreshCw size={14} className={isLoading ? 'spin' : ''} />
+            {isLoading ? '読込中...' : '更新'}
+          </button>
+        </div>
+
         <div style={searchContainerStyle}>
           <Search style={searchIconStyle} size={16} />
           <input

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 // アイコンライブラリ インポート
-import { 
-  Eye, 
-  EyeOff, 
-  Monitor, 
-  Tablet, 
-  Smartphone, 
-  Undo, 
-  Redo, 
+import {
+  Eye,
+  EyeOff,
+  Monitor,
+  Tablet,
+  Smartphone,
+  Undo,
+  Redo,
   Download,
   RefreshCw,
   Settings,
@@ -16,7 +16,8 @@ import {
   PanelRight,
   PanelLeftClose,
   PanelRightClose,
-  FolderOpen
+  FolderOpen,
+  PlusCircle
 } from 'lucide-react';
 import { usePageStore } from '../../store/usePageStore';
 import { prepareImagesForExport } from '../../utils/imageHandler';
@@ -24,6 +25,7 @@ import { generateGlobalStylesCSS } from '../../utils/globalStylesHelper';
 import { generateComponentHTML } from '../../utils/htmlGenerator';
 import GlobalSettingsPanel from './GlobalSettingsPanel';
 import ProjectManager from './ProjectManager';
+import ComponentBuilder from './ComponentBuilder';
 
 const Toolbar: React.FC = () => {
   const { 
@@ -46,6 +48,7 @@ const Toolbar: React.FC = () => {
 
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
   const [showProjectManager, setShowProjectManager] = useState(false);
+  const [showComponentBuilder, setShowComponentBuilder] = useState(false);
 
   const exportHTML = () => {
     // Generate actual HTML for all components
@@ -610,6 +613,21 @@ HTMLファイルには、ページ設定で設定した共通スタイル（main
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
+              onClick={() => setShowComponentBuilder(true)}
+              style={{ ...secondaryButtonStyle, backgroundColor: '#10b981', color: '#ffffff' }}
+              title="コンポーネント作成"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#059669';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#10b981';
+              }}
+            >
+              <PlusCircle size={16} />
+              コンポーネント作成
+            </button>
+
+            <button
               onClick={() => setShowProjectManager(true)}
               style={secondaryButtonStyle}
               title="プロジェクト管理"
@@ -693,15 +711,73 @@ HTMLファイルには、ページ設定で設定した共通スタイル（main
         </div>
       </div>
 
-      <GlobalSettingsPanel 
+      <GlobalSettingsPanel
         isOpen={showGlobalSettings}
         onClose={() => setShowGlobalSettings(false)}
       />
 
-      <ProjectManager 
+      <ProjectManager
         isOpen={showProjectManager}
         onClose={() => setShowProjectManager(false)}
       />
+
+      {showComponentBuilder && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => setShowComponentBuilder(false)}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              maxWidth: '1400px',
+              width: '90%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '20px 24px',
+                borderBottom: '1px solid #e5e7eb',
+              }}
+            >
+              <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>
+                コンポーネントビルダー
+              </h2>
+              <button
+                onClick={() => setShowComponentBuilder(false)}
+                style={{
+                  padding: '8px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <ComponentBuilder />
+          </div>
+        </div>
+      )}
     </>
   );
 };
