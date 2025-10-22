@@ -87,6 +87,85 @@ export const useDataPropBinding = ({ props, containerRef }: DataPropBindingOptio
           }
           break;
 
+        case 'color':
+          if (element instanceof HTMLElement) {
+            element.style.color = String(propValue);
+          }
+          break;
+
+        case 'background-color':
+          if (element instanceof HTMLElement) {
+            element.style.backgroundColor = String(propValue);
+          }
+          break;
+
+        case 'color-both':
+          if (element instanceof HTMLElement && typeof propValue === 'object') {
+            if (propValue.color) {
+              element.style.color = propValue.color;
+            }
+            if (propValue.backgroundColor) {
+              element.style.backgroundColor = propValue.backgroundColor;
+            }
+          }
+          break;
+
+        case 'link-full':
+          if (element instanceof HTMLAnchorElement && typeof propValue === 'object') {
+            if (propValue.url) {
+              element.href = propValue.url;
+            }
+            if (propValue.text) {
+              element.textContent = propValue.text;
+            }
+          }
+          break;
+
+        case 'image-full':
+          if (element instanceof HTMLImageElement && typeof propValue === 'object') {
+            if (propValue.src) {
+              element.src = propValue.src;
+            }
+            if (propValue.alt !== undefined) {
+              element.alt = propValue.alt;
+            }
+          }
+          break;
+
+        case 'visibility':
+          if (element instanceof HTMLElement) {
+            element.style.display = propValue ? '' : 'none';
+          }
+          break;
+
+        case 'array':
+          if (element instanceof HTMLElement && Array.isArray(propValue)) {
+            const template = element.children[0];
+            if (!template) break;
+
+            element.innerHTML = '';
+
+            propValue.forEach((item) => {
+              const clone = template.cloneNode(true) as HTMLElement;
+
+              if (typeof item === 'string') {
+                clone.textContent = item;
+              } else if (typeof item === 'object') {
+                Object.keys(item).forEach((key) => {
+                  const targetElements = clone.querySelectorAll(`[data-array-field="${key}"]`);
+                  targetElements.forEach((targetEl) => {
+                    if (targetEl instanceof HTMLElement) {
+                      targetEl.textContent = String(item[key]);
+                    }
+                  });
+                });
+              }
+
+              element.appendChild(clone);
+            });
+          }
+          break;
+
         default:
           if (element instanceof HTMLElement) {
             element.textContent = String(propValue);

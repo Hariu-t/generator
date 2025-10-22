@@ -89,8 +89,16 @@ const ComponentBuilder: React.FC = () => {
           return text.startsWith('#') ? text : '#000000';
         case 'visibility':
           return true;
-        case 'array':
-          return [text];
+        case 'array': {
+          const itemMatches = selectedText.match(/<li[^>]*>([^<]+)<\/li>/gi);
+          if (itemMatches) {
+            return itemMatches.map(match => {
+              const textMatch = match.match(/>([^<]+)</);
+              return textMatch ? textMatch[1].trim() : '';
+            }).filter(Boolean);
+          }
+          return ['項目1', '項目2', '項目3'];
+        }
         case 'link': {
           const fullElement = selectedText.match(/<a[^>]*href=["']([^"']+)["'][^>]*>([^<]+)<\/a>/i);
           if (fullElement) {
@@ -138,18 +146,25 @@ const ComponentBuilder: React.FC = () => {
 
     const dataPropAttr = ` data-prop="${newPropName}" data-bind-type="${getBindType(newPropType)}"`;
 
-    const updatedHtml = beforeText + selectedText + afterText;
-
-    const tagMatch = beforeText.match(/<[^>]*$/);
-    if (tagMatch) {
-      const insertPosition = selectionRange.start;
-      const newHtml = htmlCode.substring(0, insertPosition) + dataPropAttr + '>' + selectedText + afterText;
-      setHtmlCode(newHtml);
-    } else {
-      const parentTagEnd = beforeText.lastIndexOf('>');
-      if (parentTagEnd !== -1) {
-        const newHtml = htmlCode.substring(0, parentTagEnd) + dataPropAttr + htmlCode.substring(parentTagEnd);
+    if (newPropType === 'array') {
+      const openTagMatch = selectedText.match(/^(<[^>]+>)/);
+      if (openTagMatch) {
+        const tagWithAttr = openTagMatch[1].slice(0, -1) + dataPropAttr + '>';
+        const newHtml = beforeText + tagWithAttr + selectedText.slice(openTagMatch[1].length) + afterText;
         setHtmlCode(newHtml);
+      }
+    } else {
+      const tagMatch = beforeText.match(/<[^>]*$/);
+      if (tagMatch) {
+        const insertPosition = selectionRange.start;
+        const newHtml = htmlCode.substring(0, insertPosition) + dataPropAttr + '>' + selectedText + afterText;
+        setHtmlCode(newHtml);
+      } else {
+        const parentTagEnd = beforeText.lastIndexOf('>');
+        if (parentTagEnd !== -1) {
+          const newHtml = htmlCode.substring(0, parentTagEnd) + dataPropAttr + htmlCode.substring(parentTagEnd);
+          setHtmlCode(newHtml);
+        }
       }
     }
 
@@ -400,7 +415,7 @@ export default ${componentName};`;
               <li><strong>リンク編集:</strong> aタグ全体を選択（例: "&lt;a href=\"...\"&gt;テキスト&lt;/a&gt;"）→ URL・テキスト両方編集可能</li>
               <li><strong>画像編集:</strong> imgタグ全体を選択（例: "&lt;img src=\"...\" alt=\"...\" /&gt;"）→ パス・ALT両方編集可能</li>
               <li><strong>スタイル編集（カラーなど）:</strong> 要素タグ全体を選択（例: "&lt;h3&gt;テキスト&lt;/h3&gt;"）</li>
-              <li><strong>配列編集:</strong> 繰り返し要素の親を選択（例: "&lt;ul&gt;...&lt;/ul&gt;"）</li>
+              <li><strong>配列編集:</strong> 繰り返し要素の親タグ全体を選択（例: "&lt;ul&gt;&lt;li&gt;項目1&lt;/li&gt;&lt;li&gt;項目2&lt;/li&gt;&lt;/ul&gt;"）→ 最初の子要素がテンプレートになります</li>
             </ul>
           </div>
 
