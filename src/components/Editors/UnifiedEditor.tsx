@@ -162,13 +162,7 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
     e.target.style.boxShadow = 'none';
   };
 
-  if (mode === 'style') {
-    return renderStyleEditor();
-  }
-
-  return renderContentEditor();
-
-  function renderStyleEditor() {
+  const renderStyleEditor = () => {
     const toggleDarkMode = () => {
       const isDarkMode = component.style?.isDarkMode || false;
 
@@ -458,9 +452,9 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
         </div>
       </div>
     );
-  }
+  };
 
-  function renderContentEditor() {
+  const renderContentEditor = () => {
     switch (component.type) {
       case 'headline':
         return renderHeadlineEditor();
@@ -481,9 +475,9 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
           </div>
         );
     }
-  }
+  };
 
-  function renderHeadlineEditor() {
+  const renderHeadlineEditor = () => {
     return (
       <div style={styles.container}>
         <div style={styles.section}>
@@ -605,9 +599,9 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
         </div>
       </div>
     );
-  }
+  };
 
-  function renderKVEditor() {
+  const renderKVEditor = () => {
     const handleChannelInfoChange = (field: 'number' | 'name', value: string) => {
       const newChannelInfo = { ...component.props.channelInfo, [field]: value };
       handlePropChange('channelInfo', newChannelInfo);
@@ -928,9 +922,9 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
         </div>
       </div>
     );
-  }
+  };
 
-  function renderFAQEditor() {
+  const renderFAQEditor = () => {
     const handleFAQChange = (index: number, field: string, value: string) => {
       const newFAQs = [...(component.props.faqs || [])];
       newFAQs[index] = { ...newFAQs[index], [field]: value };
@@ -1036,9 +1030,9 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
         </div>
       </div>
     );
-  }
+  };
 
-  function renderFooterEditor() {
+  const renderFooterEditor = () => {
     const handleLinkChange = (index: number, field: string, value: string) => {
       const newLinks = [...(component.props.links || [])];
       newLinks[index] = { ...newLinks[index], [field]: value };
@@ -1225,9 +1219,9 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
         </div>
       </div>
     );
-  }
+  };
 
-  function renderPricingEditor() {
+  const renderPricingEditor = () => {
     const handleMainPlanChange = (field: string, value: any) => {
       updateComponent(component.id, {
         props: {
@@ -1503,9 +1497,9 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
         </div>
       </div>
     );
-  }
+  };
 
-  function renderAppIntroEditor() {
+  const renderAppIntroEditor = () => {
     return (
       <div style={styles.container}>
         <div style={styles.section}>
@@ -1528,7 +1522,13 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
         </div>
       </div>
     );
+  };
+
+  if (mode === 'style') {
+    return renderStyleEditor();
   }
+
+  return renderContentEditor();
 };
 
 export default UnifiedEditor;
