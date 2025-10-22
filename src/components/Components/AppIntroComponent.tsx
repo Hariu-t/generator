@@ -1,7 +1,7 @@
 import React from 'react';
 import { ComponentData } from '../../types';
-import { usePageStore } from '../../store/usePageStore';
-import { getGlobalStyleValue } from '../../utils/globalStylesHelper';
+import { useComponentData } from '../../hooks/useComponentData';
+import { useDataPropBinding } from '../../hooks/useDataPropBinding';
 
 interface AppIntroComponentProps {
   component: ComponentData;
@@ -9,30 +9,28 @@ interface AppIntroComponentProps {
 }
 
 const AppIntroComponent: React.FC<AppIntroComponentProps> = ({ component }) => {
-  const { pageData } = usePageStore();
-  const { balloonText } = component.props;
-  const { 
-    backgroundColor, 
-    textColor, 
-    headlineColor, 
-    descriptionColor, 
+  const { props, style, globalStyles } = useComponentData(component);
+  const containerRef = useDataPropBinding({ props });
+
+  const { balloonText } = props;
+  const {
+    backgroundColor,
+    textColor,
+    headlineColor,
+    descriptionColor,
     cardBackgroundColor,
     cardTextColor,
     accentColor
-  } = component.style || {};
+  } = style || {};
 
-  // 共通スタイルの取得
-  const mainColor = getGlobalStyleValue(pageData.globalStyles, 'mainColor');
-  const baseColor = getGlobalStyleValue(pageData.globalStyles, 'baseColor');
-  const base2Color = getGlobalStyleValue(pageData.globalStyles, 'base2Color');
-  const globalAccentColor = getGlobalStyleValue(pageData.globalStyles, 'accentColor');
+  const { mainColor, baseColor, base2Color, accentColor: globalAccentColor } = globalStyles;
 
   const containerStyle = {
     backgroundColor: backgroundColor || baseColor,
   };
 
   return (
-    <section id='streamingArea' style={containerStyle} className="base-pattern-1">
+    <section ref={containerRef} id='streamingArea' style={containerStyle} className="base-pattern-1">
       <div className='sectionInner'>
         <h3>スカパー！番組配信とは</h3>
         <p className='text'>

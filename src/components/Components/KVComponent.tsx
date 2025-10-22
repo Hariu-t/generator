@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Play, Calendar, Users } from 'lucide-react';
 import { ComponentData } from '../../types';
-import { usePageStore } from '../../store/usePageStore';
-import { getGlobalStyleValue } from '../../utils/globalStylesHelper';
+import { useComponentData } from '../../hooks/useComponentData';
+import { useDataPropBinding } from '../../hooks/useDataPropBinding';
 
 interface KVComponentProps {
   component: ComponentData;
@@ -10,7 +10,9 @@ interface KVComponentProps {
 }
 
 const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
-  const { pageData } = usePageStore();
+  const { props, style, globalStyles } = useComponentData(component);
+  const containerRef = useDataPropBinding({ props });
+
   const {
     mediaItems = [],
     title,
@@ -23,16 +25,9 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
     showMoreText = 'もっと見る',
     showLessText = '閉じる',
     channelInfo,
-  } = component.props;
+  } = props;
 
-  const {
-  } = component.style || {};
-
-  // 共通スタイルの取得
-  const mainColor = getGlobalStyleValue(pageData.globalStyles, 'mainColor');
-  const baseColor = getGlobalStyleValue(pageData.globalStyles, 'baseColor');
-  const base2Color = getGlobalStyleValue(pageData.globalStyles, 'base2Color');
-  const accentColor = getGlobalStyleValue(pageData.globalStyles, 'accentColor');
+  const { mainColor, baseColor, base2Color, accentColor } = globalStyles;
 
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
@@ -110,7 +105,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
 
   // パターン4: 番組ヒーロー型
   return (
-    <section id='kvArea' className="base-pattern-1">
+    <section ref={containerRef} id='kvArea' className="base-pattern-1">
       <div className="mainInfo">
         <div className="flexWrapper">
 

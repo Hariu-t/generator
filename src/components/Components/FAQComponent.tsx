@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { ComponentData } from '../../types';
+import { useComponentData } from '../../hooks/useComponentData';
+import { useDataPropBinding } from '../../hooks/useDataPropBinding';
 
 interface FAQComponentProps {
   component: ComponentData;
@@ -8,9 +10,12 @@ interface FAQComponentProps {
 }
 
 const FAQComponent: React.FC<FAQComponentProps> = ({ component }) => {
-  const { title, description, faqs } = component.props;
-  const { theme, backgroundColor, textColor, headlineColor, descriptionColor, cardBackgroundColor, cardTextColor } = component.style || {};
+  const { props, style, globalStyles } = useComponentData(component);
+  const containerRef = useDataPropBinding({ props });
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const { title, description, faqs } = props;
+  const { theme, backgroundColor, textColor, headlineColor, descriptionColor, cardBackgroundColor, cardTextColor } = style || {};
 
   const getThemeClasses = () => {
     if (backgroundColor) {
@@ -67,7 +72,8 @@ const FAQComponent: React.FC<FAQComponentProps> = ({ component }) => {
   };
 
   return (
-    <div 
+    <div
+      ref={containerRef}
       className={`py-16 sm:py-24 ${getThemeClasses()} ${getTextClasses()}`}
       style={containerStyle}
     >

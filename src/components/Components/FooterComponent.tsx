@@ -1,6 +1,8 @@
 import React from 'react';
 import { Twitter, Linkedin, Instagram, Facebook } from 'lucide-react';
 import { ComponentData } from '../../types';
+import { useComponentData } from '../../hooks/useComponentData';
+import { useDataPropBinding } from '../../hooks/useDataPropBinding';
 
 interface FooterComponentProps {
   component: ComponentData;
@@ -8,8 +10,11 @@ interface FooterComponentProps {
 }
 
 const FooterComponent: React.FC<FooterComponentProps> = ({ component }) => {
-  const { companyName, description, links, socialLinks, copyright } = component.props;
-  const theme = component.style?.theme || 'dark';
+  const { props, style } = useComponentData(component);
+  const containerRef = useDataPropBinding({ props });
+
+  const { companyName, description, links, socialLinks, copyright } = props;
+  const theme = style?.theme || 'dark';
 
   const getThemeClasses = () => {
     if (theme === 'light') {
@@ -34,7 +39,7 @@ const FooterComponent: React.FC<FooterComponentProps> = ({ component }) => {
   };
 
   return (
-    <footer className={`py-12 ${getThemeClasses()}`}>
+    <footer ref={containerRef} className={`py-12 ${getThemeClasses()}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}

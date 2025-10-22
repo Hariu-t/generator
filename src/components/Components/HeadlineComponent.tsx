@@ -1,7 +1,7 @@
 import React from 'react';
 import { ComponentData } from '../../types';
-import { usePageStore } from '../../store/usePageStore';
-import { getGlobalStyleValue } from '../../utils/globalStylesHelper';
+import { useComponentData } from '../../hooks/useComponentData';
+import { useDataPropBinding } from '../../hooks/useDataPropBinding';
 
 interface HeadlineComponentProps {
   component: ComponentData;
@@ -9,51 +9,59 @@ interface HeadlineComponentProps {
 }
 
 const HeadlineComponent: React.FC<HeadlineComponentProps> = ({ component }) => {
-  const { pageData } = usePageStore();
-  const { text, usePageTitle } = component.props;
-  const { 
-    backgroundColor, 
-    textColor, 
-    headlineColor
-  } = component.style || {};
+  const { props, style, globalStyles, pageData } = useComponentData(component);
 
-  // 共通スタイルの取得
-  const mainColor = getGlobalStyleValue(pageData.globalStyles, 'mainColor');
-
-  // ページタイトル連動機能
   const getDisplayText = () => {
-    if (usePageTitle && pageData.globalSettings.title) {
-      // ページタイトルから「｜スカパー！: スポーツ＆音楽ライブ、アイドル、アニメ、ドラマ、映画など」を除去
+    if (props.usePageTitle && pageData.globalSettings.title) {
       const titleWithoutSuffix = pageData.globalSettings.title.replace(/｜スカパー！:.*$/, '').trim();
-      return titleWithoutSuffix || text;
+      return titleWithoutSuffix || props.text;
     }
-    return text;
+    return props.text;
   };
-  const containerStyle = {
-    backgroundColor: backgroundColor || mainColor,
-    color: textColor || '#ffffff',
+
+  const displayProps = {
+    ...props,
+    text: getDisplayText(),
+  };
+
+  const containerRef = useDataPropBinding({ props: displayProps });
+
+  const containerStyle: React.CSSProperties = {
+    backgroundColor: style?.backgroundColor || globalStyles.mainColor,
+    color: style?.textColor || '#ffffff',
     padding: '20px 0',
   };
 
-  const innerStyle = {
+  const innerStyle: React.CSSProperties = {
     maxWidth: '1200px',
     margin: '0 auto',
     padding: '0 20px',
   };
 
-  const headlineStyle = {
+  const headlineStyle: React.CSSProperties = {
     fontSize: '24px',
     fontWeight: 'bold',
     lineHeight: '1.4',
     margin: 0,
-    color: headlineColor || textColor || '#ffffff',
+    color: style?.headlineColor || style?.textColor || '#ffffff',
   };
 
   return (
-    <div style={containerStyle} className="mainColor" data-component-background data-component-text>
+    <div
+      ref={containerRef}
+      style={containerStyle}
+      className="mainColor"
+      data-component-background
+      data-component-text
+    >
       <div style={innerStyle}>
-        <h1 style={headlineStyle} data-component-headline>
-          {getDisplayText() || 'タイトルを挿入'}
+        <h1
+          style={headlineStyle}
+          data-component-headline
+          data-prop="text"
+          data-bind-type="text"
+        >
+          {displayProps.text || 'タイトルを挿入'}
         </h1>
       </div>
     </div>

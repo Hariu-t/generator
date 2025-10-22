@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowRight, Check, Info } from 'lucide-react';
 import { ComponentData } from '../../types';
-import { usePageStore } from '../../store/usePageStore';
-import { getGlobalStyleValue } from '../../utils/globalStylesHelper';
+import { useComponentData } from '../../hooks/useComponentData';
+import { useDataPropBinding } from '../../hooks/useDataPropBinding';
 
 interface PricingComponentProps {
   component: ComponentData;
@@ -12,19 +12,21 @@ interface PricingComponentProps {
 const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
   const [isMustReadOpen, setIsMustReadOpen] = useState(false);
 
-  const { pageData } = usePageStore();
-  const { 
-    mainPlan, 
+  const { props, style, globalStyles } = useComponentData(component);
+  const containerRef = useDataPropBinding({ props });
+
+  const {
+    mainPlan,
     additionalPlans,
     showMustReadBox
-  } = component.props;
-  
-  const { 
-    theme, 
-    backgroundColor, 
-    textColor, 
-    headlineColor, 
-    descriptionColor, 
+  } = props;
+
+  const {
+    theme,
+    backgroundColor,
+    textColor,
+    headlineColor,
+    descriptionColor,
     accentColor,
     cardBackgroundColor,
     cardTextColor,
@@ -32,13 +34,9 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
     mainPlanBoxColor,
     mainPlanTextColor,
     priceColor,
-  } = component.style || {};
+  } = style || {};
 
-  // 共通スタイルの取得
-  const mainColor = getGlobalStyleValue(pageData.globalStyles, 'mainColor');
-  const baseColor = getGlobalStyleValue(pageData.globalStyles, 'baseColor');
-  const base2Color = getGlobalStyleValue(pageData.globalStyles, 'base2Color');
-  const globalAccentColor = getGlobalStyleValue(pageData.globalStyles, 'accentColor');
+  const { mainColor, baseColor, base2Color, accentColor: globalAccentColor } = globalStyles;
 
   const getThemeClasses = () => {
     if (backgroundColor) {
@@ -133,7 +131,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
   ];
 
   return (
-    <section id='priceArea' className={`baseColor`} style={containerStyle}>
+    <section ref={containerRef} id='priceArea' className={`baseColor`} style={containerStyle}>
       <h3>番組を見るには</h3>
       <div className='priceInfo priceInfo1'>
         <p className='subTitle alignBaseline main-pattern-1'><span className='textLarge'>ご加入月は<span className='price'>0</span>円</span>で<br className='sp'/>人気番組が楽しめる！</p>
