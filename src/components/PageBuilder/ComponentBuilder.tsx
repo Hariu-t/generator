@@ -16,10 +16,10 @@ interface PropField {
 const ComponentBuilder: React.FC = () => {
   const [componentName, setComponentName] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [category, setCategory] = useState('content');
+  const [category, setCategory] = useState('KV');
   const [isNewCategory, setIsNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [existingCategories, setExistingCategories] = useState<string[]>([]);
+  const [existingCategories, setExistingCategories] = useState<string[]>(['KV', '料金', '番組配信']);
   const [description, setDescription] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [cssFiles, setCssFiles] = useState<string[]>([]);
@@ -139,6 +139,8 @@ const ComponentBuilder: React.FC = () => {
 
   React.useEffect(() => {
     const loadCategories = async () => {
+      const defaultCategories = ['KV', '料金', '番組配信'];
+
       const { data, error } = await supabase
         .from('component_templates')
         .select('category')
@@ -146,12 +148,16 @@ const ComponentBuilder: React.FC = () => {
 
       if (error) {
         console.error('Error loading categories:', error);
+        setExistingCategories(defaultCategories);
         return;
       }
 
       if (data) {
-        const uniqueCategories = Array.from(new Set(data.map(item => item.category)));
-        setExistingCategories(uniqueCategories);
+        const dbCategories = data.map(item => item.category);
+        const allCategories = Array.from(new Set([...defaultCategories, ...dbCategories])).sort();
+        setExistingCategories(allCategories);
+      } else {
+        setExistingCategories(defaultCategories);
       }
     };
 
