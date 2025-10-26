@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, RefreshCw } from 'lucide-react';
+import { Plus, Search, RefreshCw, Lock } from 'lucide-react';
 import { ComponentTemplate } from '../../types';
 import { componentTemplates } from '../../data/componentTemplates';
 import { usePageStore } from '../../store/usePageStore';
 import { supabase } from '../../lib/supabase';
+import ComponentBuilder from './ComponentBuilder';
 
 const ComponentLibrary: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [customTemplates, setCustomTemplates] = useState<ComponentTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showComponentBuilder, setShowComponentBuilder] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const { addComponent, pageData } = usePageStore();
 
   const allTemplates = [...componentTemplates, ...customTemplates];
@@ -45,6 +50,41 @@ const ComponentLibrary: React.FC = () => {
       console.error('Error loading custom templates:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const ADMIN_PASSWORD = 'admin2024';
+
+  const checkAdminAuth = () => {
+    const authTime = localStorage.getItem('admin_auth_time');
+    if (!authTime) return false;
+
+    const now = Date.now();
+    const authTimestamp = parseInt(authTime, 10);
+    const hourInMs = 60 * 60 * 1000;
+
+    return (now - authTimestamp) < hourInMs;
+  };
+
+  const handleComponentBuilderClick = () => {
+    if (checkAdminAuth()) {
+      setShowComponentBuilder(true);
+    } else {
+      setShowPasswordModal(true);
+      setPasswordInput('');
+      setPasswordError('');
+    }
+  };
+
+  const handlePasswordSubmit = () => {
+    if (passwordInput === ADMIN_PASSWORD) {
+      localStorage.setItem('admin_auth_time', Date.now().toString());
+      setShowPasswordModal(false);
+      setShowComponentBuilder(true);
+      setPasswordInput('');
+      setPasswordError('');
+    } else {
+      setPasswordError('パスワードが正しくありません');
     }
   };
 
@@ -269,25 +309,53 @@ const ComponentLibrary: React.FC = () => {
       <div style={headerStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2 style={{ ...titleStyle, marginBottom: 0 }}>コンポーネント</h2>
-          <button
-            onClick={loadCustomTemplates}
-            disabled={isLoading}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: isLoading ? '#e5e7eb' : '#f3f4f6',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '12px',
-            }}
-            title="カスタムコンポーネントを更新"
-          >
-            <RefreshCw size={14} className={isLoading ? 'spin' : ''} />
-            {isLoading ? '読込中...' : '更新'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={handleComponentBuilderClick}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#10b981',
+                border: '1px solid #059669',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '12px',
+                color: '#ffffff',
+                fontWeight: 500,
+              }}
+              title="コンポーネント作成（管理者のみ）"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#059669';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#10b981';
+              }}
+            >
+              <Plus size={14} />
+              作成
+            </button>
+            <button
+              onClick={loadCustomTemplates}
+              disabled={isLoading}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: isLoading ? '#e5e7eb' : '#f3f4f6',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '12px',
+              }}
+              title="カスタムコンポーネントを更新"
+            >
+              <RefreshCw size={14} className={isLoading ? 'spin' : ''} />
+              {isLoading ? '読込中...' : '更新'}
+            </button>
+          </div>
         </div>
 
         <div style={searchContainerStyle}>
@@ -380,6 +448,211 @@ const ComponentLibrary: React.FC = () => {
           );
         })}
       </div>
+
+      {showPasswordModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => setShowPasswordModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              padding: '32px',
+              maxWidth: '400px',
+              width: '90%',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  backgroundColor: '#fef3c7',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                }}
+              >
+                <Lock size={24} color="#f59e0b" />
+              </div>
+              <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px' }}>
+                管理者認証
+              </h2>
+              <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
+                コンポーネント作成にはパスワードが必要です
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  color: '#374151',
+                  marginBottom: '6px',
+                }}
+              >
+                パスワード
+              </label>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => {
+                  setPasswordInput(e.target.value);
+                  setPasswordError('');
+                }}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handlePasswordSubmit();
+                  }
+                }}
+                placeholder="パスワードを入力"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: passwordError ? '2px solid #ef4444' : '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+                autoFocus
+              />
+              {passwordError && (
+                <p style={{ fontSize: '12px', color: '#ef4444', margin: '6px 0 0' }}>
+                  {passwordError}
+                </p>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  backgroundColor: '#f3f4f6',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  color: '#374151',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#e5e7eb';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f3f4f6';
+                }}
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handlePasswordSubmit}
+                style={{
+                  flex: 1,
+                  padding: '10px 16px',
+                  backgroundColor: '#3b82f6',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  color: '#ffffff',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#2563eb';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#3b82f6';
+                }}
+              >
+                認証
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showComponentBuilder && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => {
+            setShowComponentBuilder(false);
+            loadCustomTemplates();
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              maxWidth: '1400px',
+              width: '90%',
+              maxHeight: '90vh',
+              overflow: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '20px 24px',
+                borderBottom: '1px solid #e5e7eb',
+              }}
+            >
+              <h2 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>
+                コンポーネントビルダー
+              </h2>
+              <button
+                onClick={() => {
+                  setShowComponentBuilder(false);
+                  loadCustomTemplates();
+                }}
+                style={{
+                  padding: '8px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <ComponentBuilder />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
