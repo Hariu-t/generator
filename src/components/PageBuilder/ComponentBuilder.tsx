@@ -19,6 +19,8 @@ const ComponentBuilder: React.FC = () => {
   const [category, setCategory] = useState('content');
   const [description, setDescription] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [cssFiles, setCssFiles] = useState<string[]>([]);
+  const [jsFiles, setJsFiles] = useState<string[]>([]);
   const [htmlCode, setHtmlCode] = useState('');
   const [propFields, setPropFields] = useState<PropField[]>([]);
   const [generatedCode, setGeneratedCode] = useState('');
@@ -32,6 +34,8 @@ const ComponentBuilder: React.FC = () => {
   const [step, setStep] = useState<'html' | 'props' | 'generate'>('html');
   const [parsedTags, setParsedTags] = useState<Array<{ tag: string; fullElement: string; position: { start: number; end: number }; tagName: string }>>([]);
   const [selectedTagIndex, setSelectedTagIndex] = useState<number | null>(null);
+  const [newCssFile, setNewCssFile] = useState('');
+  const [newJsFile, setNewJsFile] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const parseHtmlTags = (html: string) => {
@@ -378,7 +382,25 @@ const ComponentBuilder: React.FC = () => {
     const propNames = propFields.map(f => f.name).filter(Boolean).join(', ');
     const propsDestructure = propFields.length > 0 ? `const { ${propNames} } = props;` : '';
 
-    const code = `import React from 'react';
+    const cssFilesComment = cssFiles.length > 0
+      ? `/**
+ * Required CSS Files:
+${cssFiles.map(file => ` * - /generator_common/css/${file}`).join('\n')}
+ */
+
+`
+      : '';
+
+    const jsFilesComment = jsFiles.length > 0
+      ? `/**
+ * Required JS Files:
+${jsFiles.map(file => ` * - /generator_common/js/${file}`).join('\n')}
+ */
+
+`
+      : '';
+
+    const code = `${cssFilesComment}${jsFilesComment}import React from 'react';
 import { ComponentData } from '../../types';
 import { useComponentData } from '../../hooks/useComponentData';
 import { useDataPropBinding } from '../../hooks/useDataPropBinding';
@@ -451,6 +473,8 @@ export default ${componentName};`;
         code_template: generatedCode,
         default_props: defaultProps,
         prop_schema: propSchema,
+        css_files: cssFiles,
+        js_files: jsFiles,
         is_active: true,
       })
       .select()
@@ -561,6 +585,134 @@ export default ${componentName};`;
                 <option value="other">その他</option>
               </select>
             </div>
+          </div>
+
+          <div style={{ marginTop: '20px' }}>
+            <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#374151', marginBottom: '12px' }}>
+              読み込むCSSファイル
+            </h4>
+            <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px' }}>
+              public/generator_common/css/ 配下のファイルを指定してください（複数可）
+            </p>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <input
+                type="text"
+                style={{ ...styles.input, flex: 1 }}
+                value={newCssFile}
+                onChange={(e) => setNewCssFile(e.target.value)}
+                placeholder="例: style.css"
+              />
+              <button
+                style={styles.addButton}
+                onClick={() => {
+                  if (newCssFile.trim()) {
+                    setCssFiles([...cssFiles, newCssFile.trim()]);
+                    setNewCssFile('');
+                  }
+                }}
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+            {cssFiles.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {cssFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 10px',
+                      backgroundColor: '#f3f4f6',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    <span>{file}</span>
+                    <button
+                      onClick={() => setCssFiles(cssFiles.filter((_, i) => i !== index))}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: '#ef4444',
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginTop: '20px' }}>
+            <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#374151', marginBottom: '12px' }}>
+              読み込むJSファイル
+            </h4>
+            <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px' }}>
+              public/generator_common/js/ 配下のファイルを指定してください（複数可）
+            </p>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <input
+                type="text"
+                style={{ ...styles.input, flex: 1 }}
+                value={newJsFile}
+                onChange={(e) => setNewJsFile(e.target.value)}
+                placeholder="例: script.js"
+              />
+              <button
+                style={styles.addButton}
+                onClick={() => {
+                  if (newJsFile.trim()) {
+                    setJsFiles([...jsFiles, newJsFile.trim()]);
+                    setNewJsFile('');
+                  }
+                }}
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+            {jsFiles.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {jsFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 10px',
+                      backgroundColor: '#f3f4f6',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    <span>{file}</span>
+                    <button
+                      onClick={() => setJsFiles(jsFiles.filter((_, i) => i !== index))}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        color: '#ef4444',
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -1125,6 +1277,18 @@ const styles = {
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
+  } as React.CSSProperties,
+  addButton: {
+    padding: '10px 12px',
+    backgroundColor: '#3b82f6',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'background-color 0.2s',
   } as React.CSSProperties,
   propCardBody: {
     display: 'flex',
