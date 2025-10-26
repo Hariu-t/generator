@@ -17,6 +17,9 @@ const ComponentBuilder: React.FC = () => {
   const [componentName, setComponentName] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [category, setCategory] = useState('content');
+  const [isNewCategory, setIsNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [existingCategories, setExistingCategories] = useState<string[]>([]);
   const [description, setDescription] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [cssFiles, setCssFiles] = useState<string[]>([]);
@@ -133,6 +136,27 @@ const ComponentBuilder: React.FC = () => {
       setParsedTags([]);
     }
   }, [htmlCode]);
+
+  React.useEffect(() => {
+    const loadCategories = async () => {
+      const { data, error } = await supabase
+        .from('component_templates')
+        .select('category')
+        .order('category');
+
+      if (error) {
+        console.error('Error loading categories:', error);
+        return;
+      }
+
+      if (data) {
+        const uniqueCategories = Array.from(new Set(data.map(item => item.category)));
+        setExistingCategories(uniqueCategories);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   const generatePropertyName = (tagName: string, propType: PropField['type']): string => {
     const typeSuffix: Record<PropField['type'], string> = {
@@ -447,6 +471,13 @@ export default ${componentName};`;
       return;
     }
 
+    if (isNewCategory && !newCategoryName.trim()) {
+      alert('新しいカテゴリ名を入力してください');
+      return;
+    }
+
+    const finalCategory = isNewCategory ? newCategoryName.trim() : category;
+
     const defaultProps: Record<string, any> = {};
     const propSchema = propFields.map(field => ({
       name: field.name,
@@ -467,7 +498,7 @@ export default ${componentName};`;
       .insert({
         name: componentName,
         display_name: displayName,
-        category,
+        category: finalCategory,
         description,
         thumbnail_url: thumbnailUrl,
         code_template: generatedCode,
@@ -484,6 +515,15 @@ export default ${componentName};`;
       console.error('Error saving component:', error);
       alert(`保存エラー: ${error.message}`);
       return;
+    }
+
+    if (isNewCategory && newCategoryName.trim()) {
+      if (!existingCategories.includes(finalCategory)) {
+        setExistingCategories([...existingCategories, finalCategory].sort());
+      }
+      setCategory(finalCategory);
+      setIsNewCategory(false);
+      setNewCategoryName('');
     }
 
     setIsSaved(true);
@@ -572,20 +612,44 @@ export default ${componentName};`;
               <label style={styles.label}>カテゴリ</label>
               <select
                 style={styles.input}
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={isNewCategory ? '__new__' : category}
+                onChange={(e) => {
+                  if (e.target.value === '__new__') {
+                    setIsNewCategory(true);
+                    setNewCategoryName('');
+                  } else {
+                    setIsNewCategory(false);
+                    setCategory(e.target.value);
+                  }
+                }}
               >
-                <option value="header">ヘッダー</option>
-                <option value="content">コンテンツ</option>
-                <option value="footer">フッター</option>
-                <option value="hero">ヒーロー</option>
-                <option value="feature">機能</option>
-                <option value="pricing">料金</option>
-                <option value="faq">FAQ</option>
-                <option value="other">その他</option>
+                {existingCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+                <option value="__new__">+ 新しいカテゴリを追加</option>
               </select>
             </div>
           </div>
+
+          {isNewCategory && (
+            <div style={{ marginTop: '16px' }}>
+              <label style={styles.label}>
+                新しいカテゴリ名 <span style={styles.required}>*</span>
+              </label>
+              <input
+                type="text"
+                style={styles.input}
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="例: navigation, cta, testimonials"
+              />
+              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                英数字とハイフンのみを使用してください
+              </p>
+            </div>
+          )}
 
           <div style={{ marginTop: '20px' }}>
             <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#374151', marginBottom: '12px' }}>
