@@ -30,35 +30,77 @@ const ComponentBuilder: React.FC = () => {
   const [newPropName, setNewPropName] = useState('');
   const [newPropType, setNewPropType] = useState<PropField['type']>('text');
   const [step, setStep] = useState<'html' | 'props' | 'generate'>('html');
+  const [parsedTags, setParsedTags] = useState<Array<{ tag: string; fullElement: string; position: { start: number; end: number }; tagName: string }>>([]);
+  const [selectedTagIndex, setSelectedTagIndex] = useState<number | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleTextSelection = () => {
-    if (!textareaRef.current) return;
+  const parseHtmlTags = (html: string) => {
+    const tags: Array<{ tag: string; fullElement: string; position: { start: number; end: number }; tagName: string }> = [];
+    const tagRegex = /<([a-zA-Z][a-zA-Z0-9]*)((?:\s+[^>]*)?)>/g;
+    let match;
 
-    const start = textareaRef.current.selectionStart;
-    const end = textareaRef.current.selectionEnd;
-    const selected = htmlCode.substring(start, end);
+    while ((match = tagRegex.exec(html)) !== null) {
+      const tagName = match[1];
+      const openTag = match[0];
+      const startPos = match.index;
 
-    if (selected && selected.length > 0 && start !== end) {
-      setSelectedText(selected);
-      setSelectionRange({ start, end });
-      setShowPropModal(true);
+      const closeTagRegex = new RegExp(`</${tagName}>`);
+      const closeMatch = closeTagRegex.exec(html.substring(startPos));
 
-      const isHtmlTag = selected.match(/^<[^>]+>.*<\/[^>]+>$/);
-      const isStyleAttribute = selected.includes('style=') || selected.includes('class=');
+      if (closeMatch) {
+        const endPos = startPos + closeMatch.index + closeMatch[0].length;
+        const fullElement = html.substring(startPos, endPos);
 
-      let suggestedName = '';
-      if (isHtmlTag) {
-        const tagMatch = selected.match(/^<([a-zA-Z][a-zA-Z0-9]*)/);
-        suggestedName = tagMatch ? `${tagMatch[1]}Style` : 'elementStyle';
+        tags.push({
+          tag: openTag,
+          fullElement,
+          position: { start: startPos, end: endPos },
+          tagName
+        });
       } else {
-        suggestedName = selected
-          .replace(/[^a-zA-Z0-9]/g, '')
-          .toLowerCase()
-          .substring(0, 20);
+        const selfClosingMatch = html.substring(startPos).match(/^<[^>]+\/>/);
+        if (selfClosingMatch) {
+          tags.push({
+            tag: openTag,
+            fullElement: selfClosingMatch[0],
+            position: { start: startPos, end: startPos + selfClosingMatch[0].length },
+            tagName
+          });
+        }
       }
+    }
 
-      setNewPropName(suggestedName || 'prop');
+    return tags;
+  };
+
+  React.useEffect(() => {
+    if (htmlCode) {
+      setParsedTags(parseHtmlTags(htmlCode));
+    } else {
+      setParsedTags([]);
+    }
+  }, [htmlCode]);
+
+  const handleTagClick = (index: number) => {
+    const tag = parsedTags[index];
+    setSelectedTagIndex(index);
+    setSelectedText(tag.fullElement);
+    setSelectionRange(tag.position);
+    setShowPropModal(true);
+
+    const suggestedName = tag.tagName.toLowerCase();
+    setNewPropName(suggestedName);
+
+    if (tag.tagName === 'a') {
+      setNewPropType('link');
+    } else if (tag.tagName === 'img') {
+      setNewPropType('image');
+    } else if (tag.tagName === 'ul' || tag.tagName === 'ol') {
+      setNewPropType('array');
+    } else if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'div'].includes(tag.tagName)) {
+      setNewPropType('text');
+    } else {
+      setNewPropType('text');
     }
   };
 
@@ -397,7 +439,7 @@ export default ${componentName};`;
           </div>
 
           <p style={styles.helpText}>
-            既存のHTMLコードを貼り付けてください。その後、編集可能にしたいテキストを選択すると、プロパティとして定義できます。
+            既存のHTMLコードを貼り付けてください。その後、下に表示されるタグをクリックしてプロパティを定義できます。
           </p>
 
           <div style={{
@@ -408,15 +450,14 @@ export default ${componentName};`;
             marginBottom: '12px',
           }}>
             <p style={{ fontSize: '13px', color: '#0369a1', margin: '0 0 8px 0', fontWeight: 'bold' }}>
-              💡 選択方法ガイド
+              💡 使い方
             </p>
-            <ul style={{ fontSize: '12px', color: '#0369a1', margin: 0, paddingLeft: '20px', lineHeight: '1.6' }}>
-              <li><strong>テキスト編集:</strong> テキスト部分のみ選択（例: "タイトル"）</li>
-              <li><strong>リンク編集:</strong> aタグ全体を選択（例: "&lt;a href=\"...\"&gt;テキスト&lt;/a&gt;"）→ URL・テキスト両方編集可能</li>
-              <li><strong>画像編集:</strong> imgタグ全体を選択（例: "&lt;img src=\"...\" alt=\"...\" /&gt;"）→ パス・ALT両方編集可能</li>
-              <li><strong>スタイル編集（カラーなど）:</strong> 要素タグ全体を選択（例: "&lt;h3&gt;テキスト&lt;/h3&gt;"）</li>
-              <li><strong>配列編集:</strong> 繰り返し要素の親タグ全体を選択（例: "&lt;ul&gt;&lt;li&gt;項目1&lt;/li&gt;&lt;li&gt;項目2&lt;/li&gt;&lt;/ul&gt;"）→ 最初の子要素がテンプレートになります</li>
-            </ul>
+            <ol style={{ fontSize: '12px', color: '#0369a1', margin: 0, paddingLeft: '20px', lineHeight: '1.6' }}>
+              <li>HTMLコードを入力または貼り付け</li>
+              <li>下に表示される<strong>タグボタン（&lt;h2&gt;, &lt;p&gt;など）</strong>をクリック</li>
+              <li>プロパティタイプを選択（テキスト編集、画像編集、カラー編集など）</li>
+              <li>プロパティ追加をクリック</li>
+            </ol>
           </div>
 
           <textarea
@@ -424,14 +465,78 @@ export default ${componentName};`;
             style={styles.codeTextarea}
             value={htmlCode}
             onChange={(e) => setHtmlCode(e.target.value)}
-            onMouseUp={handleTextSelection}
             placeholder={`例：
 <h2>タイトルをここに入力</h2>
 <p>説明文をここに入力</p>
 <img src="/path/to/image.jpg" alt="画像" />
+<ul>
+  <li>項目1</li>
+  <li>項目2</li>
+</ul>
 `}
             rows={15}
           />
+
+          {parsedTags.length > 0 && (
+            <div style={{
+              marginTop: '16px',
+              padding: '16px',
+              backgroundColor: '#f9fafb',
+              borderRadius: '8px',
+              border: '1px solid #e5e7eb',
+            }}>
+              <p style={{
+                fontSize: '13px',
+                fontWeight: 'bold',
+                color: '#374151',
+                marginBottom: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <Wand2 size={16} />
+                クリックしてプロパティを定義
+              </p>
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '8px',
+              }}>
+                {parsedTags.map((tag, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleTagClick(index)}
+                    style={{
+                      padding: '8px 12px',
+                      backgroundColor: selectedTagIndex === index ? '#3b82f6' : '#ffffff',
+                      color: selectedTagIndex === index ? '#ffffff' : '#374151',
+                      border: selectedTagIndex === index ? '2px solid #2563eb' : '2px solid #e5e7eb',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontFamily: 'monospace',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      fontWeight: '500',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedTagIndex !== index) {
+                        e.currentTarget.style.backgroundColor = '#f3f4f6';
+                        e.currentTarget.style.borderColor = '#d1d5db';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedTagIndex !== index) {
+                        e.currentTarget.style.backgroundColor = '#ffffff';
+                        e.currentTarget.style.borderColor = '#e5e7eb';
+                      }
+                    }}
+                  >
+                    &lt;{tag.tagName}&gt;
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {htmlCode && (
@@ -610,8 +715,17 @@ export default ${componentName};`;
 
             <div style={styles.modalContent}>
               <div style={styles.selectedTextPreview}>
-                <label style={styles.modalLabel}>選択されたテキスト:</label>
-                <div style={styles.selectedTextBox}>{selectedText}</div>
+                <label style={styles.modalLabel}>選択されたタグ:</label>
+                <div style={styles.selectedTextBox}>
+                  {selectedTagIndex !== null && parsedTags[selectedTagIndex] && (
+                    <span style={{ fontFamily: 'monospace', color: '#3b82f6', fontWeight: 'bold' }}>
+                      &lt;{parsedTags[selectedTagIndex].tagName}&gt;
+                    </span>
+                  )}
+                </div>
+                <p style={{ fontSize: '11px', color: '#6b7280', marginTop: '8px', marginBottom: 0 }}>
+                  このタグの要素全体にプロパティが適用されます
+                </p>
               </div>
 
               <div style={styles.modalField}>
@@ -649,9 +763,17 @@ export default ${componentName};`;
                   <option value="visibility">⑥ 表示/非表示</option>
                 </select>
                 <p style={styles.modalHint}>
-                  {selectedText.match(/^<[^>]+>.*<\/[^>]+>$/)
-                    ? '✓ 要素タグ全体が選択されています（スタイル編集に最適）'
-                    : 'ヒント: スタイル編集には要素タグ全体を選択してください（例: <h3>...</h3>）'}
+                  {selectedTagIndex !== null && parsedTags[selectedTagIndex] && (
+                    <>
+                      <strong>推奨タイプ:</strong>
+                      {parsedTags[selectedTagIndex].tagName === 'a' && ' ② リンク編集'}
+                      {parsedTags[selectedTagIndex].tagName === 'img' && ' ③ 画像編集'}
+                      {parsedTags[selectedTagIndex].tagName === 'ul' && ' ⑤ 配列'}
+                      {parsedTags[selectedTagIndex].tagName === 'ol' && ' ⑤ 配列'}
+                      {!['a', 'img', 'ul', 'ol'].includes(parsedTags[selectedTagIndex].tagName) &&
+                        ' ① テキスト編集 または ④ カラー編集'}
+                    </>
+                  )}
                 </p>
               </div>
             </div>
