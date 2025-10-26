@@ -39,16 +39,60 @@ const ComponentBuilder: React.FC = () => {
     const tagRegex = /<([a-zA-Z][a-zA-Z0-9]*)((?:\s+[^>]*)?)>/g;
     let match;
 
+    const findMatchingCloseTag = (html: string, startPos: number, tagName: string): number => {
+      let depth = 1;
+      let pos = startPos;
+      const openRegex = new RegExp(`<${tagName}(?:\\s[^>]*)?>`, 'g');
+      const closeRegex = new RegExp(`</${tagName}>`, 'g');
+
+      openRegex.lastIndex = startPos;
+      closeRegex.lastIndex = startPos;
+
+      while (depth > 0 && pos < html.length) {
+        const nextOpen = openRegex.exec(html);
+        const nextClose = closeRegex.exec(html);
+
+        if (!nextClose) {
+          return -1;
+        }
+
+        if (nextOpen && nextOpen.index < nextClose.index) {
+          depth++;
+          pos = openRegex.lastIndex;
+          closeRegex.lastIndex = pos;
+        } else {
+          depth--;
+          if (depth === 0) {
+            return nextClose.index + nextClose[0].length;
+          }
+          pos = closeRegex.lastIndex;
+          openRegex.lastIndex = pos;
+        }
+      }
+
+      return -1;
+    };
+
     while ((match = tagRegex.exec(html)) !== null) {
       const tagName = match[1];
       const openTag = match[0];
       const startPos = match.index;
+      const openTagEnd = startPos + openTag.length;
 
-      const closeTagRegex = new RegExp(`</${tagName}>`);
-      const closeMatch = closeTagRegex.exec(html.substring(startPos));
+      const selfClosingMatch = openTag.match(/\/\s*>$/);
+      if (selfClosingMatch) {
+        tags.push({
+          tag: openTag,
+          fullElement: openTag,
+          position: { start: startPos, end: openTagEnd },
+          tagName
+        });
+        continue;
+      }
 
-      if (closeMatch) {
-        const endPos = startPos + closeMatch.index + closeMatch[0].length;
+      const endPos = findMatchingCloseTag(html, openTagEnd, tagName);
+
+      if (endPos !== -1) {
         const fullElement = html.substring(startPos, endPos);
 
         tags.push({
@@ -57,20 +101,25 @@ const ComponentBuilder: React.FC = () => {
           position: { start: startPos, end: endPos },
           tagName
         });
-      } else {
-        const selfClosingMatch = html.substring(startPos).match(/^<[^>]+\/>/);
-        if (selfClosingMatch) {
-          tags.push({
-            tag: openTag,
-            fullElement: selfClosingMatch[0],
-            position: { start: startPos, end: startPos + selfClosingMatch[0].length },
-            tagName
-          });
-        }
       }
     }
 
-    return tags;
+    const filteredTags = tags.filter((tag, index) => {
+      for (let i = 0; i < tags.length; i++) {
+        if (i !== index) {
+          const other = tags[i];
+          if (
+            tag.position.start > other.position.start &&
+            tag.position.end <= other.position.end
+          ) {
+            return false;
+          }
+        }
+      }
+      return true;
+    });
+
+    return filteredTags;
   };
 
   React.useEffect(() => {
