@@ -200,19 +200,34 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
               accentColor: '#ffffff',
             };
 
+            const currentColor = (pageData.globalStyles as any)?.[colorKey] || defaults[colorKey];
+            const currentSubColor = (pageData.globalStyles as any)?.[`${colorKey}Sub`] || subDefaults[colorKey];
+
             return (
               <div key={colorKey} style={styles.field}>
                 <label style={styles.label}>{labels[colorKey]}</label>
                 <div style={styles.colorInputContainer}>
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '6px',
+                      backgroundColor: currentColor,
+                      border: '2px solid #e5e7eb',
+                      flexShrink: 0,
+                      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                    }}
+                    title={`現在の色: ${currentColor}`}
+                  />
                   <input
                     type="color"
-                    value={(pageData.globalStyles as any)?.[colorKey] || defaults[colorKey]}
+                    value={currentColor}
                     onChange={(e) => handleGlobalStyleChange(colorKey, e.target.value)}
                     style={styles.colorInput}
                   />
                   <input
                     type="text"
-                    value={(pageData.globalStyles as any)?.[colorKey] || defaults[colorKey]}
+                    value={currentColor}
                     onChange={(e) => handleGlobalStyleChange(colorKey, e.target.value)}
                     style={styles.colorValue}
                     placeholder={defaults[colorKey]}
@@ -220,15 +235,27 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
                 </div>
                 <div style={styles.colorInputContainer}>
                   <label style={{ ...styles.label, fontSize: '11px', marginBottom: 0, minWidth: '80px' }}>サブ色:</label>
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '6px',
+                      backgroundColor: currentSubColor,
+                      border: '2px solid #e5e7eb',
+                      flexShrink: 0,
+                      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                    }}
+                    title={`現在のサブ色: ${currentSubColor}`}
+                  />
                   <input
                     type="color"
-                    value={(pageData.globalStyles as any)?.[`${colorKey}Sub`] || subDefaults[colorKey]}
+                    value={currentSubColor}
                     onChange={(e) => handleGlobalStyleChange(`${colorKey}Sub`, e.target.value)}
                     style={styles.colorInput}
                   />
                   <input
                     type="text"
-                    value={(pageData.globalStyles as any)?.[`${colorKey}Sub`] || subDefaults[colorKey]}
+                    value={currentSubColor}
                     onChange={(e) => handleGlobalStyleChange(`${colorKey}Sub`, e.target.value)}
                     style={styles.colorValue}
                     placeholder={subDefaults[colorKey]}
