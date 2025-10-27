@@ -30,29 +30,29 @@ const AppIntroComponent: React.FC<AppIntroComponentProps> = ({ component }) => {
   };
 
   return (
-    <section ref={containerRef} id='streamingArea' style={containerStyle} className="base-pattern-1">
+    <section ref={containerRef} id='streamingArea' style={containerStyle} className="baseColor base-pattern-1">
       <div className='sectionInner'>
-        <h3>スカパー！番組配信とは</h3>
-        <p className='text'>
+        <h3 className="commonColor">スカパー！番組配信とは</h3>
+        <p className='text commonColor'>
           スカパー！ご加入のお客さまは、スマホ・タブレット・PCなどでも<br />
           追加料金なしで契約商品をご視聴いただけます。
         </p>
-        <p className='annotion'>※ご契約している商品でも一部視聴できないチャンネル・番組がございます。</p>
+        <p className='annotion commonColor'>※ご契約している商品でも一部視聴できないチャンネル・番組がございます。</p>
 
         <div className='viewingMethod2'>
           <div className="viewindFlex">
             <div className='viewingItem'>
-              <div className='viewingBallon'>
+              <div className='viewingBallon accentColor'>
                 {balloonText || 'ブラックリスト'}をマイリスト登録すれば便利！
               </div>
               <div className='innerFlex'>
                 <p className='img'>
-                  <img 
-                    src="/program/st/promo/generator_common/img/streamingApp_logo.svg" 
+                  <img
+                    src="/program/st/promo/generator_common/img/streamingApp_logo.svg"
                     alt="スカパー！番組配信"
                   />
                 </p>
-                <p className='text'>
+                <p className='text commonColor'>
                   スカパー！番組配信を<br />
                   見るならアプリがおすすめ！
                 </p>

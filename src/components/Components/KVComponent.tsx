@@ -105,14 +105,14 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
 
   // パターン4: 番組ヒーロー型
   return (
-    <section ref={containerRef} id='kvArea' className="base-pattern-1">
+    <section ref={containerRef} id='kvArea' className="baseColor base-pattern-1">
       <div className="mainInfo">
         <div className="flexWrapper">
 
           {/* 左側：番組情報 */}
           <div className="textInfo">
             {/* タイトル */}
-            <h2 data-component-headline>
+            <h2 className="commonColor" data-component-headline>
               {title || 'ブラックリスト ファイナル・シーズン'}
             </h2>
 
@@ -121,13 +121,13 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
               <div className="flagWrapper">
                 {/* 1. 配信バッジ (特別扱い) */}
                 {broadcastInfo.streamingBadgeText && (
-                  <p className="flag flag_streaming">
+                  <p className="flag flag_streaming accentColor">
                     {broadcastInfo.streamingBadgeText}
                   </p>
                 )}
                 {/* 2. 追加バッジ (従来通り) */}
                 {(broadcastInfo.badges || []).map((badge: any, index: number) => (
-                  <p key={index} className="flag main-pattern-1">
+                  <p key={index} className="flag main-pattern-1 mainColor">
                     {badge.text}
                   </p>
                 ))}

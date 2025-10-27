@@ -39,13 +39,13 @@ const FooterComponent: React.FC<FooterComponentProps> = ({ component }) => {
   };
 
   return (
-    <footer ref={containerRef} className={`py-12 ${getThemeClasses()}`}>
+    <footer ref={containerRef} className={`base2Color py-12 ${getThemeClasses()}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="lg:col-span-2">
-            <h3 className="text-2xl font-bold mb-4">{companyName}</h3>
-            <p className={`text-lg mb-6 max-w-md ${theme === 'light' ? 'text-gray-600' : 'text-gray-300'}`}>
+            <h3 className="text-2xl font-bold mb-4 commonColor">{companyName}</h3>
+            <p className={`commonColor text-lg mb-6 max-w-md ${theme === 'light' ? 'text-gray-600' : 'text-gray-300'}`}>
               {description}
             </p>
             

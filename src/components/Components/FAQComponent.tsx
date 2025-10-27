@@ -74,15 +74,15 @@ const FAQComponent: React.FC<FAQComponentProps> = ({ component }) => {
   return (
     <div
       ref={containerRef}
-      className={`py-16 sm:py-24 ${getThemeClasses()} ${getTextClasses()}`}
+      className={`baseColor py-16 sm:py-24 ${getThemeClasses()} ${getTextClasses()}`}
       style={containerStyle}
     >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={headlineStyle}>{title}</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4 commonColor" style={headlineStyle}>{title}</h2>
           {description && (
-            <p 
-              className="text-xl max-w-3xl mx-auto"
+            <p
+              className="text-xl max-w-3xl mx-auto commonColor"
               style={descriptionTextStyle}
             >
               {description}
@@ -94,7 +94,7 @@ const FAQComponent: React.FC<FAQComponentProps> = ({ component }) => {
           {faqs.map((faq: any, index: number) => (
             <div
               key={index}
-              className={`border rounded-lg overflow-hidden ${getCardClasses()}`}
+              className={`base2Color border rounded-lg overflow-hidden ${getCardClasses()}`}
               style={cardStyle}
             >
               <button
