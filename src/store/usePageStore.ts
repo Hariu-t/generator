@@ -10,7 +10,8 @@ interface PageStore {
   historyIndex: number;
   showComponentLibrary: boolean;
   showPropertiesPanel: boolean;
-  
+  showClassNames: boolean;
+
   // Actions
   addComponent: (component: ComponentData) => void;
   updateComponent: (id: string, updates: Partial<ComponentData>) => void;
@@ -28,6 +29,7 @@ interface PageStore {
   resetPage: () => void;
   toggleComponentLibrary: () => void;
   togglePropertiesPanel: () => void;
+  toggleClassNames: () => void;
   
   // プロジェクト保存機能（共有ストレージ）
   saveProject: (name: string, category: string) => void;
@@ -114,6 +116,7 @@ export const usePageStore = create<PageStore>((set, get) => ({
   historyIndex: 0,
   showComponentLibrary: true,
   showPropertiesPanel: true,
+  showClassNames: false,
   currentProjectName: null,
 
   addComponent: (component) => {
@@ -197,6 +200,7 @@ export const usePageStore = create<PageStore>((set, get) => ({
   },
   toggleComponentLibrary: () => set((state) => ({ showComponentLibrary: !state.showComponentLibrary })),
   togglePropertiesPanel: () => set((state) => ({ showPropertiesPanel: !state.showPropertiesPanel })),
+  toggleClassNames: () => set((state) => ({ showClassNames: !state.showClassNames })),
 
   saveProject: (name, category) => {
     const state = get();

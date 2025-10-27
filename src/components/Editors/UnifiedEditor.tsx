@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Trash2, Palette } from 'lucide-react';
+import { Plus, Trash2, Palette, Eye, EyeOff } from 'lucide-react';
 import { ComponentData } from '../../types';
 import { usePageStore } from '../../store/usePageStore';
 import ImageDropZone from '../UI/ImageDropZone';
@@ -11,7 +11,7 @@ interface UnifiedEditorProps {
 }
 
 const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
-  const { pageData, updateComponent, updateGlobalStyles } = usePageStore();
+  const { pageData, updateComponent, updateGlobalStyles, showClassNames, toggleClassNames } = usePageStore();
 
   const handlePropChange = (key: string, value: any) => {
     updateComponent(component.id, {
@@ -166,10 +166,38 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
     return (
       <div style={styles.container}>
         <div style={styles.section}>
-          <h3 style={{...styles.sectionTitle, display: 'flex', alignItems: 'center', gap: '8px'}}>
-            <Palette size={16} color="#4b5563" />
-            共通スタイル設定
-          </h3>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '12px',
+          }}>
+            <h3 style={{...styles.sectionTitle, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 0}}>
+              <Palette size={16} color="#4b5563" />
+              共通スタイル設定
+            </h3>
+            <button
+              onClick={toggleClassNames}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                backgroundColor: showClassNames ? '#dbeafe' : '#f3f4f6',
+                color: showClassNames ? '#1e40af' : '#4b5563',
+                border: showClassNames ? '1px solid #93c5fd' : '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              title={showClassNames ? 'クラス名表示をOFF' : 'クラス名表示をON'}
+            >
+              {showClassNames ? <Eye size={14} /> : <EyeOff size={14} />}
+              {showClassNames ? 'クラス名表示中' : 'クラス名表示'}
+            </button>
+          </div>
 
           {['mainColor', 'baseColor', 'base2Color', 'accentColor'].map((colorKey) => {
             const labels: Record<string, string> = {
