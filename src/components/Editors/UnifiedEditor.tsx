@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Trash2, Palette, Moon, Sun } from 'lucide-react';
+import { Plus, Trash2, Palette } from 'lucide-react';
 import { ComponentData } from '../../types';
 import { usePageStore } from '../../store/usePageStore';
 import ImageDropZone from '../UI/ImageDropZone';
@@ -163,129 +163,8 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
   };
 
   const renderStyleEditor = () => {
-    const toggleDarkMode = () => {
-      const isDarkMode = component.style?.isDarkMode || false;
-
-      if (!isDarkMode) {
-        updateComponent(component.id, {
-          style: {
-            ...component.style,
-            lightModeBackup: {
-              backgroundColor: component.style?.backgroundColor,
-              textColor: component.style?.textColor,
-              headlineColor: component.style?.headlineColor,
-              descriptionColor: component.style?.descriptionColor,
-              buttonBackgroundColor: component.style?.buttonBackgroundColor,
-              buttonTextColor: component.style?.buttonTextColor,
-              cardBackgroundColor: component.style?.cardBackgroundColor,
-              cardTextColor: component.style?.cardTextColor,
-              accentColor: component.style?.accentColor,
-            },
-            backgroundColor: '#0f172a',
-            textColor: '#f1f5f9',
-            headlineColor: '#ffffff',
-            descriptionColor: '#cbd5e1',
-            buttonBackgroundColor: '#3b82f6',
-            buttonTextColor: '#ffffff',
-            cardBackgroundColor: '#1e293b',
-            cardTextColor: '#f1f5f9',
-            accentColor: '#06b6d4',
-            isDarkMode: true,
-          }
-        });
-      } else {
-        const backup = component.style?.lightModeBackup || {};
-
-        const restoreStyle = {
-          backgroundColor: backup.backgroundColor || '#ffffff',
-          textColor: backup.textColor || '#374151',
-          headlineColor: backup.headlineColor || '#111827',
-          descriptionColor: backup.descriptionColor || '#6b7280',
-          buttonBackgroundColor: backup.buttonBackgroundColor || '#2563eb',
-          buttonTextColor: backup.buttonTextColor || '#ffffff',
-          cardBackgroundColor: backup.cardBackgroundColor || '#f9fafb',
-          cardTextColor: backup.cardTextColor || '#374151',
-          accentColor: backup.accentColor || '#E60012',
-        };
-
-        const cleanedStyle = Object.fromEntries(
-          Object.entries(restoreStyle).filter(([_, value]) => value !== undefined)
-        );
-
-        updateComponent(component.id, {
-          style: {
-            ...component.style,
-            ...cleanedStyle,
-            isDarkMode: false,
-            lightModeBackup: undefined,
-          }
-        });
-      }
-    };
-
-    const isDarkMode = component.style?.isDarkMode || false;
-
     return (
       <div style={styles.container}>
-        <div style={styles.section}>
-          <h3 style={{...styles.sectionTitle, display: 'flex', alignItems: 'center', gap: '8px'}}>
-            <Moon size={16} color="#4b5563" />
-            表示モード
-          </h3>
-
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '12px',
-            backgroundColor: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px',
-            marginBottom: '16px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {isDarkMode ? <Moon size={16} color="#2563eb" /> : <Sun size={16} color="#f59e0b" />}
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: 500, color: '#374151' }}>
-                  ダークモード{isDarkMode ? 'ON' : 'OFF'}
-                </div>
-                <div style={{ fontSize: '12px', fontWeight: 500, color: '#6b7280' }}>
-                  {isDarkMode ? 'ダークテーマで表示中' : 'ライトテーマで表示中'}
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={toggleDarkMode}
-              style={{
-                position: 'relative',
-                width: '48px',
-                height: '24px',
-                backgroundColor: isDarkMode ? '#2563eb' : '#d1d5db',
-                borderRadius: '12px',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s ease-in-out',
-              }}
-            >
-              <div style={{
-                position: 'absolute',
-                top: '2px',
-                left: isDarkMode ? '26px' : '2px',
-                width: '20px',
-                height: '20px',
-                backgroundColor: '#ffffff',
-                borderRadius: '50%',
-                transition: 'left 0.2s ease-in-out',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                {isDarkMode ? <Moon size={12} color="#2563eb" /> : <Sun size={12} color="#f59e0b" />}
-              </div>
-            </button>
-          </div>
-        </div>
-
         <div style={styles.section}>
           <h3 style={{...styles.sectionTitle, display: 'flex', alignItems: 'center', gap: '8px'}}>
             <Palette size={16} color="#4b5563" />
