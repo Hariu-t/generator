@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, RefreshCw } from 'lucide-react';
+import { Plus, Search, RefreshCw } from 'lucide-react';
 import { ComponentTemplate } from '../../types';
 import { componentTemplates } from '../../data/componentTemplates';
 import { usePageStore } from '../../store/usePageStore';
