@@ -23,6 +23,7 @@ import { prepareImagesForExport } from '../../utils/imageHandler';
 import { generateGlobalStylesCSS } from '../../utils/globalStylesHelper';
 import { generateComponentHTML, getRequiredCSSFiles, generateCSSLinks, getCategoryFromComponentType } from '../../utils/htmlGenerator';
 import { generateCSSTemplate, generateSectionId, saveCSSMetadata, isCSSGenerated } from '../../utils/cssTemplateGenerator';
+import { wrapComponentHTML } from '../../utils/componentHtmlWrapper';
 import { componentTemplates } from '../../data/componentTemplates';
 import GlobalSettingsPanel from './GlobalSettingsPanel';
 import ProjectManager from './ProjectManager';
@@ -53,10 +54,11 @@ const Toolbar: React.FC = () => {
     // 新しいカテゴリのCSSテンプレートを生成
     generateAndDownloadMissingCSS();
 
-    // Generate actual HTML for all components
-    const componentsHTML = pageData.components.map(component =>
-      generateComponentHTML(component, pageData.globalStyles)
-    ).join('\n');
+    // Generate actual HTML for all components with unique ID wrappers
+    const componentsHTML = pageData.components.map(component => {
+      const html = generateComponentHTML(component, pageData.globalStyles);
+      return wrapComponentHTML(html, component);
+    }).join('\n\n');
 
     const { globalSettings } = pageData;
 

@@ -1,13 +1,17 @@
 import { ComponentTemplate } from '../types';
+import { generateComponentMetadata } from '../utils/componentIdGenerator';
 
 export const componentTemplates: ComponentTemplate[] = [
   {
     id: 'kv-1',
     type: 'kv',
     name: 'KV-1',
+    nameRomanized: 'program-hero',
     description: '単番組ジェネレータ用スライダー付きKV',
     thumbnail: '/program/st/promo/generator_common/img/thumbnail_kv-1.jpg',
     category: 'KV',
+    categoryRomanized: 'kv',
+    uniqueId: 'kv_program_hero',
     defaultProps: {
       pattern: 'program-hero',
       title: 'ブラックリスト ファイナル・シーズン',
@@ -52,9 +56,12 @@ export const componentTemplates: ComponentTemplate[] = [
     id: 'pricing-1',
     type: 'pricing',
     name: '料金表示',
+    nameRomanized: 'price-table',
     description: '価格比較と詳細な料金プランを表示する料金表コンポーネント',
     thumbnail: '/program/st/promo/generator_common/img/thumbnail_pricing-1.jpg',
     category: '料金',
+    categoryRomanized: 'pricing',
+    uniqueId: 'pricing_price_table',
     defaultProps: {
       showMustReadBox: true,
       mainPlan: {
@@ -85,9 +92,12 @@ export const componentTemplates: ComponentTemplate[] = [
     id: 'app-intro-1',
     type: 'app-intro',
     name: '番組配信とは',
+    nameRomanized: 'streaming-intro',
     description: 'スカパー！番組配信の紹介とアプリダウンロードを促進するコンポーネント',
     thumbnail: '/program/st/promo/generator_common/img/thumbnail_app-intro-1.jpg',
     category: '番組配信',
+    categoryRomanized: 'streaming',
+    uniqueId: 'streaming_streaming_intro',
     defaultProps: {
       balloonText: 'ブラックリスト'
     }

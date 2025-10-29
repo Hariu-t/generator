@@ -79,10 +79,13 @@ export interface ComponentTemplate {
   id: string;
   type: ComponentType;
   name: string;
+  nameRomanized?: string; // コンポーネント名のローマ字表記（必須）
   description: string;
   thumbnail: string;
   category: string;
+  categoryRomanized?: string; // カテゴリ名のローマ字表記（オプション）
   defaultProps: Record<string, any>;
+  uniqueId?: string; // 自動生成される一意のID（カテゴリ_コンポーネント）
 }
 
 export interface DesignPattern {

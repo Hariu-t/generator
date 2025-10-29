@@ -1,6 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { Plus, Trash2, Download, Copy, Check, Code, Wand2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import {
+  validateComponentNameRomanized,
+  validateCategoryRomanized,
+  generateComponentMetadata
+} from '../../utils/componentIdGenerator';
 
 interface PropField {
   id: string;
@@ -15,10 +20,13 @@ interface PropField {
 
 const ComponentBuilder: React.FC = () => {
   const [componentName, setComponentName] = useState('');
+  const [componentNameRomanized, setComponentNameRomanized] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [category, setCategory] = useState('KV');
+  const [categoryRomanized, setCategoryRomanized] = useState('kv');
   const [isNewCategory, setIsNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryRomanized, setNewCategoryRomanized] = useState('');
   const [existingCategories, setExistingCategories] = useState<string[]>(['KV', '料金', '番組配信']);
   const [description, setDescription] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
@@ -477,12 +485,41 @@ export default ${componentName};`;
       return;
     }
 
+    // コンポーネント名（ローマ字）のバリデーション
+    const componentNameValidation = validateComponentNameRomanized(componentNameRomanized);
+    if (!componentNameValidation.valid) {
+      alert(componentNameValidation.error);
+      return;
+    }
+
     if (isNewCategory && !newCategoryName.trim()) {
       alert('新しいカテゴリ名を入力してください');
       return;
     }
 
+    if (isNewCategory && !newCategoryRomanized.trim()) {
+      alert('カテゴリ名（ローマ字）を入力してください');
+      return;
+    }
+
+    // カテゴリ名（ローマ字）のバリデーション
+    if (isNewCategory) {
+      const categoryValidation = validateCategoryRomanized(newCategoryRomanized);
+      if (!categoryValidation.valid) {
+        alert(categoryValidation.error);
+        return;
+      }
+    }
+
     const finalCategory = isNewCategory ? newCategoryName.trim() : category;
+    const finalCategoryRomanized = isNewCategory ? newCategoryRomanized.trim() : categoryRomanized;
+
+    // 一意のIDとメタデータを生成
+    const metadata = generateComponentMetadata(
+      finalCategory,
+      finalCategoryRomanized,
+      componentNameRomanized
+    );
 
     const defaultProps: Record<string, any> = {};
     const propSchema = propFields.map(field => ({
@@ -503,8 +540,12 @@ export default ${componentName};`;
       .from('component_templates')
       .insert({
         name: componentName,
+        name_romanized: componentNameRomanized,
         display_name: displayName,
         category: finalCategory,
+        category_romanized: finalCategoryRomanized,
+        unique_id: metadata.uniqueId,
+        section_id: metadata.sectionId,
         description,
         thumbnail_url: thumbnailUrl,
         code_template: generatedCode,
@@ -603,6 +644,22 @@ export default ${componentName};`;
 
             <div style={styles.field}>
               <label style={styles.label}>
+                コンポーネント名（ローマ字） <span style={styles.required}>*</span>
+              </label>
+              <input
+                type="text"
+                style={styles.input}
+                value={componentNameRomanized}
+                onChange={(e) => setComponentNameRomanized(e.target.value)}
+                placeholder="例: custom-hero（半角英数字、ハイフンのみ）"
+              />
+              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                半角英数字とハイフン、スペースのみ使用可。CSS IDに使用されます。
+              </p>
+            </div>
+
+            <div style={styles.field}>
+              <label style={styles.label}>
                 表示名 <span style={styles.required}>*</span>
               </label>
               <input
@@ -641,19 +698,39 @@ export default ${componentName};`;
 
           {isNewCategory && (
             <div style={{ marginTop: '16px' }}>
-              <label style={styles.label}>
-                新しいカテゴリ名 <span style={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                style={styles.input}
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="例: navigation, cta, testimonials"
-              />
-              <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                英数字とハイフンのみを使用してください
-              </p>
+              <div style={styles.fieldRow}>
+                <div style={styles.field}>
+                  <label style={styles.label}>
+                    新しいカテゴリ名 <span style={styles.required}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    style={styles.input}
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="例: 特集、イベント、キャンペーン"
+                  />
+                  <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                    日本語・英語どちらでも可
+                  </p>
+                </div>
+
+                <div style={styles.field}>
+                  <label style={styles.label}>
+                    カテゴリ名（ローマ字） <span style={styles.required}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    style={styles.input}
+                    value={newCategoryRomanized}
+                    onChange={(e) => setNewCategoryRomanized(e.target.value)}
+                    placeholder="例: special, event, campaign"
+                  />
+                  <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                    半角英数字とハイフンのみ。CSSファイル名に使用されます。
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
