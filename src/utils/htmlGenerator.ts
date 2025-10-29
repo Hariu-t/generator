@@ -1,6 +1,44 @@
 // HTML generation utilities for component export
 import { ComponentData, PageData } from '../types';
 import { getGlobalStyleValue } from './globalStylesHelper';
+import { componentTemplates } from '../data/componentTemplates';
+
+// カテゴリとCSSファイルのマッピング
+const CATEGORY_CSS_MAP: Record<string, string> = {
+  'KV': 'kv.css',
+  '料金': 'pricing.css',
+  '番組配信': 'app-intro.css',
+  'FAQ': 'faq.css',
+  'footer': 'footer.css'
+};
+
+// コンポーネントタイプからカテゴリを取得
+export const getCategoryFromComponentType = (type: string): string | null => {
+  const template = componentTemplates.find(t => t.type === type);
+  return template?.category || null;
+};
+
+// 使用されているコンポーネントからCSSファイルのリストを生成
+export const getRequiredCSSFiles = (components: ComponentData[]): string[] => {
+  const categories = new Set<string>();
+
+  components.forEach(component => {
+    const category = getCategoryFromComponentType(component.type);
+    if (category && CATEGORY_CSS_MAP[category]) {
+      categories.add(CATEGORY_CSS_MAP[category]);
+    }
+  });
+
+  // 共通CSSは常に含める
+  return ['common.css', ...Array.from(categories)];
+};
+
+// CSSリンクタグを生成
+export const generateCSSLinks = (cssFiles: string[]): string => {
+  return cssFiles
+    .map(file => `  <link rel="stylesheet" href="/program/st/promo/generator_common/css/${file}">`)
+    .join('\n');
+};
 
 // Generate inline styles from style object
 export const generateInlineStyles = (styles: Record<string, string>): string => {

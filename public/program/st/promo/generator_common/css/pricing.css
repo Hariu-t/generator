@@ -1,0 +1,229 @@
+/* 料金コンポーネント用CSS */
+
+#priceArea {
+  padding: 60px 0;
+}
+
+#priceArea .sectionInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+#priceArea h3 {
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  margin: 0 0 40px 0;
+}
+
+#priceArea .priceBoxArea {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 40px;
+  justify-content: center;
+}
+
+#priceArea .priceBox {
+  flex: 1;
+  max-width: 400px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+#priceArea .priceBox .priceBoxHeader {
+  padding: 20px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 18px;
+  color: #ffffff;
+}
+
+#priceArea .priceBox .priceBoxBody {
+  padding: 24px;
+  background: #ffffff;
+}
+
+#priceArea .priceBoxBody .priceItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+#priceArea .priceBoxBody .priceItem:last-child {
+  border-bottom: none;
+}
+
+#priceArea .priceBoxBody .priceLabel {
+  font-size: 14px;
+  color: #4b5563;
+}
+
+#priceArea .priceBoxBody .priceValue {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+#priceArea .priceBoxBody .priceUnit {
+  font-size: 14px;
+  color: #6b7280;
+  margin-left: 4px;
+}
+
+#priceArea .priceBoxBody .totalRow {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 2px solid #e5e7eb;
+}
+
+#priceArea .priceBoxBody .totalLabel {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+#priceArea .priceBoxBody .totalValue {
+  font-size: 32px;
+  font-weight: bold;
+  color: #dc2626;
+}
+
+#priceArea .planArea {
+  margin-bottom: 32px;
+}
+
+#priceArea .mainPlan {
+  background: #3b82f6;
+  color: #ffffff;
+  padding: 32px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+#priceArea .mainPlan h4 {
+  font-size: 24px;
+  margin: 0 0 12px 0;
+}
+
+#priceArea .mainPlan .planDescription {
+  font-size: 14px;
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+#priceArea .mainPlan .planPrice {
+  font-size: 48px;
+  font-weight: bold;
+  margin: 0;
+}
+
+#priceArea .mainPlan .planPrice .unit {
+  font-size: 18px;
+  margin-left: 8px;
+}
+
+#priceArea .mainPlan .planNote {
+  font-size: 12px;
+  margin-top: 8px;
+  opacity: 0.8;
+}
+
+#priceArea .additionalPlans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+#priceArea .planCard {
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+#priceArea .planCard:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+}
+
+#priceArea .planCard h5 {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0 0 8px 0;
+}
+
+#priceArea .planCard .planDescription {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+#priceArea .planCard .planPrice {
+  font-size: 32px;
+  font-weight: bold;
+  color: #dc2626;
+}
+
+#priceArea .planCard .planPrice .unit {
+  font-size: 14px;
+  color: #6b7280;
+  margin-left: 4px;
+}
+
+#priceArea .mustReadBox {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 32px;
+}
+
+#priceArea .mustReadBox h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #dc2626;
+  margin: 0 0 16px 0;
+}
+
+#priceArea .mustReadBox .mustReadContent {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #4b5563;
+}
+
+#priceArea .mustReadBox ul {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+#priceArea .mustReadBox li {
+  margin-bottom: 8px;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  #priceArea .priceBoxArea {
+    flex-direction: column;
+  }
+
+  #priceArea .priceBox {
+    max-width: 100%;
+  }
+
+  #priceArea .mainPlan .planPrice {
+    font-size: 36px;
+  }
+
+  #priceArea .additionalPlans {
+    grid-template-columns: 1fr;
+  }
+}

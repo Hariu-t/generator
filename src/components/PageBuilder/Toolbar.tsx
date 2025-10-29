@@ -21,7 +21,7 @@ import {
 import { usePageStore } from '../../store/usePageStore';
 import { prepareImagesForExport } from '../../utils/imageHandler';
 import { generateGlobalStylesCSS } from '../../utils/globalStylesHelper';
-import { generateComponentHTML } from '../../utils/htmlGenerator';
+import { generateComponentHTML, getRequiredCSSFiles, generateCSSLinks } from '../../utils/htmlGenerator';
 import GlobalSettingsPanel from './GlobalSettingsPanel';
 import ProjectManager from './ProjectManager';
 
@@ -49,18 +49,22 @@ const Toolbar: React.FC = () => {
 
   const exportHTML = () => {
     // Generate actual HTML for all components
-    const componentsHTML = pageData.components.map(component => 
+    const componentsHTML = pageData.components.map(component =>
       generateComponentHTML(component, pageData.globalStyles)
     ).join('\n');
 
     const { globalSettings } = pageData;
-    
+
     // 画像ファイルの準備
     const exportImages = prepareImagesForExport();
-    
+
     // 共通スタイルのCSS生成
     const globalStylesCSS = generateGlobalStylesCSS(pageData.globalStyles);
-    
+
+    // 必要なCSSファイルのリストを取得
+    const requiredCSSFiles = getRequiredCSSFiles(pageData.components);
+    const cssLinks = generateCSSLinks(requiredCSSFiles);
+
     const htmlContent = `<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -116,7 +120,10 @@ const Toolbar: React.FC = () => {
     <link rel="stylesheet" href="/static_r1/common_r1/css/import.css" type="text/css" media="(min-width:769px)">
     <link rel="stylesheet" href="/static_r1/common_r1/s/css/import.css" type="text/css" media="(max-width:768px)">
     <link href="/global/assets/css/global.css" rel="stylesheet">
-    
+
+    <!-- コンポーネント用CSS -->
+${cssLinks}
+
     <!-- 共通スタイル -->
     <style>
       ${globalStylesCSS}

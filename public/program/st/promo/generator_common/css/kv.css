@@ -1,0 +1,191 @@
+/* KVコンポーネント用CSS */
+
+/* 番組ヒーロー型KV */
+#kvArea {
+  position: relative;
+  background: #fff;
+}
+
+#kvArea .mainInfo {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+#kvArea .flexWrapper {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+#kvArea .textInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+#kvArea .textInfo h2 {
+  font-size: 32px;
+  font-weight: bold;
+  line-height: 1.4;
+  margin: 0 0 20px 0;
+}
+
+#kvArea .flagWrapper {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+#kvArea .flag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  margin: 0;
+}
+
+#kvArea .flag_streaming {
+  background-color: #E60012;
+  color: #ffffff;
+}
+
+#kvArea .schedule {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+#kvArea .icon {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+#kvArea .iconInfo {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#kvArea .chNumber {
+  font-weight: bold;
+  margin: 0 0 4px 0;
+}
+
+#kvArea .chName {
+  margin: 0;
+}
+
+#kvArea .chExplain {
+  margin: 0 0 8px 0;
+}
+
+#kvArea .borderBottom {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+#kvArea .streamingBox {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #f0f9ff;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+#kvArea .streamingItem.img {
+  flex-shrink: 0;
+}
+
+#kvArea .streamingItem.img img {
+  height: 40px;
+  width: auto;
+}
+
+#kvArea .streamingItem.text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+#kvArea .mediaArea {
+  flex: 1;
+  position: relative;
+}
+
+#kvArea .mediaContainer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+#kvArea .mediaContainer .img {
+  margin: 0;
+}
+
+#kvArea .mediaContainer img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#kvArea .mediaContainer iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+#kvArea .arrow {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border-top: 3px solid #333;
+  border-right: 3px solid #333;
+}
+
+#kvArea .arrow-prev {
+  transform: rotate(-135deg);
+}
+
+#kvArea .arrow-next {
+  transform: rotate(45deg);
+}
+
+#kvArea .mediaDots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+#kvArea .mediaDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d1d5db;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#kvArea .mediaDot.active {
+  background: #3b82f6;
+  width: 24px;
+  border-radius: 5px;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  #kvArea .flexWrapper {
+    flex-direction: column;
+  }
+
+  #kvArea .textInfo h2 {
+    font-size: 24px;
+  }
+}
