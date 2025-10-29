@@ -36,26 +36,31 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
-      const projects = getSavedProjects();
-      setSavedProjects(projects);
-      const currentName = getCurrentProjectName();
-      if (currentName) {
-        const currentProject = projects.find(p => p.name === currentName);
-        setProjectName(currentName);
-        setCategory(currentProject?.category || '');
-      } else {
-        setProjectName('');
-        setCategory('');
-      }
-      setExpandedCategories(new Set());
+      loadProjects();
     }
-  }, [isOpen, getCurrentProjectName]); // getSavedProjectsを依存配列から削除
+  }, [isOpen]);
 
-  const handleSave = () => {
+  const loadProjects = async () => {
+    const projects = await getSavedProjects();
+    setSavedProjects(projects);
+    const currentName = getCurrentProjectName();
+    if (currentName) {
+      const currentProject = projects.find(p => p.name === currentName);
+      setProjectName(currentName);
+      setCategory(currentProject?.category || '');
+    } else {
+      setProjectName('');
+      setCategory('');
+    }
+    setExpandedCategories(new Set());
+  };
+
+  const handleSave = async () => {
     const finalCategory = category.trim() || '未分類';
     if (projectName.trim()) {
-      saveProject(projectName.trim(), finalCategory);
-      setSavedProjects(getSavedProjects());
+      await saveProject(projectName.trim(), finalCategory);
+      const projects = await getSavedProjects();
+      setSavedProjects(projects);
       setShowSaveForm(false);
       setExpandedCategories(prev => new Set(prev).add(finalCategory));
     }
@@ -70,8 +75,18 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleLoad = (projectId: string) => { loadProject(projectId); onClose(); };
-  const handleDelete = (projectId: string) => { if (confirm('このプロジェクトを削除してもよろしいですか？')) { deleteProject(projectId); setSavedProjects(getSavedProjects()); } };
+  const handleLoad = async (projectId: string) => {
+    await loadProject(projectId);
+    onClose();
+  };
+
+  const handleDelete = async (projectId: string) => {
+    if (confirm('このプロジェクトを削除してもよろしいですか？')) {
+      await deleteProject(projectId);
+      const projects = await getSavedProjects();
+      setSavedProjects(projects);
+    }
+  };
   const toggleCategory = (cat: string) => setExpandedCategories(prev => { const newSet = new Set(prev); if (newSet.has(cat)) newSet.delete(cat); else newSet.add(cat); return newSet; });
   const formatDate = (date: string) => new Date(date).toLocaleString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   const getProjectDescription = (p: SavedProject) => `${p.pageData.components.length}個のコンポーネント • ${p.pageData.globalSettings.title}`;
