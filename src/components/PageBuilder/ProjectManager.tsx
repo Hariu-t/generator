@@ -36,31 +36,26 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
-      loadProjects();
+      const projects = getSavedProjects();
+      setSavedProjects(projects);
+      const currentName = getCurrentProjectName();
+      if (currentName) {
+        const currentProject = projects.find(p => p.name === currentName);
+        setProjectName(currentName);
+        setCategory(currentProject?.category || '');
+      } else {
+        setProjectName('');
+        setCategory('');
+      }
+      setExpandedCategories(new Set());
     }
-  }, [isOpen]);
+  }, [isOpen, getCurrentProjectName]);
 
-  const loadProjects = async () => {
-    const projects = await getSavedProjects();
-    setSavedProjects(projects);
-    const currentName = getCurrentProjectName();
-    if (currentName) {
-      const currentProject = projects.find(p => p.name === currentName);
-      setProjectName(currentName);
-      setCategory(currentProject?.category || '');
-    } else {
-      setProjectName('');
-      setCategory('');
-    }
-    setExpandedCategories(new Set());
-  };
-
-  const handleSave = async () => {
+  const handleSave = () => {
     const finalCategory = category.trim() || '未分類';
     if (projectName.trim()) {
-      await saveProject(projectName.trim(), finalCategory);
-      const projects = await getSavedProjects();
-      setSavedProjects(projects);
+      saveProject(projectName.trim(), finalCategory);
+      setSavedProjects(getSavedProjects());
       setShowSaveForm(false);
       setExpandedCategories(prev => new Set(prev).add(finalCategory));
     }
@@ -75,16 +70,15 @@ const ProjectManager: React.FC<ProjectManagerProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleLoad = async (projectId: string) => {
-    await loadProject(projectId);
+  const handleLoad = (projectId: string) => {
+    loadProject(projectId);
     onClose();
   };
 
-  const handleDelete = async (projectId: string) => {
+  const handleDelete = (projectId: string) => {
     if (confirm('このプロジェクトを削除してもよろしいですか？')) {
-      await deleteProject(projectId);
-      const projects = await getSavedProjects();
-      setSavedProjects(projects);
+      deleteProject(projectId);
+      setSavedProjects(getSavedProjects());
     }
   };
   const toggleCategory = (cat: string) => setExpandedCategories(prev => { const newSet = new Set(prev); if (newSet.has(cat)) newSet.delete(cat); else newSet.add(cat); return newSet; });

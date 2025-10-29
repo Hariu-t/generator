@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { ComponentData, PageData, ViewMode, SavedProject, GlobalStyles } from '../types';
-import { supabase } from '../lib/supabase';
 
 interface PageStore {
   pageData: PageData;
@@ -74,25 +73,36 @@ const initialPageData: PageData = {
   },
 };
 
-// Supabaseからプロジェクトを取得
-const getSharedProjects = async (): Promise<SavedProject[]> => {
+const SHARED_PROJECTS_STORAGE_KEY = 'lp-builder-shared-projects';
+const SHARED_PROJECTS_BACKUP_KEY = 'lp-builder-shared-projects-backup';
+const CURRENT_PROJECT_KEY = 'lp-builder-current-project';
+
+const getSharedProjects = (): SavedProject[] => {
   try {
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .order('updated_at', { ascending: false });
-
-    if (error) throw error;
-
-    return data ? data.map(project => ({
-      id: project.id,
-      name: project.name,
-      category: project.category,
-      pageData: project.page_data,
-      createdAt: project.created_at,
-    })) : [];
+    const stored = localStorage.getItem(SHARED_PROJECTS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
   } catch (error) {
-    console.error('Failed to load projects from Supabase:', error);
+    console.error('Failed to load shared projects:', error);
+    return [];
+  }
+};
+
+const saveSharedProjects = (projects: SavedProject[]): void => {
+  try {
+    const projectsJson = JSON.stringify(projects);
+    localStorage.setItem(SHARED_PROJECTS_STORAGE_KEY, projectsJson);
+    localStorage.setItem(SHARED_PROJECTS_BACKUP_KEY, projectsJson);
+  } catch (error) {
+    console.error('Failed to save shared projects:', error);
+  }
+};
+
+const getBackupProjects = (): SavedProject[] => {
+  try {
+    const stored = localStorage.getItem(SHARED_PROJECTS_BACKUP_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Failed to load backup projects:', error);
     return [];
   }
 };
@@ -192,102 +202,63 @@ export const usePageStore = create<PageStore>((set, get) => ({
   togglePropertiesPanel: () => set((state) => ({ showPropertiesPanel: !state.showPropertiesPanel })),
   toggleClassNames: () => set((state) => ({ showClassNames: !state.showClassNames })),
 
-  saveProject: async (name, category) => {
+  saveProject: (name, category) => {
     const state = get();
-
-    try {
-      // 既存のプロジェクトをチェック
-      const { data: existing } = await supabase
-        .from('projects')
-        .select('id')
-        .eq('name', name)
-        .maybeSingle();
-
-      if (existing) {
-        // 更新
-        const { error } = await supabase
-          .from('projects')
-          .update({
-            category,
-            page_data: state.pageData,
-          })
-          .eq('id', existing.id);
-
-        if (error) throw error;
-      } else {
-        // 新規作成
-        const { error } = await supabase
-          .from('projects')
-          .insert({
-            name,
-            category,
-            page_data: state.pageData,
-          });
-
-        if (error) throw error;
-      }
-
-      set({ currentProjectName: name });
-      console.log('Project saved successfully to Supabase');
-    } catch (error) {
-      console.error('Failed to save project:', error);
-      alert('プロジェクトの保存に失敗しました');
+    const now = new Date().toISOString();
+    const newProject: SavedProject = {
+      id: `project-${Date.now()}`,
+      name,
+      category,
+      pageData: state.pageData,
+      createdAt: now,
+      updatedAt: now
+    };
+    const existingProjects = getSharedProjects();
+    const existingProjectIndex = existingProjects.findIndex(p => p.name === name);
+    let updatedProjects: SavedProject[];
+    if (existingProjectIndex >= 0) {
+      updatedProjects = [...existingProjects];
+      updatedProjects[existingProjectIndex] = {
+        ...existingProjects[existingProjectIndex],
+        pageData: state.pageData,
+        category,
+        updatedAt: now
+      };
+    } else {
+      updatedProjects = [...existingProjects, newProject];
     }
+    saveSharedProjects(updatedProjects);
+    set({ currentProjectName: name });
+    localStorage.setItem(CURRENT_PROJECT_KEY, name);
   },
   
-  loadProject: async (projectId) => {
-    try {
-      const { data: project, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (project) {
-        set(state => {
-          const newHistory = state.history.slice(0, state.historyIndex + 1);
-          newHistory.push(project.page_data);
-          return {
-            pageData: project.page_data,
-            selectedComponentId: null,
-            history: newHistory,
-            historyIndex: newHistory.length - 1,
-            currentProjectName: project.name
-          };
-        });
-        console.log('Project loaded successfully from Supabase');
-      }
-    } catch (error) {
-      console.error('Failed to load project:', error);
-      alert('プロジェクトの読み込みに失敗しました');
+  loadProject: (projectId) => {
+    const projects = getSharedProjects();
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      set(state => {
+        const newHistory = state.history.slice(0, state.historyIndex + 1);
+        newHistory.push(project.pageData);
+        return {
+          pageData: project.pageData,
+          selectedComponentId: null,
+          history: newHistory,
+          historyIndex: newHistory.length - 1,
+          currentProjectName: project.name
+        };
+      });
+      localStorage.setItem(CURRENT_PROJECT_KEY, project.name);
     }
   },
 
-  deleteProject: async (projectId) => {
-    try {
-      const { data: project } = await supabase
-        .from('projects')
-        .select('name')
-        .eq('id', projectId)
-        .maybeSingle();
-
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', projectId);
-
-      if (error) throw error;
-
-      if (project && get().currentProjectName === project.name) {
-        set({ currentProjectName: null });
-      }
-
-      console.log('Project deleted successfully from Supabase');
-    } catch (error) {
-      console.error('Failed to delete project:', error);
-      alert('プロジェクトの削除に失敗しました');
+  deleteProject: (projectId) => {
+    const projects = getSharedProjects();
+    const updatedProjects = projects.filter(p => p.id !== projectId);
+    saveSharedProjects(updatedProjects);
+    const deletedProject = projects.find(p => p.id === projectId);
+    if (deletedProject && get().currentProjectName === deletedProject.name) {
+      set({ currentProjectName: null });
+      localStorage.removeItem(CURRENT_PROJECT_KEY);
     }
   },
   
@@ -295,11 +266,21 @@ export const usePageStore = create<PageStore>((set, get) => ({
   getCurrentProjectName: () => get().currentProjectName,
   setCurrentProjectName: (name) => {
     set({ currentProjectName: name });
+    if (name) localStorage.setItem(CURRENT_PROJECT_KEY, name);
+    else localStorage.removeItem(CURRENT_PROJECT_KEY);
   },
 
   restoreFromBackup: () => {
-    // Supabaseに移行したため、バックアップ機能は不要
-    alert('Supabaseデータベースを使用しているため、データは自動的に保存されています。');
+    const backupProjects = getBackupProjects();
+    if (backupProjects.length > 0) {
+      if (confirm('バックアップからプロジェクトを復元しますか？現在のプロジェクトリストは上書きされます。')) {
+        saveSharedProjects(backupProjects);
+        alert('バックアップからプロジェクトを復元しました。');
+        return true;
+      }
+    } else {
+      alert('利用可能なバックアップが見つかりませんでした。');
+    }
     return false;
   },
 }));

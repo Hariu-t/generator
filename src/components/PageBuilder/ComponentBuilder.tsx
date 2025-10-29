@@ -1,11 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { Plus, Trash2, Download, Copy, Check, Code, Wand2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 import {
   validateComponentNameRomanized,
   validateCategoryRomanized,
   generateComponentMetadata
 } from '../../utils/componentIdGenerator';
+import {
+  addComponentTemplate,
+  getComponentTemplates,
+  getComponentTemplateByName
+} from '../../utils/componentTemplateStorage';
 
 interface PropField {
   id: string;
