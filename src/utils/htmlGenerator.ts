@@ -3,13 +3,33 @@ import { ComponentData, PageData } from '../types';
 import { getGlobalStyleValue } from './globalStylesHelper';
 import { componentTemplates } from '../data/componentTemplates';
 
-// カテゴリとCSSファイルのマッピング
-const CATEGORY_CSS_MAP: Record<string, string> = {
+// カテゴリ名からCSSファイル名を生成
+const generateCSSFileName = (category: string): string => {
+  // カテゴリ名を小文字にして、スペースや特殊文字をハイフンに変換
+  return category
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/^-+|-+$/g, '') + '.css';
+};
+
+// カテゴリとCSSファイルのマッピング（既存のカテゴリ）
+const PREDEFINED_CATEGORY_CSS_MAP: Record<string, string> = {
   'KV': 'kv.css',
   '料金': 'pricing.css',
   '番組配信': 'app-intro.css',
   'FAQ': 'faq.css',
   'footer': 'footer.css'
+};
+
+// カテゴリからCSSファイル名を取得（動的生成対応）
+const getCSSFileNameForCategory = (category: string): string => {
+  // 既存のマッピングがあればそれを使用
+  if (PREDEFINED_CATEGORY_CSS_MAP[category]) {
+    return PREDEFINED_CATEGORY_CSS_MAP[category];
+  }
+  // なければカテゴリ名から自動生成
+  return generateCSSFileName(category);
 };
 
 // コンポーネントタイプからカテゴリを取得
@@ -20,17 +40,18 @@ export const getCategoryFromComponentType = (type: string): string | null => {
 
 // 使用されているコンポーネントからCSSファイルのリストを生成
 export const getRequiredCSSFiles = (components: ComponentData[]): string[] => {
-  const categories = new Set<string>();
+  const cssFiles = new Set<string>();
 
   components.forEach(component => {
     const category = getCategoryFromComponentType(component.type);
-    if (category && CATEGORY_CSS_MAP[category]) {
-      categories.add(CATEGORY_CSS_MAP[category]);
+    if (category) {
+      const cssFileName = getCSSFileNameForCategory(category);
+      cssFiles.add(cssFileName);
     }
   });
 
   // 共通CSSは常に含める
-  return ['common.css', ...Array.from(categories)];
+  return ['common.css', ...Array.from(cssFiles)];
 };
 
 // CSSリンクタグを生成

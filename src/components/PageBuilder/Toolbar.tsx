@@ -21,7 +21,9 @@ import {
 import { usePageStore } from '../../store/usePageStore';
 import { prepareImagesForExport } from '../../utils/imageHandler';
 import { generateGlobalStylesCSS } from '../../utils/globalStylesHelper';
-import { generateComponentHTML, getRequiredCSSFiles, generateCSSLinks } from '../../utils/htmlGenerator';
+import { generateComponentHTML, getRequiredCSSFiles, generateCSSLinks, getCategoryFromComponentType } from '../../utils/htmlGenerator';
+import { generateCSSTemplate, generateSectionId, saveCSSMetadata, isCSSGenerated } from '../../utils/cssTemplateGenerator';
+import { componentTemplates } from '../../data/componentTemplates';
 import GlobalSettingsPanel from './GlobalSettingsPanel';
 import ProjectManager from './ProjectManager';
 
@@ -48,6 +50,9 @@ const Toolbar: React.FC = () => {
   const [showProjectManager, setShowProjectManager] = useState(false);
 
   const exportHTML = () => {
+    // 新しいカテゴリのCSSテンプレートを生成
+    generateAndDownloadMissingCSS();
+
     // Generate actual HTML for all components
     const componentsHTML = pageData.components.map(component =>
       generateComponentHTML(component, pageData.globalStyles)
@@ -337,6 +342,61 @@ HTMLファイルには、ページ設定で設定した共通スタイル（main
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  // 新しいカテゴリのCSSテンプレートを生成してダウンロード
+  const generateAndDownloadMissingCSS = () => {
+    const allCategories = new Set<string>();
+    const predefinedCategories = new Set(['KV', '料金', '番組配信', 'FAQ', 'footer']);
+
+    // 全てのカテゴリを収集
+    pageData.components.forEach(component => {
+      const category = getCategoryFromComponentType(component.type);
+      if (category) {
+        allCategories.add(category);
+      }
+    });
+
+    // 新しいカテゴリをチェック
+    const newCategories = Array.from(allCategories).filter(
+      cat => !predefinedCategories.has(cat) && !isCSSGenerated(cat)
+    );
+
+    if (newCategories.length === 0) {
+      return; // 新しいカテゴリがない場合は何もしない
+    }
+
+    // 新しいカテゴリのCSSテンプレートを生成してダウンロード
+    newCategories.forEach(category => {
+      const fileName = category
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_]+/g, '-')
+        .replace(/^-+|-+$/g, '') + '.css';
+
+      const sectionId = generateSectionId(category);
+      const cssContent = generateCSSTemplate(category, fileName);
+
+      // CSSファイルをダウンロード
+      downloadFile(cssContent, fileName, 'text/css');
+
+      // メタデータを保存
+      saveCSSMetadata({
+        category,
+        fileName,
+        sectionId,
+        generated: true
+      });
+    });
+
+    // アラートで通知
+    if (newCategories.length > 0) {
+      alert(
+        `新しいカテゴリのCSSテンプレートを生成しました:\n\n` +
+        newCategories.map(cat => `- ${cat} (${cat.toLowerCase().replace(/[^\w\s-]/g, '').replace(/[\s_]+/g, '-')}.css)`).join('\n') +
+        `\n\nダウンロードしたCSSファイルを /public/program/st/promo/generator_common/css/ に配置してください。`
+      );
+    }
   };
 
   const getViewModeIcon = (mode: string) => {
