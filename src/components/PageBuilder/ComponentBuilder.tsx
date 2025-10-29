@@ -492,7 +492,7 @@ export default ${componentName};`;
     setStep('generate');
   };
 
-  const saveToDatabase = async () => {
+  const saveToDatabase = () => {
     if (!componentName || !displayName) {
       alert('コンポーネント名と表示名は必須です');
       return;
@@ -534,6 +534,15 @@ export default ${componentName};`;
       componentName
     );
 
+    // unique_idの重複チェック
+    const existingTemplates = getComponentTemplates();
+    const existingComponent = existingTemplates.find(t => t.uniqueId === metadata.uniqueId);
+
+    if (existingComponent) {
+      alert(`このunique_id（${metadata.uniqueId}）は既に使用されています。\n既存のコンポーネント: ${existingComponent.displayName}\n\n異なるコンポーネント名またはカテゴリを選択してください。`);
+      return;
+    }
+
     const defaultProps: Record<string, any> = {};
     const propSchema = propFields.map(field => ({
       name: field.name,
@@ -549,46 +558,41 @@ export default ${componentName};`;
       }
     });
 
-    const { data, error } = await supabase
-      .from('component_templates')
-      .insert({
+    try {
+      addComponentTemplate({
         name: componentName,
-        name_romanized: componentName,
-        display_name: displayName,
+        nameRomanized: componentName,
+        displayName: displayName,
         category: finalCategory,
-        category_romanized: finalCategoryRomanized,
-        unique_id: metadata.uniqueId,
-        section_id: metadata.sectionId,
+        categoryRomanized: finalCategoryRomanized,
+        uniqueId: metadata.uniqueId,
+        sectionId: metadata.sectionId,
         description,
-        thumbnail_url: thumbnailUrl,
-        code_template: generatedCode,
-        default_props: defaultProps,
-        prop_schema: propSchema,
-        css_files: cssFiles,
-        js_files: jsFiles,
-        is_active: true,
-      })
-      .select()
-      .maybeSingle();
+        thumbnailUrl: thumbnailUrl,
+        codeTemplate: generatedCode,
+        defaultProps: defaultProps,
+        propSchema: propSchema,
+        cssFiles: cssFiles,
+        jsFiles: jsFiles,
+        isActive: true,
+      });
 
-    if (error) {
-      console.error('Error saving component:', error);
-      alert(`保存エラー: ${error.message}`);
-      return;
-    }
-
-    if (isNewCategory && newCategoryName.trim()) {
-      if (!existingCategories.includes(finalCategory)) {
-        setExistingCategories([...existingCategories, finalCategory].sort());
+      if (isNewCategory && newCategoryName.trim()) {
+        if (!existingCategories.includes(finalCategory)) {
+          setExistingCategories([...existingCategories, finalCategory].sort());
+        }
+        setCategory(finalCategory);
+        setIsNewCategory(false);
+        setNewCategoryName('');
       }
-      setCategory(finalCategory);
-      setIsNewCategory(false);
-      setNewCategoryName('');
-    }
 
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
-    alert('コンポーネントがデータベースに保存されました！');
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+      alert('コンポーネントがlocalStorageに保存されました！');
+    } catch (error) {
+      console.error('Error saving component:', error);
+      alert(`保存エラー: ${error}`);
+    }
   };
 
   const copyToClipboard = async () => {

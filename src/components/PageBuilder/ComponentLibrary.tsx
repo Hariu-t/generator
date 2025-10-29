@@ -3,7 +3,7 @@ import { Plus, Search, RefreshCw, Lock } from 'lucide-react';
 import { ComponentTemplate } from '../../types';
 import { componentTemplates } from '../../data/componentTemplates';
 import { usePageStore } from '../../store/usePageStore';
-import { supabase } from '../../lib/supabase';
+import { getComponentTemplates } from '../../utils/componentTemplateStorage';
 import ComponentBuilder from './ComponentBuilder';
 
 const ComponentLibrary: React.FC = () => {
@@ -24,28 +24,23 @@ const ComponentLibrary: React.FC = () => {
     loadCustomTemplates();
   }, []);
 
-  const loadCustomTemplates = async () => {
+  const loadCustomTemplates = () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('component_templates')
-        .select('*')
-        .eq('is_active', true);
+      const data = getComponentTemplates();
 
-      if (error) throw error;
-
-      if (data) {
-        const templates: ComponentTemplate[] = data.map(item => ({
+      const templates: ComponentTemplate[] = data
+        .filter(item => item.isActive)
+        .map(item => ({
           id: item.id,
-          name: item.display_name,
+          name: item.displayName,
           description: item.description || '',
           category: item.category,
           type: item.name.replace('Component', '').toLowerCase(),
-          thumbnail: item.thumbnail_url || '',
-          defaultProps: item.default_props || {},
+          thumbnail: item.thumbnailUrl || '',
+          defaultProps: item.defaultProps || {},
         }));
-        setCustomTemplates(templates);
-      }
+      setCustomTemplates(templates);
     } catch (error) {
       console.error('Error loading custom templates:', error);
     } finally {
