@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Plus, Trash2, Download, Copy, Check, Code, Wand2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import {
   validateComponentNameRomanized,
   validateCategoryRomanized,
@@ -593,42 +594,14 @@ export default ${componentName};`;
     });
 
     try {
-      // 1. コンポーネントファイルを作成
+      // 1. コンポーネントファイル名を生成
       const componentFileName = componentName
         .split(/[\s-]+/)
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join('') + 'Component.tsx';
 
-      const componentFilePath = `/tmp/cc-agent/59019885/project/src/components/Components/${componentFileName}`;
-
-      // エッジ関数を呼び出してファイルを作成
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-component`;
-      const headers = {
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-      };
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          componentName,
-          displayName,
-          category: finalCategory,
-          categoryRomanized: finalCategoryRomanized,
-          generatedCode,
-          uniqueId: metadata.uniqueId,
-          sectionId: metadata.sectionId,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'ファイルの作成に失敗しました');
-      }
-
-      console.log('ファイル作成成功:', result);
+      console.log('生成されたコンポーネントファイル名:', componentFileName);
+      console.log('生成されたコード:', generatedCode);
 
       // 2. localStorageに保存
       addComponentTemplate({
@@ -647,7 +620,6 @@ export default ${componentName};`;
         cssFiles: cssFiles,
         jsFiles: jsFiles,
         isActive: true,
-        componentFilePath: componentFilePath,
       });
 
       if (isNewCategory && newCategoryName.trim()) {
@@ -662,12 +634,23 @@ export default ${componentName};`;
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
 
+      // コンポーネントファイルを自動ダウンロード
+      const blob = new Blob([generatedCode], { type: 'text/typescript' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = componentFileName;
+      a.click();
+      URL.revokeObjectURL(url);
+
       // 成功メッセージをより詳細に
       alert(`コンポーネント「${displayName}」を追加しました！\n\n` +
             `ファイル名: ${componentFileName}\n` +
             `カテゴリ: ${finalCategory}\n` +
             `Unique ID: ${metadata.uniqueId}\n\n` +
-            `コンポーネントライブラリに表示されます。`);
+            `✓ コンポーネントファイルをダウンロードしました\n` +
+            `✓ コンポーネントライブラリに表示されます\n\n` +
+            `ダウンロードしたファイルを src/components/Components/ に配置してください。`);
     } catch (error) {
       console.error('Error saving component:', error);
       alert(`保存エラー: ${error}`);
