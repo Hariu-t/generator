@@ -36,13 +36,23 @@ Deno.serve(async (req: Request) => {
 
     // プロジェクトのベースパスを取得
     const projectBasePath = '/tmp/cc-agent/59019885/project';
-    const componentFilePath = `${projectBasePath}/src/components/Components/${componentFileName}`;
+    const componentsDirPath = `${projectBasePath}/src/components/Components`;
+    const componentFilePath = `${componentsDirPath}/${componentFileName}`;
 
-    // 1. コンポーネントファイルを作成
+    // 1. Componentsディレクトリが存在しない場合は作成
+    try {
+      await Deno.stat(componentsDirPath);
+    } catch {
+      // ディレクトリが存在しない場合は作成
+      await Deno.mkdir(componentsDirPath, { recursive: true });
+      console.log(`Created directory: ${componentsDirPath}`);
+    }
+
+    // 2. コンポーネントファイルを作成
     await Deno.writeTextFile(componentFilePath, generatedCode);
     console.log(`Component file created: ${componentFilePath}`);
 
-    // 2. componentTemplates.tsを更新して新しいコンポーネントを追加
+    // 3. componentTemplates.tsを更新して新しいコンポーネントを追加
     const templatesFilePath = `${projectBasePath}/src/data/componentTemplates.ts`;
     let templatesContent = await Deno.readTextFile(templatesFilePath);
 
