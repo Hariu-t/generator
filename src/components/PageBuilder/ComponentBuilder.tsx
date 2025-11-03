@@ -492,7 +492,7 @@ export default ${componentName};`;
     setStep('generate');
   };
 
-  const saveToDatabase = () => {
+  const saveComponentAndCreateFiles = async () => {
     if (!componentName || !displayName) {
       alert('コンポーネント名と表示名は必須です');
       return;
@@ -559,6 +559,44 @@ export default ${componentName};`;
     });
 
     try {
+      // 1. コンポーネントファイルを作成
+      const componentFileName = componentName
+        .split(/[\s-]+/)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join('') + 'Component.tsx';
+
+      const componentFilePath = `/tmp/cc-agent/59019885/project/src/components/Components/${componentFileName}`;
+
+      // エッジ関数を呼び出してファイルを作成
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-component`;
+      const headers = {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          componentName,
+          displayName,
+          category: finalCategory,
+          categoryRomanized: finalCategoryRomanized,
+          generatedCode,
+          uniqueId: metadata.uniqueId,
+          sectionId: metadata.sectionId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'ファイルの作成に失敗しました');
+      }
+
+      console.log('ファイル作成成功:', result);
+
+      // 2. localStorageに保存
       addComponentTemplate({
         name: componentName,
         nameRomanized: componentName,
@@ -575,6 +613,7 @@ export default ${componentName};`;
         cssFiles: cssFiles,
         jsFiles: jsFiles,
         isActive: true,
+        componentFilePath: componentFilePath,
       });
 
       if (isNewCategory && newCategoryName.trim()) {
@@ -588,7 +627,13 @@ export default ${componentName};`;
 
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
-      alert('コンポーネントがlocalStorageに保存されました！');
+
+      // 成功メッセージをより詳細に
+      alert(`コンポーネント「${displayName}」を追加しました！\n\n` +
+            `ファイル名: ${componentFileName}\n` +
+            `カテゴリ: ${finalCategory}\n` +
+            `Unique ID: ${metadata.uniqueId}\n\n` +
+            `コンポーネントライブラリに表示されます。`);
     } catch (error) {
       console.error('Error saving component:', error);
       alert(`保存エラー: ${error}`);
@@ -1151,20 +1196,23 @@ export default ${componentName};`;
             <div style={styles.saveSection}>
               <button
                 style={{ ...styles.saveButton, ...(isSaved ? styles.savedButton : {}) }}
-                onClick={saveToDatabase}
+                onClick={saveComponentAndCreateFiles}
                 disabled={isSaved}
               >
                 {isSaved ? (
                   <>
                     <Check size={16} />
-                    保存完了
+                    追加完了
                   </>
                 ) : (
-                  'データベースに保存'
+                  <>
+                    <Plus size={16} />
+                    コンポーネント追加
+                  </>
                 )}
               </button>
               <p style={styles.saveHint}>
-                保存後、コンポーネントライブラリに表示されます
+                追加後、コンポーネントライブラリに表示されます
               </p>
             </div>
           </div>
