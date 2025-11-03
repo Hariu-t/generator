@@ -620,14 +620,14 @@ export default ${componentName};`;
       <div style={styles.header}>
         <h2 style={styles.title}>コンポーネントビルダー</h2>
         <p style={styles.subtitle}>
-          HTMLコードを貼り付けて、対話的にプロパティを定義できます
+          基本情報を入力し、HTMLコードを貼り付けて、対話的にプロパティを定義できます
         </p>
       </div>
 
       <div style={styles.stepsContainer}>
         <div style={{ ...styles.step, ...(step === 'html' ? styles.stepActive : {}) }}>
           <div style={styles.stepNumber}>1</div>
-          <span>HTMLコード</span>
+          <span>基本情報・HTML</span>
         </div>
         <div style={styles.stepDivider}></div>
         <div style={{ ...styles.step, ...(step === 'props' ? styles.stepActive : {}) }}>
@@ -889,7 +889,7 @@ export default ${componentName};`;
           <div style={styles.sectionHeader}>
             <h3 style={styles.sectionTitle}>
               <Code size={20} style={{ marginRight: '8px' }} />
-              HTMLコード
+              基本情報とHTMLコード
             </h3>
             {htmlCode && (
               <button
@@ -902,7 +902,7 @@ export default ${componentName};`;
           </div>
 
           <p style={styles.helpText}>
-            HTMLコードを入力してください。コード内のタグをクリックするとプロパティを定義できます。
+            基本情報を入力し、HTMLコードを貼り付けてください。コード内のタグをクリックするとプロパティを定義できます。
           </p>
 
           <div style={{
@@ -916,6 +916,7 @@ export default ${componentName};`;
               💡 使い方
             </p>
             <ol style={{ fontSize: '12px', color: '#0369a1', margin: 0, paddingLeft: '20px', lineHeight: '1.6' }}>
+              <li>基本情報（コンポーネント名、カテゴリなど）を入力</li>
               <li>HTMLコードを入力または貼り付け</li>
               <li>表示されたコード内の<strong>タグ（&lt;h2&gt;, &lt;p&gt;など）</strong>を直接クリック</li>
               <li>プロパティタイプを選択して追加</li>
