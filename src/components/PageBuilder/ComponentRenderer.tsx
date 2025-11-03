@@ -7,6 +7,9 @@ import FooterComponent from '../Components/FooterComponent';
 import PricingComponent from '../Components/PricingComponent';
 import AppIntroComponent from '../Components/AppIntroComponent';
 import HeadlineComponent from '../Components/HeadlineComponent';
+import TabComponent from '../Components/TabComponent';
+import ModalComponent from '../Components/ModalComponent';
+import SliderComponent from '../Components/SliderComponent';
 
 interface ComponentRendererProps {
   component: ComponentData;
@@ -100,6 +103,12 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({ component }) => {
         return <PricingComponent {...commonProps} />;
       case 'app-intro':
         return <AppIntroComponent {...commonProps} />;
+      case 'tab':
+        return <TabComponent {...commonProps} />;
+      case 'modal':
+        return <ModalComponent {...commonProps} />;
+      case 'slider':
+        return <SliderComponent {...commonProps} />;
       default:
         return (
           <div className="p-8 bg-gray-100 text-center">

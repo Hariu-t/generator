@@ -184,50 +184,7 @@ ${cssLinks}
 
   <script src="/global/assets/js/global.js"></script>
   <script src="/global/assets/js/jquery.min.js"></script>
-
-  <script>
-    // FAQ toggle functionality
-    function toggleFAQ(index) {
-      const answer = document.getElementById('faq-answer-' + index);
-      const icon = document.getElementById('faq-icon-' + index);
-      
-      if (answer.style.display === 'none' || answer.style.display === '') {
-        answer.style.display = 'block';
-        icon.style.transform = 'rotate(180deg)';
-      } else {
-        answer.style.display = 'none';
-        icon.style.transform = 'rotate(0deg)';
-      }
-    }
-    
-    // Expandable content functionality
-    function toggleExpanded(componentId) {
-      const expandedDiv = document.getElementById('expanded-desc-' + componentId);
-      const toggleBtn = document.getElementById('toggle-btn-' + componentId);
-      
-      if (expandedDiv.style.display === 'none' || expandedDiv.style.display === '') {
-        expandedDiv.style.display = 'block';
-        toggleBtn.textContent = '閉じる';
-      } else {
-        expandedDiv.style.display = 'none';
-        toggleBtn.textContent = 'もっと見る';
-      }
-    }
-    
-    // Smooth scrolling for anchor links
-    document.addEventListener('DOMContentLoaded', function() {
-      const links = document.querySelectorAll('a[href^="#"]');
-      links.forEach(link => {
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          const target = document.querySelector(this.getAttribute('href'));
-          if (target) {
-            target.scrollIntoView({ behavior: 'smooth' });
-          }
-        });
-      });
-    });
-  </script>
+  <script src="/program/st/promo/generator_common/js/common.js"></script>
 </body>
 </html>`;
 

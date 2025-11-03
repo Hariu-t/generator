@@ -168,29 +168,34 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
             {activeMediaItems && activeMediaItems.length > 0 && (
               <>
                 {/* 現在のメディアアイテムを表示 */}
-                <div id='kvSlider'>
-                  {activeMediaItems[currentMediaIndex].type === 'video' ? (
-                    <iframe id="player" width="440" height="329"
-                      src={convertToEmbedUrl(activeMediaItems[currentMediaIndex].url)}
-                      title="YouTube video player"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  ) : (
-                    <p className='img'>
-                      <img
-                      className='guard'
-                        src={activeMediaItems[currentMediaIndex].url}
-                        alt={activeMediaItems[currentMediaIndex].alt}
-                      />
-                    </p>
-                  )}
+                <div id='kvSlider' data-slider={component.id} data-slider-autoplay="8000">
+                  {activeMediaItems.map((item, index) => (
+                    <div key={index} data-slider-item className={index === currentMediaIndex ? 'is-active' : ''} style={{ display: index === currentMediaIndex ? 'block' : 'none' }}>
+                      {item.type === 'video' ? (
+                        <iframe id="player" width="440" height="329"
+                          src={convertToEmbedUrl(item.url)}
+                          title="YouTube video player"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <p className='img'>
+                          <img
+                            className='guard'
+                            src={item.url}
+                            alt={item.alt}
+                          />
+                        </p>
+                      )}
+                    </div>
+                  ))}
                 </div>
 
                 {/* ナビゲーションボタン */}
                 {activeMediaItems.length > 1 && (
                   <>
                     <button
+                      data-slider-prev
                       onClick={prevMediaSlide}
                       style={{
                         position: 'absolute',
@@ -223,6 +228,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                     </button>
 
                     <button
+                      data-slider-next
                       onClick={nextMediaSlide}
                       style={{
                         position: 'absolute',
@@ -270,7 +276,9 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                     {activeMediaItems.map((_, index) => (
                       <button
                         key={index}
+                        data-slider-dot={index}
                         onClick={() => changeMediaSlide(index)}
+                        aria-current={index === currentMediaIndex ? 'true' : 'false'}
                         style={{
                           width: '16px',
                           height: '16px',
@@ -329,13 +337,17 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
           {/* 展開可能な詳細説明 */}
           {expandedDescription && (
             <div>
-              <p className={`description description_add ${isExpanded ? 'show' : ''}`}>
+              <p className={`description description_add ${isExpanded ? 'show is-expanded' : ''}`} data-expanded-content={`${component.id}-expanded`} aria-hidden={!isExpanded}>
                 {expandedDescription}
               </p>
               <button
                 id='showDesc'
+                data-toggle-expanded={`${component.id}-expanded`}
+                data-show-more-text={showMoreText}
+                data-show-less-text={showLessText}
                 onClick={() => setIsExpanded(!isExpanded)}
                 className={`borderBottom ${isExpanded ? 'active' : ''}`}
+                aria-expanded={isExpanded}
               >
                 {isExpanded ? showLessText : showMoreText}
               </button>

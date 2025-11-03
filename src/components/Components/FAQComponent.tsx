@@ -91,37 +91,45 @@ const FAQComponent: React.FC<FAQComponentProps> = ({ component }) => {
         </div>
 
         <div className="space-y-4">
-          {faqs.map((faq: any, index: number) => (
-            <div
-              key={index}
-              className={`base2Color border rounded-lg overflow-hidden ${getCardClasses()}`}
-              style={cardStyle}
-            >
-              <button
-                onClick={() => toggleFAQ(index)}
-                className={`w-full px-6 py-4 text-left flex items-center justify-between hover:bg-opacity-50 transition-colors ${getHoverClasses()}`}
-                style={cardTextColor ? { color: cardTextColor } : mainTextStyle}
+          {faqs.map((faq: any, index: number) => {
+            const accordionId = `${component.id}-faq-${index}`;
+            return (
+              <div
+                key={index}
+                className={`base2Color border rounded-lg overflow-hidden ${getCardClasses()}`}
+                style={cardStyle}
               >
-                <span className="font-semibold text-lg">{faq.question}</span>
-                <ChevronDown
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    openIndex === index ? 'transform rotate-180' : ''
-                  }`}
-                />
-              </button>
-              
-              {openIndex === index && (
-                <div className="px-6 pb-4">
-                  <p 
+                <button
+                  data-accordion-trigger={accordionId}
+                  onClick={() => toggleFAQ(index)}
+                  className={`w-full px-6 py-4 text-left flex items-center justify-between hover:bg-opacity-50 transition-colors ${getHoverClasses()}`}
+                  style={cardTextColor ? { color: cardTextColor } : mainTextStyle}
+                  aria-expanded={openIndex === index}
+                >
+                  <span className="font-semibold text-lg">{faq.question}</span>
+                  <ChevronDown
+                    data-accordion-icon={accordionId}
+                    className={`w-5 h-5 transition-transform duration-200 ${
+                      openIndex === index ? 'transform rotate-180 is-rotated' : ''
+                    }`}
+                  />
+                </button>
+
+                <div
+                  data-accordion-content={accordionId}
+                  className={`px-6 transition-all duration-200 ${openIndex === index ? 'is-open pb-4' : 'h-0 overflow-hidden'}`}
+                  aria-hidden={openIndex !== index}
+                >
+                  <p
                     className="leading-relaxed"
                     style={{ color: cardTextColor ? `${cardTextColor}CC` : (textColor ? `${textColor}CC` : undefined) }}
                   >
                     {faq.answer}
                   </p>
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

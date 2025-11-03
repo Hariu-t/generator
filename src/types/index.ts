@@ -5,7 +5,7 @@ export interface ComponentData {
   style?: ComponentStyle;
 }
 
-export type ComponentType = 
+export type ComponentType =
   | 'kv'
   | 'test'
   | 'footer'
@@ -13,7 +13,10 @@ export type ComponentType =
   | 'pricing'
   | 'contact'
   | 'headline'
-  | 'app-intro';
+  | 'app-intro'
+  | 'tab'
+  | 'modal'
+  | 'slider';
 
 export interface ComponentStyle {
   theme?: 'light' | 'dark';

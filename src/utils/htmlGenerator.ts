@@ -745,17 +745,26 @@ export const generateFAQHTML = (component: ComponentData, globalStyles: any): st
     'color': descriptionColor || textColor || '#666'
   };
   
-  const faqsHTML = faqs.map((faq: any, index: number) => `
+  const faqsHTML = faqs.map((faq: any, index: number) => {
+    const accordionId = `${component.id}-faq-${index}`;
+    return `
     <div style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; margin-bottom: 16px; background-color: ${cardBackgroundColor || '#ffffff'};">
-      <button onclick="toggleFAQ(${index})" style="width: 100%; padding: 16px 24px; text-align: left; display: flex; align-items: center; justify-content: space-between; background: none; border: none; cursor: pointer; font-size: 18px; font-weight: 600; color: ${cardTextColor || textColor || '#333'};">
+      <button
+        data-accordion-trigger="${accordionId}"
+        aria-expanded="false"
+        style="width: 100%; padding: 16px 24px; text-align: left; display: flex; align-items: center; justify-content: space-between; background: none; border: none; cursor: pointer; font-size: 18px; font-weight: 600; color: ${cardTextColor || textColor || '#333'};">
         <span>${faq.question}</span>
-        <span id="faq-icon-${index}" style="transition: transform 0.2s;">▼</span>
+        <span data-accordion-icon="${accordionId}" style="transition: transform 0.2s;">▼</span>
       </button>
-      <div id="faq-answer-${index}" style="display: none; padding: 0 24px 16px; color: ${cardTextColor || textColor || '#666'};">
-        <p style="line-height: 1.6; margin: 0;">${faq.answer}</p>
+      <div
+        data-accordion-content="${accordionId}"
+        aria-hidden="true"
+        style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease; padding: 0 24px; color: ${cardTextColor || textColor || '#666'};">
+        <p style="line-height: 1.6; margin: 0; padding-bottom: 16px;">${faq.answer}</p>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
   
   return `
     <div style="${generateInlineStyles(containerStyles)}">
@@ -827,6 +836,229 @@ export const generateTestimonialsHTML = (component: ComponentData, globalStyles:
   `;
 };
 
+// Generate HTML for Tab component
+export const generateTabHTML = (component: ComponentData, globalStyles: any): string => {
+  const { title, description, tabs } = component.props;
+  const { backgroundColor, textColor, headlineColor, descriptionColor, accentColor } = component.style || {};
+
+  const baseColor = getGlobalStyleValue(globalStyles, 'baseColor');
+  const mainColor = getGlobalStyleValue(globalStyles, 'mainColor');
+
+  const containerStyles = {
+    'background-color': backgroundColor || baseColor,
+    'color': textColor || '#333',
+    'padding': '64px 0 96px'
+  };
+
+  const innerStyles = {
+    'max-width': '1200px',
+    'margin': '0 auto',
+    'padding': '0 16px'
+  };
+
+  const tabButtonsHTML = tabs.map((tab: any, index: number) => `
+    <button
+      role="tab"
+      data-tab-trigger="${component.id}-tab-${index}"
+      aria-selected="${index === 0 ? 'true' : 'false'}"
+      aria-controls="${component.id}-panel-${index}"
+      class="${index === 0 ? 'is-active' : ''}"
+      style="padding: 12px 24px; font-size: 16px; font-weight: 500; border: none; border-bottom: 2px solid ${index === 0 ? (accentColor || mainColor) : 'transparent'}; background: none; color: ${index === 0 ? (accentColor || mainColor) : textColor || '#666'}; cursor: pointer; transition: all 0.3s;"
+    >
+      ${tab.label}
+    </button>
+  `).join('');
+
+  const tabContentsHTML = tabs.map((tab: any, index: number) => `
+    <div
+      id="${component.id}-panel-${index}"
+      role="tabpanel"
+      data-tab-content="${component.id}-tab-${index}"
+      data-tab-group="${component.id}"
+      aria-labelledby="${component.id}-tab-${index}"
+      class="${index === 0 ? 'is-active' : ''}"
+      style="display: ${index === 0 ? 'block' : 'none'}; padding-top: 32px;"
+    >
+      <p style="font-size: 18px; line-height: 1.6; color: ${textColor || '#333'};">${tab.content}</p>
+    </div>
+  `).join('');
+
+  return `
+    <div style="${generateInlineStyles(containerStyles)}">
+      <div style="${generateInlineStyles(innerStyles)}">
+        ${title ? `<h2 style="font-size: 48px; font-weight: bold; text-align: center; margin-bottom: 16px; color: ${headlineColor || textColor || '#333'};">${title}</h2>` : ''}
+        ${description ? `<p style="font-size: 20px; text-align: center; max-width: 768px; margin: 0 auto 48px; color: ${descriptionColor || textColor || '#666'};">${description}</p>` : ''}
+        <div data-tab-group="${component.id}">
+          <div role="tablist" style="border-bottom: 1px solid #e5e7eb;">
+            <div style="display: flex; gap: 32px;">
+              ${tabButtonsHTML}
+            </div>
+          </div>
+          <div>
+            ${tabContentsHTML}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// Generate HTML for Modal component
+export const generateModalHTML = (component: ComponentData, globalStyles: any): string => {
+  const { buttonText, modalTitle, modalContent, buttonStyle } = component.props;
+  const { backgroundColor, textColor, accentColor, buttonBackgroundColor, buttonTextColor } = component.style || {};
+
+  const baseColor = getGlobalStyleValue(globalStyles, 'baseColor');
+  const mainColor = getGlobalStyleValue(globalStyles, 'mainColor');
+
+  const containerStyles = {
+    'background-color': backgroundColor || baseColor,
+    'color': textColor || '#333',
+    'padding': '64px 0 96px',
+    'text-align': 'center'
+  };
+
+  const innerStyles = {
+    'max-width': '1200px',
+    'margin': '0 auto',
+    'padding': '0 16px'
+  };
+
+  return `
+    <div style="${generateInlineStyles(containerStyles)}">
+      <div style="${generateInlineStyles(innerStyles)}">
+        <button
+          data-modal-open="${component.id}"
+          style="padding: 12px 24px; font-size: 16px; font-weight: 600; border-radius: 8px; border: none; background-color: ${buttonBackgroundColor || mainColor}; color: ${buttonTextColor || '#fff'}; cursor: pointer; transition: opacity 0.3s;"
+          onmouseover="this.style.opacity='0.9'"
+          onmouseout="this.style.opacity='1'"
+        >
+          ${buttonText || 'モーダルを開く'}
+        </button>
+
+        <div class="modal-overlay" style="display: none; position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; padding: 16px; align-items: center; justify-content: center;">
+          <div
+            data-modal="${component.id}"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title-${component.id}"
+            style="position: relative; max-width: 768px; width: 100%; background-color: #fff; border-radius: 8px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); padding: 32px;"
+          >
+            <button
+              data-modal-close
+              aria-label="閉じる"
+              style="position: absolute; top: 16px; right: 16px; padding: 8px; border-radius: 8px; border: none; background: none; cursor: pointer; font-size: 24px; line-height: 1;"
+              onmouseover="this.style.backgroundColor='#f3f4f6'"
+              onmouseout="this.style.backgroundColor='transparent'"
+            >
+              ×
+            </button>
+            <h3 id="modal-title-${component.id}" style="font-size: 32px; font-weight: bold; margin-bottom: 16px; padding-right: 40px;">${modalTitle || 'モーダルタイトル'}</h3>
+            <p style="font-size: 18px; line-height: 1.6; color: #666;">${modalContent || 'モーダルのコンテンツがここに表示されます。'}</p>
+            <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 16px;">
+              <button
+                data-modal-close
+                style="padding: 8px 24px; border-radius: 8px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; transition: background-color 0.3s;"
+                onmouseover="this.style.backgroundColor='#f9fafb'"
+                onmouseout="this.style.backgroundColor='#fff'"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// Generate HTML for Slider component
+export const generateSliderHTML = (component: ComponentData, globalStyles: any): string => {
+  const { title, description, slides, autoplay = true, autoplayDelay = 8000 } = component.props;
+  const { backgroundColor, textColor, headlineColor, descriptionColor } = component.style || {};
+
+  const baseColor = getGlobalStyleValue(globalStyles, 'baseColor');
+
+  const containerStyles = {
+    'background-color': backgroundColor || baseColor,
+    'color': textColor || '#333',
+    'padding': '64px 0 96px'
+  };
+
+  const innerStyles = {
+    'max-width': '1200px',
+    'margin': '0 auto',
+    'padding': '0 16px'
+  };
+
+  const slidesHTML = slides.map((slide: any, index: number) => `
+    <div
+      data-slider-item
+      class="${index === 0 ? 'is-active' : ''}"
+      aria-hidden="${index !== 0}"
+      style="position: absolute; inset: 0; opacity: ${index === 0 ? '1' : '0'}; transition: opacity 0.5s;"
+    >
+      <img
+        src="${slide.image || 'https://images.pexels.com/photos/6044265/pexels-photo-6044265.jpeg?auto=compress&cs=tinysrgb&w=1200'}"
+        alt="${slide.caption || `スライド ${index + 1}`}"
+        style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;"
+      />
+      ${slide.caption ? `
+        <div style="position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0, 0, 0, 0.5); color: #fff; padding: 24px;">
+          <p style="font-size: 18px; font-weight: 600; margin: 0;">${slide.caption}</p>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+
+  const dotsHTML = slides.map((_: any, index: number) => `
+    <button
+      data-slider-dot="${index}"
+      aria-label="スライド ${index + 1} に移動"
+      aria-current="${index === 0 ? 'true' : 'false'}"
+      class="${index === 0 ? 'is-active' : ''}"
+      style="width: 12px; height: 12px; border-radius: 50%; border: none; background-color: ${index === 0 ? '#fff' : 'rgba(255, 255, 255, 0.5)'}; cursor: pointer; transition: all 0.3s;"
+    ></button>
+  `).join('');
+
+  return `
+    <div style="${generateInlineStyles(containerStyles)}">
+      <div style="${generateInlineStyles(innerStyles)}">
+        ${title ? `<h2 style="font-size: 48px; font-weight: bold; text-align: center; margin-bottom: 16px; color: ${headlineColor || textColor || '#333'};">${title}</h2>` : ''}
+        ${description ? `<p style="font-size: 20px; text-align: center; max-width: 768px; margin: 0 auto 48px; color: ${descriptionColor || textColor || '#666'};">${description}</p>` : ''}
+        <div data-slider="${component.id}" data-slider-autoplay="${autoplayDelay}" style="position: relative;">
+          <div style="position: relative; overflow: hidden; border-radius: 8px; min-height: 400px;">
+            ${slidesHTML}
+          </div>
+          ${slides.length > 1 ? `
+            <button
+              data-slider-prev
+              aria-label="前のスライド"
+              style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); padding: 12px; border-radius: 50%; border: none; background-color: rgba(255, 255, 255, 0.8); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); transition: background-color 0.3s;"
+              onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 1)'"
+              onmouseout="this.style.backgroundColor='rgba(255, 255, 255, 0.8)'"
+            >
+              <span style="display: block; width: 24px; height: 24px; border-left: 3px solid #333; border-bottom: 3px solid #333; transform: rotate(45deg);"></span>
+            </button>
+            <button
+              data-slider-next
+              aria-label="次のスライド"
+              style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); padding: 12px; border-radius: 50%; border: none; background-color: rgba(255, 255, 255, 0.8); cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); transition: background-color 0.3s;"
+              onmouseover="this.style.backgroundColor='rgba(255, 255, 255, 1)'"
+              onmouseout="this.style.backgroundColor='rgba(255, 255, 255, 0.8)'"
+            >
+              <span style="display: block; width: 24px; height: 24px; border-right: 3px solid #333; border-top: 3px solid #333; transform: rotate(45deg);"></span>
+            </button>
+            <div style="position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px;">
+              ${dotsHTML}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+};
+
 // Main function to generate HTML for any component
 export const generateComponentHTML = (component: ComponentData, globalStyles: any): string => {
   switch (component.type) {
@@ -838,9 +1070,14 @@ export const generateComponentHTML = (component: ComponentData, globalStyles: an
       return generatePricingHTML(component, globalStyles);
     case 'app-intro':
       return generateAppIntroHTML(component, globalStyles);
-      return generateCTAHTML(component, globalStyles);
     case 'test':
       return generateFAQHTML(component, globalStyles);
+    case 'tab':
+      return generateTabHTML(component, globalStyles);
+    case 'modal':
+      return generateModalHTML(component, globalStyles);
+    case 'slider':
+      return generateSliderHTML(component, globalStyles);
     default:
       return `<div><!-- Unsupported component type: ${component.type} --></div>`;
   }
