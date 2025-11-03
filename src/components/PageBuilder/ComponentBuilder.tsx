@@ -132,16 +132,30 @@ const ComponentBuilder: React.FC = () => {
       }
     }
 
-    const filteredTags = tags.filter((tag, index) => {
-      for (let i = 0; i < tags.length; i++) {
-        if (i !== index) {
-          const other = tags[i];
-          if (
-            tag.position.start > other.position.start &&
-            tag.position.end <= other.position.end
-          ) {
-            return false;
-          }
+    // すべてのタグを表示（親要素も子要素も含む）
+    // 深さ（ネストレベル）を計算して、インデント表示用に保存
+    const tagsWithDepth = tags.map(tag => {
+      let depth = 0;
+      for (const other of tags) {
+        if (
+          tag.position.start > other.position.start &&
+          tag.position.end <= other.position.end
+        ) {
+          depth++;
+        }
+      }
+      return { ...tag, depth };
+    });
+
+    // すべてのタグを返す（フィルタリングなし）
+    const filteredTags = tagsWithDepth.filter((tag, index) => {
+      // 重複チェックのみ（同じ位置のタグは除外）
+      for (let i = 0; i < index; i++) {
+        if (
+          tagsWithDepth[i].position.start === tag.position.start &&
+          tagsWithDepth[i].position.end === tag.position.end
+        ) {
+          return false;
         }
       }
       return true;
@@ -231,67 +245,87 @@ const ComponentBuilder: React.FC = () => {
   const renderInteractiveHTML = () => {
     if (!htmlCode) return null;
 
-    const parts: JSX.Element[] = [];
-    let lastIndex = 0;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {parsedTags.map((tag, index) => {
+          const isSelected = selectedTagIndex === index;
+          const hasProperty = propFields.some(f =>
+            f.position && f.position.start === tag.position.start
+          );
 
-    parsedTags.forEach((tag, index) => {
-      if (tag.position.start > lastIndex) {
-        const textBefore = htmlCode.substring(lastIndex, tag.position.start);
-        parts.push(
-          <span key={`text-${lastIndex}`} style={{ color: '#6b7280' }}>
-            {textBefore}
-          </span>
-        );
-      }
+          // 深さに応じたインデント
+          const indent = (tag as any).depth || 0;
+          const indentSize = indent * 20;
 
-      const isSelected = selectedTagIndex === index;
-      const hasProperty = propFields.some(f =>
-        f.position && f.position.start === tag.position.start
-      );
+          // タグの開始部分のみを取得（最初の>まで）
+          const openTagMatch = tag.fullElement.match(/^<[^>]+>/);
+          const openTag = openTagMatch ? openTagMatch[0] : tag.tag;
 
-      parts.push(
-        <span
-          key={`tag-${index}`}
-          onClick={() => handleTagClick(index)}
-          style={{
-            color: hasProperty ? '#10b981' : '#3b82f6',
-            cursor: 'pointer',
-            backgroundColor: isSelected ? '#dbeafe' : hasProperty ? '#d1fae5' : 'transparent',
-            padding: '2px 4px',
-            borderRadius: '3px',
-            fontWeight: hasProperty ? 'bold' : 'normal',
-            transition: 'all 0.2s',
-            display: 'inline-block',
-            border: isSelected ? '1px solid #3b82f6' : '1px solid transparent',
-          }}
-          onMouseEnter={(e) => {
-            if (!isSelected) {
-              e.currentTarget.style.backgroundColor = '#f3f4f6';
+          // タグ内のテキストコンテンツを取得（子要素は除外）
+          let textContent = '';
+          const contentMatch = tag.fullElement.match(/^<[^>]+>([^<]*)/);
+          if (contentMatch && contentMatch[1].trim()) {
+            textContent = contentMatch[1].trim();
+            if (textContent.length > 50) {
+              textContent = textContent.substring(0, 50) + '...';
             }
-          }}
-          onMouseLeave={(e) => {
-            if (!isSelected) {
-              e.currentTarget.style.backgroundColor = hasProperty ? '#d1fae5' : 'transparent';
-            }
-          }}
-        >
-          {tag.fullElement}
-        </span>
-      );
+          }
 
-      lastIndex = tag.position.end;
-    });
-
-    if (lastIndex < htmlCode.length) {
-      const textAfter = htmlCode.substring(lastIndex);
-      parts.push(
-        <span key={`text-${lastIndex}`} style={{ color: '#6b7280' }}>
-          {textAfter}
-        </span>
-      );
-    }
-
-    return <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{parts}</div>;
+          return (
+            <div
+              key={`tag-${index}`}
+              onClick={() => handleTagClick(index)}
+              style={{
+                marginLeft: `${indentSize}px`,
+                color: hasProperty ? '#10b981' : '#3b82f6',
+                cursor: 'pointer',
+                backgroundColor: isSelected ? '#dbeafe' : hasProperty ? '#d1fae5' : 'transparent',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontWeight: hasProperty ? 'bold' : 'normal',
+                transition: 'all 0.2s',
+                border: isSelected ? '1px solid #3b82f6' : '1px solid transparent',
+                fontSize: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSelected) {
+                  e.currentTarget.style.backgroundColor = '#f3f4f6';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected) {
+                  e.currentTarget.style.backgroundColor = hasProperty ? '#d1fae5' : 'transparent';
+                }
+              }}
+            >
+              <span style={{ color: hasProperty ? '#10b981' : '#3b82f6', fontWeight: 'bold' }}>
+                {openTag}
+              </span>
+              {textContent && (
+                <span style={{ color: '#6b7280', fontSize: '11px', fontStyle: 'italic' }}>
+                  "{textContent}"
+                </span>
+              )}
+              {hasProperty && (
+                <span style={{
+                  fontSize: '10px',
+                  color: '#10b981',
+                  backgroundColor: '#d1fae5',
+                  padding: '2px 6px',
+                  borderRadius: '3px',
+                  fontWeight: 'bold'
+                }}>
+                  ✓ プロパティ定義済み
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   const addPropertyFromSelection = () => {
@@ -956,7 +990,7 @@ export default ${componentName};`;
           </div>
 
           <p style={styles.helpText}>
-            基本情報を入力し、HTMLコードを貼り付けてください。コード内のタグをクリックするとプロパティを定義できます。
+            基本情報を入力し、HTMLコードを貼り付けてください。表示されるタグ一覧から、親要素・子要素問わず任意のタグをクリックしてプロパティを定義できます。
           </p>
 
           <div style={{
@@ -972,8 +1006,8 @@ export default ${componentName};`;
             <ol style={{ fontSize: '12px', color: '#0369a1', margin: 0, paddingLeft: '20px', lineHeight: '1.6' }}>
               <li>基本情報（コンポーネント名、カテゴリなど）を入力</li>
               <li>HTMLコードを入力または貼り付け</li>
-              <li><strong>（任意）</strong> 表示されたコード内の<strong>タグ（&lt;h2&gt;, &lt;p&gt;など）</strong>を直接クリック</li>
-              <li><strong>（任意）</strong> プロパティタイプを選択して追加</li>
+              <li><strong>（任意）</strong> 表示されるタグ一覧から<strong>親要素・子要素問わず任意のタグ</strong>をクリック</li>
+              <li><strong>（任意）</strong> プロパティタイプを選択して追加（複数のタグにプロパティ定義可能）</li>
               <li>「次へ：プロパティ定義」をクリック、または直接「コード生成」でコンポーネント作成</li>
             </ol>
             <p style={{ fontSize: '11px', color: '#0369a1', margin: '8px 0 0', fontStyle: 'italic' }}>
@@ -1022,7 +1056,7 @@ export default ${componentName};`;
                   gap: '8px'
                 }}>
                   <Wand2 size={16} />
-                  タグをクリックしてプロパティを定義
+                  すべてのタグ（親・子要素）- クリックしてプロパティを定義
                 </p>
                 <div style={{ display: 'flex', gap: '12px', fontSize: '11px' }}>
                   <span style={{ color: '#3b82f6' }}>● クリック可能</span>
