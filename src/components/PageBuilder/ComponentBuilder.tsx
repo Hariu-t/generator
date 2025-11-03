@@ -891,13 +891,22 @@ export default ${componentName};`;
               <Code size={20} style={{ marginRight: '8px' }} />
               基本情報とHTMLコード
             </h3>
-            {htmlCode && (
-              <button
-                style={styles.nextButton}
-                onClick={() => setStep('props')}
-              >
-                次へ：プロパティ定義
-              </button>
+            {htmlCode && componentName && (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  style={styles.nextButton}
+                  onClick={() => setStep('props')}
+                >
+                  次へ：プロパティ定義
+                </button>
+                <button
+                  style={{ ...styles.generateButton, padding: '8px 16px', fontSize: '13px' }}
+                  onClick={generateComponentCode}
+                >
+                  <Wand2 size={16} style={{ marginRight: '4px' }} />
+                  スキップしてコード生成
+                </button>
+              </div>
             )}
           </div>
 
@@ -918,9 +927,13 @@ export default ${componentName};`;
             <ol style={{ fontSize: '12px', color: '#0369a1', margin: 0, paddingLeft: '20px', lineHeight: '1.6' }}>
               <li>基本情報（コンポーネント名、カテゴリなど）を入力</li>
               <li>HTMLコードを入力または貼り付け</li>
-              <li>表示されたコード内の<strong>タグ（&lt;h2&gt;, &lt;p&gt;など）</strong>を直接クリック</li>
-              <li>プロパティタイプを選択して追加</li>
+              <li><strong>（任意）</strong> 表示されたコード内の<strong>タグ（&lt;h2&gt;, &lt;p&gt;など）</strong>を直接クリック</li>
+              <li><strong>（任意）</strong> プロパティタイプを選択して追加</li>
+              <li>「次へ：プロパティ定義」をクリック、または直接「コード生成」でコンポーネント作成</li>
             </ol>
+            <p style={{ fontSize: '11px', color: '#0369a1', margin: '8px 0 0', fontStyle: 'italic' }}>
+              ※ プロパティなしでも静的なコンポーネントとして生成できます
+            </p>
           </div>
 
           <textarea
@@ -998,21 +1011,22 @@ export default ${componentName};`;
               <button
                 style={styles.generateButton}
                 onClick={generateComponentCode}
-                disabled={!componentName || propFields.length === 0}
+                disabled={!componentName}
               >
                 コード生成
               </button>
             </div>
 
             <p style={styles.helpText}>
-              コード内のテキストを選択して、プロパティとして定義してください。同じ要素に複数のプロパティを定義できます（例：テキスト + カラー）。
+              プロパティは任意です。静的なコンポーネントの場合はプロパティなしでもコード生成できます。動的な値を設定したい場合は、コード内のテキストを選択してプロパティを定義してください。
             </p>
 
             {propFields.length === 0 ? (
               <div style={styles.emptyState}>
                 <p>プロパティが定義されていません</p>
                 <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '8px' }}>
-                  上のHTMLコード内でテキストを選択してプロパティを追加してください
+                  プロパティなしで静的なコンポーネントとして生成することもできます。<br />
+                  動的な値を設定したい場合は、HTMLコード内でテキストを選択してプロパティを追加してください。
                 </p>
               </div>
             ) : (
