@@ -233,12 +233,13 @@ const Canvas: React.FC = () => {
   if (previewMode) {
     return (
       <div style={canvasStyle}>
+        <style>{dynamicStyles}</style>
         <div style={canvasContentStyle}>
           <Header />
           {/* 必須ヘッドラインコンポーネント */}
           {pageData.components.find(c => c.type === 'headline') && (
-            <ComponentRenderer 
-              component={pageData.components.find(c => c.type === 'headline')!} 
+            <ComponentRenderer
+              component={pageData.components.find(c => c.type === 'headline')!}
             />
           )}
           {pageData.components.filter(c => c.type !== 'headline').map((component) => (
