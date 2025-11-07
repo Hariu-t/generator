@@ -10,6 +10,7 @@ import HeadlineComponent from '../Components/HeadlineComponent';
 import TabComponent from '../Components/TabComponent';
 import ModalComponent from '../Components/ModalComponent';
 import SliderComponent from '../Components/SliderComponent';
+import TelComponent from '../Components/tel';
 
 interface ComponentRendererProps {
   component: ComponentData;
@@ -109,10 +110,16 @@ const ComponentRenderer: React.FC<ComponentRendererProps> = ({ component }) => {
         return <ModalComponent {...commonProps} />;
       case 'slider':
         return <SliderComponent {...commonProps} />;
+      case 'tel':
+        return <TelComponent {...commonProps} />;
       default:
         return (
           <div className="p-8 bg-gray-100 text-center">
             <p className="text-gray-500">Unknown component type: {component.type}</p>
+            <p className="text-xs text-gray-400 mt-2">
+              Component type &quot;{component.type}&quot; is not registered in ComponentRenderer.
+              Please add it to the switch statement.
+            </p>
           </div>
         );
     }

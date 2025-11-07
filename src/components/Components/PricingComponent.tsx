@@ -132,41 +132,46 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
 
   return (
     <section ref={containerRef} id='priceArea' className={`baseColor`} style={containerStyle}>
-      <h3>番組を見るには</h3>
+      <h3>コンテンツ</h3>
       <div className='priceInfo priceInfo1'>
-        <p className='subTitle alignBaseline main-pattern-1'><span className='textLarge'>ご加入月は<span className='price'>0</span>円</span>で<br className='sp'/>人気番組が楽しめる！</p>
+        {/* <p className='subTitle alignBaseline main-pattern-1'><span className='textLarge'>ご加入月は<span className='price'>0</span>円</span>で<br className='sp'/>人気番組が楽しめる！</p> */}
+        <p className='subTitle main-pattern-1'><span className='textLarge'>契約月は無料</span>で<br className='sp'/>人気番組が楽しめる！</p>
 
         <div className='priceTable'>
           <div className='priceBox thisMonth mainColor'>
-            <p className='tit accent-pattern-1'>ご加入月</p>
+            {/* <p className='tit accent-pattern-1'>ご加入月</p> */}
+            <p className='tit accent-pattern-1'>契約月</p>
             <div className='fee viewingFee'>
             <p className='flag accent-pattern-2'>視聴料</p>
             <p><span className='fontLearge fontRobot'>0</span><span className='fontMedium'>円</span>(税込)</p>
             </div>
-            <div className='fee BasicFee'>
+            {/* <div className='fee BasicFee'>
             <p className='flag accent-pattern-2'>基本料</p>
             <p><span className='fontLearge fontRobot'>0</span><span className='fontMedium'>円</span>(税込)</p>
-            </div>
+            </div> */}
           </div>
 
           <div className='priceBox nextMonth mainColor'>
             <p className='tit accent-pattern-1'>翌月以降</p>
             <div className='fee viewingFee'>
             <p className='flag accent-pattern-2'>視聴料</p>
-            <p className='text'>
+            {/* <p className='text'>
                 選んだチャンネル、<br/>
                 プラン・セット料金
+            </p> */}
+            <p className='text'>
+                選んだプラン料金
             </p>
             </div>
-            <div className='fee BasicFee'>
+            {/* <div className='fee BasicFee'>
             <p className='flag accent-pattern-2'>基本料</p>
             <p><span className='fontLearge fontRobot'>429</span><span className='fontMedium'>円</span>(税込)</p>
-            </div>
+            </div> */}
           </div>
         </div>
 
         {/* メインプラン */}
-        {mainPlan && (
+        {/* {mainPlan && (
           <div className="ChFeeWrapper">
             <div className="chFee chFee2 chFee_style" id='priceInfo2'>
               <p className="tit">
@@ -237,7 +242,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* 追加プラン */}
         {additionalPlans && additionalPlans.length > 0 && (
@@ -269,10 +274,10 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
           </div>
         )}
 
-        <div className="flexWrapper">
+        {/* <div className="flexWrapper">
             <div className="c-btn c-btn--blueline"><a href="/plan/channel/basic/">各チャンネルの<br/>料金一覧はこちら</a></div>
             <div className="c-btn c-btn--blueline"><a href="/plan/pack/basic/">各プラン・セットの<br/>料金一覧はこちら</a></div>
-        </div>
+        </div> */}
       </div>
 
 
@@ -286,12 +291,12 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
           #priceArea .subTitle {
             background: #C3000F;
             width: 100%;
-            min-height: 90px;
+            padding: 18px;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: baseline;
             font-size: 26px;
-            line-height: 1.3;
+            line-height: normal;
             font-weight: bold;
             margin: 0 0 50px;
             text-align: center;
@@ -301,7 +306,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
           }
           #priceArea .subTitle span.textLarge {
             font-size: 36px;
-            line-height: 1.4;
+            line-height: inherit;
           }
           #priceArea .subTitle span.price {
             font-family: 'Roboto', sans-serif;
@@ -315,8 +320,8 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
             width: 100%;
             margin: 0 auto 50px;
           }
-          #priceArea .priceInfo:not(:last-child) {
-            padding-bottom: 120px;
+          #priceArea .priceInfo + .flexWrapper {
+            margin-top: 120px;
           }
           #priceArea .priceInfo1 {
             max-width: 1160px;
@@ -376,7 +381,7 @@ const PricingComponent: React.FC<PricingComponentProps> = ({ component }) => {
             margin: 0 20px;
             padding: 0 16px;
           }
-          #priceArea .priceTable .viewingFee {
+          #priceArea .priceTable .viewingFee:not(:last-child) {
             border-bottom: 1px solid #fff;
           }
           #priceArea .priceTable .fee .flag {

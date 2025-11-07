@@ -55,7 +55,7 @@ const initialPageData: PageData = {
     }
   ],
   globalSettings: {
-    title: 'タイトルを挿入｜スカパー！: スポーツ＆音楽ライブ、アイドル、アニメ、ドラマ、映画など',
+      title: 'タイトルを挿入',
     description: 'ディスクリプションを挿入',
     directory: 'test',
   },
@@ -121,6 +121,15 @@ export const usePageStore = create<PageStore>((set, get) => ({
 
   addComponent: (component) => {
     set((state) => {
+      // 重複チェック：同じIDのコンポーネントが既に存在する場合は追加しない
+      const existingComponent = state.pageData.components.find(c => c.id === component.id);
+      if (existingComponent) {
+        // エラーメッセージを表示
+        alert(`同じIDのコンポーネントが既に存在しています。\n\nコンポーネントID: ${component.id}\nコンポーネントタイプ: ${component.type}`);
+        console.warn(`Component with id "${component.id}" already exists. Skipping duplicate.`);
+        return state;
+      }
+      
       const newPageData = { ...state.pageData, components: [...state.pageData.components, component] };
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newPageData);

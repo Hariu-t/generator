@@ -10,6 +10,7 @@ import {
   getComponentTemplates,
   getComponentTemplateByName
 } from '../../utils/componentTemplateStorage';
+import { supabase } from '../../lib/supabase';
 
 interface PropField {
   id: string;
@@ -40,7 +41,7 @@ const ComponentBuilder: React.FC = () => {
   const [isNewCategory, setIsNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryRomanized, setNewCategoryRomanized] = useState('');
-  const [existingCategories, setExistingCategories] = useState<string[]>(['KV', '料金', '番組配信']);
+  const [existingCategories, setExistingCategories] = useState<string[]>(['KV', '料金']);
   const [description, setDescription] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [cssFiles, setCssFiles] = useState<string[]>([]);
@@ -58,6 +59,8 @@ const ComponentBuilder: React.FC = () => {
   const [step, setStep] = useState<'html' | 'props' | 'generate'>('html');
   const [parsedTags, setParsedTags] = useState<Array<{ tag: string; fullElement: string; position: { start: number; end: number }; tagName: string }>>([]);
   const [selectedTagIndex, setSelectedTagIndex] = useState<number | null>(null);
+  const [childTags, setChildTags] = useState<Array<{ tag: string; fullElement: string; position: { start: number; end: number }; tagName: string }>>([]);
+  const [selectedChildIndex, setSelectedChildIndex] = useState<number>(-1);
   const [newCssFile, setNewCssFile] = useState('');
   const [newJsFile, setNewJsFile] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -160,24 +163,35 @@ const ComponentBuilder: React.FC = () => {
 
   React.useEffect(() => {
     const loadCategories = async () => {
-      const defaultCategories = ['KV', '料金', '番組配信'];
+      const defaultCategories = ['KV', '料金'];
 
-      const { data, error } = await supabase
-        .from('component_templates')
-        .select('category')
-        .order('category');
-
-      if (error) {
-        console.error('Error loading categories:', error);
+      // Supabaseが利用可能な場合のみデータベースからカテゴリを取得
+      if (!supabase) {
         setExistingCategories(defaultCategories);
         return;
       }
 
-      if (data) {
-        const dbCategories = data.map(item => item.category);
-        const allCategories = Array.from(new Set([...defaultCategories, ...dbCategories])).sort();
-        setExistingCategories(allCategories);
-      } else {
+      try {
+        const { data, error } = await supabase!
+          .from('component_templates')
+          .select('category')
+          .order('category');
+
+        if (error) {
+          console.error('Error loading categories:', error);
+          setExistingCategories(defaultCategories);
+          return;
+        }
+
+        if (data) {
+          const dbCategories = data.map((item: { category: string }) => item.category);
+          const allCategories = Array.from(new Set([...defaultCategories, ...dbCategories])).sort();
+          setExistingCategories(allCategories);
+        } else {
+          setExistingCategories(defaultCategories);
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
         setExistingCategories(defaultCategories);
       }
     };
@@ -208,12 +222,97 @@ const ComponentBuilder: React.FC = () => {
     return `${tagName}_${nextNumber}_${typeSuffix[propType]}`;
   };
 
+  // タグからクラス名を抽出する関数
+  const extractClassName = (fullElement: string): string | null => {
+    const classMatch = fullElement.match(/class=["']([^"']+)["']/i);
+    if (classMatch && classMatch[1]) {
+      // 最初のクラス名のみを取得
+      return classMatch[1].split(/\s+/)[0];
+    }
+    return null;
+  };
+
   const handleTagClick = (index: number) => {
     const tag = parsedTags[index];
     setSelectedTagIndex(index);
     setSelectedText(tag.fullElement);
     setSelectionRange(tag.position);
     setShowPropModal(true);
+
+    // 子要素（入れ子のタグ）を抽出してモーダルで選択可能にする
+    try {
+      const openTagMatch = tag.fullElement.match(/^<([a-zA-Z][a-zA-Z0-9]*)(?:\s[^>]*)?>/);
+      const closeTagMatch = tag.fullElement.match(/<\/([a-zA-Z][a-zA-Z0-9]*)>\s*$/);
+      const innerStart = openTagMatch ? openTagMatch[0].length : 0;
+      const innerEnd = closeTagMatch ? tag.fullElement.length - closeTagMatch[0].length : tag.fullElement.length;
+      const innerHtml = tag.fullElement.slice(innerStart, innerEnd);
+
+      const tags: Array<{ tag: string; fullElement: string; position: { start: number; end: number }; tagName: string }> = [];
+      const tagRegex = /<([a-zA-Z][a-zA-Z0-9]*)((?:\s+[^>]*)?)>/g;
+      let match;
+
+      const findMatchingCloseTag = (html: string, startPos: number, tagName: string): number => {
+        let depth = 1;
+        let pos = startPos;
+        const openRegex = new RegExp(`<${tagName}(?:\\s[^>]*)?>`, 'g');
+        const closeRegex = new RegExp(`</${tagName}>`, 'g');
+        openRegex.lastIndex = startPos;
+        closeRegex.lastIndex = startPos;
+        while (depth > 0 && pos < html.length) {
+          const nextOpen = openRegex.exec(html);
+          const nextClose = closeRegex.exec(html);
+          if (!nextClose) return -1;
+          if (nextOpen && nextOpen.index < nextClose.index) {
+            depth++;
+            pos = openRegex.lastIndex;
+            closeRegex.lastIndex = pos;
+          } else {
+            depth--;
+            if (depth === 0) return nextClose.index + nextClose[0].length;
+            pos = closeRegex.lastIndex;
+            openRegex.lastIndex = pos;
+          }
+        }
+        return -1;
+      };
+
+      while ((match = tagRegex.exec(innerHtml)) !== null) {
+        const tagName = match[1];
+        const openTag = match[0];
+        const startPos = match.index;
+        const openTagEnd = startPos + openTag.length;
+
+        const selfClosingMatch = openTag.match(/\/\s*>$/);
+        const absoluteStart = tag.position.start + innerStart + startPos;
+        if (selfClosingMatch) {
+          tags.push({
+            tag: openTag,
+            fullElement: openTag,
+            position: { start: absoluteStart, end: absoluteStart + openTag.length },
+            tagName,
+          });
+          continue;
+        }
+
+        const endPos = findMatchingCloseTag(innerHtml, openTagEnd, tagName);
+        if (endPos !== -1) {
+          const fullElement = innerHtml.substring(startPos, endPos);
+          const absoluteEnd = tag.position.start + innerStart + endPos;
+          tags.push({
+            tag: openTag,
+            fullElement,
+            position: { start: absoluteStart, end: absoluteEnd },
+            tagName,
+          });
+        }
+      }
+
+      setChildTags(tags);
+      setSelectedChildIndex(-1);
+    } catch (e) {
+      setChildTags([]);
+      setSelectedChildIndex(-1);
+    }
 
     if (tag.tagName === 'a') {
       setNewPropType('link');
@@ -297,12 +396,17 @@ const ComponentBuilder: React.FC = () => {
   const addPropertyFromSelection = () => {
     if (!selectedText || !selectionRange) return;
 
-    const tag = parsedTags[selectedTagIndex!];
-    const autoGeneratedName = generatePropertyName(tag.tagName, newPropType);
+    const baseTag = parsedTags[selectedTagIndex!];
+    const target = selectedChildIndex >= 0 ? childTags[selectedChildIndex] : baseTag;
+
+    const autoGeneratedName = generatePropertyName(target.tagName, newPropType);
     setNewPropName(autoGeneratedName);
 
-    const beforeText = htmlCode.substring(0, selectionRange.start);
-    const afterText = htmlCode.substring(selectionRange.end);
+    const localRange = selectedChildIndex >= 0 ? target.position : selectionRange;
+    const localSelectedText = selectedChildIndex >= 0 ? target.fullElement : selectedText;
+
+    const beforeText = htmlCode.substring(0, localRange.start);
+    const afterText = htmlCode.substring(localRange.end);
 
     const findElementTag = (beforeText: string) => {
       const tagMatch = beforeText.match(/<([a-zA-Z][a-zA-Z0-9]*)(?:\s[^>]*)?>(?:(?!<\1).)*$/s);
@@ -326,7 +430,7 @@ const ComponentBuilder: React.FC = () => {
         case 'visibility':
           return true;
         case 'array': {
-          const itemMatches = selectedText.match(/<li[^>]*>([^<]+)<\/li>/gi);
+          const itemMatches = localSelectedText.match(/<li[^>]*>([^<]+)<\/li>/gi);
           if (itemMatches) {
             return itemMatches.map(match => {
               const textMatch = match.match(/>([^<]+)</);
@@ -336,20 +440,20 @@ const ComponentBuilder: React.FC = () => {
           return ['項目1', '項目2', '項目3'];
         }
         case 'link': {
-          const fullElement = selectedText.match(/<a[^>]*href=["']([^"']+)["'][^>]*>([^<]+)<\/a>/i);
+          const fullElement = localSelectedText.match(/<a[^>]*href=["']([^"']+)["'][^>]*>([^<]+)<\/a>/i);
           if (fullElement) {
             return { url: fullElement[1] || '', text: fullElement[2] || '' };
           }
           return { url: text.match(/^https?:\/\//) ? text : '', text: text.match(/^https?:\/\//) ? '' : text };
         }
         case 'image': {
-          const fullElement = selectedText.match(/<img[^>]*src=["']([^"']+)["'][^>]*alt=["']([^"']+)["'][^>]*>/i);
+          const fullElement = localSelectedText.match(/<img[^>]*src=["']([^"']+)["'][^>]*alt=["']([^"']+)["'][^>]*>/i);
           if (fullElement) {
             return { src: fullElement[1] || '', alt: fullElement[2] || '' };
           }
           return { src: text, alt: '' };
         }
-        default:
+      default:
           return text;
       }
     };
@@ -370,9 +474,9 @@ const ComponentBuilder: React.FC = () => {
       name: autoGeneratedName,
       type: newPropType,
       label: generateLabel(autoGeneratedName),
-      defaultValue: getDefaultValue(newPropType, selectedText),
+      defaultValue: getDefaultValue(newPropType, localSelectedText),
       description: '',
-      position: selectionRange,
+      position: localRange,
       elementPath: elementPath,
     };
 
@@ -393,11 +497,11 @@ const ComponentBuilder: React.FC = () => {
 
     const dataPropAttr = ` data-prop="${autoGeneratedName}" data-bind-type="${getBindType(newPropType)}"`;
 
-    const openingTagMatch = selectedText.match(/^<([a-zA-Z][a-zA-Z0-9]*)((?:\s[^>]*)?)>/);
+    const openingTagMatch = localSelectedText.match(/^<([a-zA-Z][a-zA-Z0-9]*)((?:\s[^>]*)?)>/);
     if (openingTagMatch) {
       const tagName = openingTagMatch[1];
       const existingAttrs = openingTagMatch[2];
-      const restOfElement = selectedText.slice(openingTagMatch[0].length);
+      const restOfElement = localSelectedText.slice(openingTagMatch[0].length);
 
       const newOpeningTag = `<${tagName}${existingAttrs}${dataPropAttr}>`;
       const updatedElement = newOpeningTag + restOfElement;
@@ -412,6 +516,8 @@ const ComponentBuilder: React.FC = () => {
     setSelectedText('');
     setSelectionRange(null);
     setSelectedTagIndex(null);
+    setChildTags([]);
+    setSelectedChildIndex(-1);
   };
 
   const removePropField = (id: string) => {
@@ -588,11 +694,167 @@ export default ${componentName};`;
 
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
-      alert('コンポーネントがlocalStorageに保存されました！');
+      
+      // コンポーネントファイルを自動ダウンロード
+      downloadComponentFile(componentName, generatedCode);
+      
+      // 関連ファイル更新ガイドを生成・ダウンロード
+      downloadRelatedFilesGuide(
+        componentName,
+        displayName,
+        finalCategory,
+        finalCategoryRomanized,
+        metadata,
+        defaultProps,
+        propSchema,
+        thumbnailUrl,
+        cssFiles,
+        jsFiles
+      );
+      
+      alert('コンポーネントがlocalStorageに保存されました！\n\nコンポーネントファイルと関連ファイル更新ガイドをダウンロードしました。');
     } catch (error) {
       console.error('Error saving component:', error);
       alert(`保存エラー: ${error}`);
     }
+  };
+
+  // コンポーネントファイルをダウンロード
+  const downloadComponentFile = (name: string, code: string) => {
+    const blob = new Blob([code], { type: 'text/typescript' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name}.tsx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // 関連ファイル更新ガイドを生成・ダウンロード
+  const downloadRelatedFilesGuide = (
+    componentName: string,
+    displayName: string,
+    category: string,
+    categoryRomanized: string,
+    metadata: any,
+    defaultProps: Record<string, any>,
+    propSchema: any[],
+    thumbnailUrlValue: string,
+    cssFilesValue: string[],
+    jsFilesValue: string[]
+  ) => {
+    // ComponentTypeに追加する必要があるかチェック
+    // uniqueIdからコンポーネントタイプを生成（例: kv_program_hero -> kv-program-hero）
+    const componentType = metadata.uniqueId.replace(/_/g, '-');
+    
+    // 既存のComponentTypeをチェック
+    const existingTypes: string[] = ['kv', 'test', 'footer', 'about', 'pricing', 'contact', 'headline', 'app-intro', 'tab', 'modal', 'slider'];
+    const needsTypeUpdate = !existingTypes.includes(componentType);
+    
+    // componentTemplates.tsに追加するコード
+    const componentTemplateCode = `  {
+    id: '${componentType}',
+    type: '${componentType}' as ComponentType,
+    name: '${componentName}',
+    nameRomanized: '${componentName}',
+    displayName: '${displayName}',
+    description: '${displayName}',
+    thumbnail: '${thumbnailUrlValue || ''}',
+    category: '${category}',
+    categoryRomanized: '${categoryRomanized}',
+    uniqueId: '${metadata.uniqueId}',
+    sectionId: '${metadata.sectionId}',
+    defaultProps: ${JSON.stringify(defaultProps, null, 8).replace(/\n/g, '\n    ')},
+    propSchema: ${JSON.stringify(propSchema, null, 8).replace(/\n/g, '\n    ')},
+    cssFiles: ${JSON.stringify(cssFilesValue)},
+    jsFiles: ${JSON.stringify(jsFilesValue)},
+  },`;
+
+    // types/index.tsに追加する必要がある場合のコード
+    const typeUpdateCode = needsTypeUpdate
+      ? `\n  | '${componentType}'`
+      : '';
+
+    const guide = `# 関連ファイル更新ガイド
+
+## 1. コンポーネントファイルの配置
+
+生成されたコンポーネントファイルを以下の場所に配置してください:
+
+\`src/components/Components/${componentName}.tsx\`
+
+（※ 既にダウンロードされたファイルをそのまま配置してください）
+
+
+## 2. src/data/componentTemplates.ts の更新
+
+以下のコードを \`componentTemplates\` 配列に追加してください:
+
+\`\`\`typescript
+${componentTemplateCode}
+\`\`\`
+
+注意: 配列の最後にカンマ（,）を追加することを忘れないでください。
+
+
+## 3. src/types/index.ts の更新
+
+ComponentType に新しいタイプを追加する必要がある場合:
+
+\`\`\`typescript
+export type ComponentType =
+  | 'kv'
+  | 'test'
+  | 'footer'
+  | 'about'
+  | 'pricing'
+  | 'contact'
+  | 'headline'
+  | 'app-intro'
+  | 'tab'
+  | 'modal'
+  | 'slider'${typeUpdateCode};
+\`\`\`
+
+${needsTypeUpdate ? `⚠️ 注意: '${componentType}' を ComponentType に追加する必要があります。` : `✓ '${componentType}' は既存のタイプです。追加不要ですが、確認してください。`}
+
+
+## 4. ComponentRenderer.tsx の更新（必要に応じて）
+
+新しいコンポーネントタイプを使用する場合は、以下のファイルにインポートとレンダリングロジックを追加してください:
+
+\`src/components/PageBuilder/ComponentRenderer.tsx\`
+
+例:
+\`\`\`typescript
+import ${componentName} from '../Components/${componentName}';
+
+// switch文などでレンダリング処理を追加
+case '${componentType}':
+  return <${componentName} component={component} />;
+\`\`\`
+
+
+## 完了後
+
+すべてのファイルを更新したら、アプリケーションを再起動またはリロードしてください。
+新しいコンポーネントがコンポーネントライブラリに表示されるようになります。
+
+---
+生成日時: ${new Date().toLocaleString('ja-JP')}
+コンポーネント名: ${componentName}
+表示名: ${displayName}
+カテゴリ: ${category} (${categoryRomanized})
+Unique ID: ${metadata.uniqueId}
+`;
+
+    const blob = new Blob([guide], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${componentName}_更新ガイド.md`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const copyToClipboard = async () => {
@@ -1158,7 +1420,11 @@ export default ${componentName};`;
       </div>
 
       {showPropModal && (
-        <div style={styles.modalOverlay} onClick={() => setShowPropModal(false)}>
+        <div style={styles.modalOverlay} onClick={() => {
+          setShowPropModal(false);
+          setSelectedChildIndex(-1);
+          setChildTags([]);
+        }}>
           <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3 style={styles.modalTitle}>プロパティを定義</h3>
 
@@ -1172,10 +1438,91 @@ export default ${componentName};`;
                     </span>
                   )}
                 </div>
-                <p style={{ fontSize: '11px', color: '#6b7280', marginTop: '8px', marginBottom: 0 }}>
+              </div>
+
+              {childTags.length > 0 && (
+                <div style={styles.modalField}>
+                  <label style={styles.modalLabel}>対象要素を選択:</label>
+                  <div style={{
+                    padding: '12px',
+                    backgroundColor: '#f9fafb',
+                    borderRadius: '6px',
+                    border: '1px solid #e5e7eb',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                  }}>
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '8px',
+                      cursor: 'pointer',
+                      borderRadius: '4px',
+                      backgroundColor: selectedChildIndex === -1 ? '#dbeafe' : 'transparent',
+                      marginBottom: '4px',
+                    }}>
+                      <input
+                        type="radio"
+                        checked={selectedChildIndex === -1}
+                        onChange={() => setSelectedChildIndex(-1)}
+                        style={{ marginRight: '8px' }}
+                      />
+                      <span style={{ fontFamily: 'monospace', fontSize: '13px' }}>
+                        &lt;{parsedTags[selectedTagIndex!].tagName}&gt;
+                        {(() => {
+                          const className = extractClassName(parsedTags[selectedTagIndex!].fullElement);
+                          return className ? ` (${className})` : '';
+                        })()} (親要素)
+                      </span>
+                    </label>
+                    {childTags.map((childTag, index) => (
+                      <label
+                        key={index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '8px',
+                          cursor: 'pointer',
+                          borderRadius: '4px',
+                          backgroundColor: selectedChildIndex === index ? '#dbeafe' : 'transparent',
+                          marginBottom: '4px',
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          checked={selectedChildIndex === index}
+                          onChange={() => setSelectedChildIndex(index)}
+                          style={{ marginRight: '8px' }}
+                        />
+                        <span style={{ fontFamily: 'monospace', fontSize: '13px' }}>
+                          &lt;{childTag.tagName}&gt;
+                          {(() => {
+                            const className = extractClassName(childTag.fullElement);
+                            return className ? ` (${className})` : '';
+                          })()}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: '11px', color: '#6b7280', marginTop: '8px', marginBottom: 0 }}>
+                    {selectedChildIndex === -1 
+                      ? '親タグ全体にプロパティが適用されます'
+                      : (() => {
+                          const selectedChild = childTags[selectedChildIndex];
+                          const className = selectedChild ? extractClassName(selectedChild.fullElement) : null;
+                          const displayName = className 
+                            ? `&lt;${selectedChild.tagName}&gt; (${className})`
+                            : `&lt;${selectedChild.tagName}&gt;`;
+                          return `子タグ「${displayName}」にプロパティが適用されます`;
+                        })()}
+                  </p>
+                </div>
+              )}
+
+              {childTags.length === 0 && (
+                <p style={{ fontSize: '11px', color: '#6b7280', marginTop: '8px', marginBottom: '16px' }}>
                   このタグの要素全体にプロパティが適用されます
                 </p>
-              </div>
+              )}
 
               <div style={styles.modalField}>
                 <label style={styles.modalLabel}>プロパティタイプを選択</label>
@@ -1196,42 +1543,56 @@ export default ${componentName};`;
                   <option value="visibility">⑥ 表示/非表示</option>
                 </select>
                 <p style={styles.modalHint}>
-                  {selectedTagIndex !== null && parsedTags[selectedTagIndex] && (
-                    <>
-                      <strong>推奨:</strong>
-                      {parsedTags[selectedTagIndex].tagName === 'a' && ' ② リンク編集'}
-                      {parsedTags[selectedTagIndex].tagName === 'img' && ' ③ 画像編集'}
-                      {parsedTags[selectedTagIndex].tagName === 'ul' && ' ⑤ 配列'}
-                      {parsedTags[selectedTagIndex].tagName === 'ol' && ' ⑤ 配列'}
-                      {!['a', 'img', 'ul', 'ol'].includes(parsedTags[selectedTagIndex].tagName) &&
-                        ' ① テキスト編集 または ④ カラー編集'}
-                    </>
-                  )}
+                  {selectedTagIndex !== null && parsedTags[selectedTagIndex] && (() => {
+                    const targetTagName = selectedChildIndex >= 0 && childTags[selectedChildIndex]
+                      ? childTags[selectedChildIndex].tagName
+                      : parsedTags[selectedTagIndex].tagName;
+                    return (
+                      <>
+                        <strong>推奨:</strong>
+                        {targetTagName === 'a' && ' ② リンク編集'}
+                        {targetTagName === 'img' && ' ③ 画像編集'}
+                        {targetTagName === 'ul' && ' ⑤ 配列'}
+                        {targetTagName === 'ol' && ' ⑤ 配列'}
+                        {!['a', 'img', 'ul', 'ol'].includes(targetTagName) &&
+                          ' ① テキスト編集 または ④ カラー編集'}
+                      </>
+                    );
+                  })()}
                 </p>
               </div>
 
-              {selectedTagIndex !== null && parsedTags[selectedTagIndex] && (
-                <div style={{
-                  padding: '12px',
-                  backgroundColor: '#f0fdf4',
-                  borderRadius: '6px',
-                  border: '1px solid #bbf7d0',
-                  marginTop: '12px',
-                }}>
-                  <p style={{ fontSize: '12px', color: '#15803d', margin: '0 0 4px 0', fontWeight: 'bold' }}>
-                    ✓ 自動生成されるプロパティ名
-                  </p>
-                  <p style={{ fontSize: '13px', color: '#166534', margin: 0, fontFamily: 'monospace', fontWeight: 'bold' }}>
-                    {generatePropertyName(parsedTags[selectedTagIndex].tagName, newPropType)}
-                  </p>
-                </div>
-              )}
+              {selectedTagIndex !== null && parsedTags[selectedTagIndex] && (() => {
+                const targetTag = selectedChildIndex >= 0 && childTags[selectedChildIndex] 
+                  ? childTags[selectedChildIndex] 
+                  : parsedTags[selectedTagIndex];
+                return (
+                  <div style={{
+                    padding: '12px',
+                    backgroundColor: '#f0fdf4',
+                    borderRadius: '6px',
+                    border: '1px solid #bbf7d0',
+                    marginTop: '12px',
+                  }}>
+                    <p style={{ fontSize: '12px', color: '#15803d', margin: '0 0 4px 0', fontWeight: 'bold' }}>
+                      ✓ 自動生成されるプロパティ名
+                    </p>
+                    <p style={{ fontSize: '13px', color: '#166534', margin: 0, fontFamily: 'monospace', fontWeight: 'bold' }}>
+                      {generatePropertyName(targetTag.tagName, newPropType)}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
 
             <div style={styles.modalActions}>
               <button
                 style={styles.modalCancelButton}
-                onClick={() => setShowPropModal(false)}
+                onClick={() => {
+                  setShowPropModal(false);
+                  setSelectedChildIndex(-1);
+                  setChildTags([]);
+                }}
               >
                 キャンセル
               </button>

@@ -144,7 +144,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                   <p className="chName">{channelInfo?.name || 'スーパー！ドラマＴＶ　＃海外ドラマ☆エンタメ'}</p>
               </div>
             </div>
-            <div className="icon icon2">
+            {/* <div className="icon icon2">
               <div className="iconImg"><img src="/program/st/promo/generator_common/img/kihon_logo.gif" alt="基本プラン" className="guard"/></div>
               <div className="iconInfo">
                   <p className="chExplain">スカパー！基本プランでもご視聴いただけます。</p>
@@ -160,7 +160,7 @@ const KVComponent: React.FC<KVComponentProps> = ({ component }) => {
                   </p>
                   <p className="streamingText fontM">スカパー！番組配信のご視聴方法は<a href="#streamingArea" className="borderBottom">こちら</a></p>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* 右側：メディアスライダー */}

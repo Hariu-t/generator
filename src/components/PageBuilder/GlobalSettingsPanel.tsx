@@ -226,7 +226,7 @@ const GlobalSettingsPanel: React.FC<GlobalSettingsPanelProps> = ({ isOpen, onClo
                 }}
               />
               <p style={helpTextStyle}>
-                ※ブラウザのタブに表示されるタイトルです。「｜スカパー！: スポーツ＆音楽ライブ、アイドル、アニメ、ドラマ、映画など」が自動的に追加されます。
+                ※ブラウザのタブに表示されるタイトルです。
               </p>
             </div>
 

@@ -15,8 +15,12 @@ const ComponentLibrary: React.FC = () => {
   const [keySequence, setKeySequence] = useState('');
   const { addComponent, pageData } = usePageStore();
 
-  const SECRET_KEY = 'admin';
-  const allTemplates = [...componentTemplates, ...customTemplates];
+  const SECRET_KEY = 'mode_admin';
+  // 「番組配信」「UI要素」「メディア」「お問い合わせ」カテゴリのコンポーネントを除外
+  const excludedCategories = ['番組配信', 'UI要素', 'メディア', 'お問い合わせ'];
+  const allTemplates = [...componentTemplates, ...customTemplates].filter(
+    template => !excludedCategories.includes(template.category)
+  );
   const categories = ['All', ...Array.from(new Set(allTemplates.map(t => t.category)))];
 
   useEffect(() => {
@@ -285,25 +289,6 @@ const ComponentLibrary: React.FC = () => {
       <div style={headerStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2 style={{ ...titleStyle, marginBottom: 0 }}>コンポーネント</h2>
-          <button
-            onClick={loadCustomTemplates}
-            disabled={isLoading}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: isLoading ? '#e5e7eb' : '#f3f4f6',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '12px',
-            }}
-            title="カスタムコンポーネントを更新"
-            >
-              <RefreshCw size={14} className={isLoading ? 'spin' : ''} />
-              {isLoading ? '読込中...' : '更新'}
-            </button>
         </div>
 
         <div style={searchContainerStyle}>

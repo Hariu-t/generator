@@ -1480,7 +1480,7 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
 
     return (
       <div style={styles.container}>
-        <div style={styles.section}>
+        {/* <div style={styles.section}>
           <h3 style={styles.sectionTitle}>メインプラン</h3>
 
           <div style={{ ...styles.itemCard, backgroundColor: '#fafafa' }}>
@@ -1593,7 +1593,7 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
               </label>
             </div>
           </div>
-        </div>
+        </div> */}
 
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>追加プラン</h3>
