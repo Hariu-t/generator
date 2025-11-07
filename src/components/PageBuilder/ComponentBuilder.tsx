@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Plus, Trash2, Download, Copy, Check, Code, Wand2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import {
   validateComponentNameRomanized,
   validateCategoryRomanized,
@@ -10,7 +11,6 @@ import {
   getComponentTemplates,
   getComponentTemplateByName
 } from '../../utils/componentTemplateStorage';
-import { supabase } from '../../lib/supabase';
 
 interface PropField {
   id: string;
@@ -135,16 +135,30 @@ const ComponentBuilder: React.FC = () => {
       }
     }
 
-    const filteredTags = tags.filter((tag, index) => {
-      for (let i = 0; i < tags.length; i++) {
-        if (i !== index) {
-          const other = tags[i];
-          if (
-            tag.position.start > other.position.start &&
-            tag.position.end <= other.position.end
-          ) {
-            return false;
-          }
+    // すべてのタグを表示（親要素も子要素も含む）
+    // 深さ（ネストレベル）を計算して、インデント表示用に保存
+    const tagsWithDepth = tags.map(tag => {
+      let depth = 0;
+      for (const other of tags) {
+        if (
+          tag.position.start > other.position.start &&
+          tag.position.end <= other.position.end
+        ) {
+          depth++;
+        }
+      }
+      return { ...tag, depth };
+    });
+
+    // すべてのタグを返す（フィルタリングなし）
+    const filteredTags = tagsWithDepth.filter((tag, index) => {
+      // 重複チェックのみ（同じ位置のタグは除外）
+      for (let i = 0; i < index; i++) {
+        if (
+          tagsWithDepth[i].position.start === tag.position.start &&
+          tagsWithDepth[i].position.end === tag.position.end
+        ) {
+          return false;
         }
       }
       return true;
@@ -330,67 +344,87 @@ const ComponentBuilder: React.FC = () => {
   const renderInteractiveHTML = () => {
     if (!htmlCode) return null;
 
-    const parts: JSX.Element[] = [];
-    let lastIndex = 0;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {parsedTags.map((tag, index) => {
+          const isSelected = selectedTagIndex === index;
+          const hasProperty = propFields.some(f =>
+            f.position && f.position.start === tag.position.start
+          );
 
-    parsedTags.forEach((tag, index) => {
-      if (tag.position.start > lastIndex) {
-        const textBefore = htmlCode.substring(lastIndex, tag.position.start);
-        parts.push(
-          <span key={`text-${lastIndex}`} style={{ color: '#6b7280' }}>
-            {textBefore}
-          </span>
-        );
-      }
+          // 深さに応じたインデント
+          const indent = (tag as any).depth || 0;
+          const indentSize = indent * 20;
 
-      const isSelected = selectedTagIndex === index;
-      const hasProperty = propFields.some(f =>
-        f.position && f.position.start === tag.position.start
-      );
+          // タグの開始部分のみを取得（最初の>まで）
+          const openTagMatch = tag.fullElement.match(/^<[^>]+>/);
+          const openTag = openTagMatch ? openTagMatch[0] : tag.tag;
 
-      parts.push(
-        <span
-          key={`tag-${index}`}
-          onClick={() => handleTagClick(index)}
-          style={{
-            color: hasProperty ? '#10b981' : '#3b82f6',
-            cursor: 'pointer',
-            backgroundColor: isSelected ? '#dbeafe' : hasProperty ? '#d1fae5' : 'transparent',
-            padding: '2px 4px',
-            borderRadius: '3px',
-            fontWeight: hasProperty ? 'bold' : 'normal',
-            transition: 'all 0.2s',
-            display: 'inline-block',
-            border: isSelected ? '1px solid #3b82f6' : '1px solid transparent',
-          }}
-          onMouseEnter={(e) => {
-            if (!isSelected) {
-              e.currentTarget.style.backgroundColor = '#f3f4f6';
+          // タグ内のテキストコンテンツを取得（子要素は除外）
+          let textContent = '';
+          const contentMatch = tag.fullElement.match(/^<[^>]+>([^<]*)/);
+          if (contentMatch && contentMatch[1].trim()) {
+            textContent = contentMatch[1].trim();
+            if (textContent.length > 50) {
+              textContent = textContent.substring(0, 50) + '...';
             }
-          }}
-          onMouseLeave={(e) => {
-            if (!isSelected) {
-              e.currentTarget.style.backgroundColor = hasProperty ? '#d1fae5' : 'transparent';
-            }
-          }}
-        >
-          {tag.fullElement}
-        </span>
-      );
+          }
 
-      lastIndex = tag.position.end;
-    });
-
-    if (lastIndex < htmlCode.length) {
-      const textAfter = htmlCode.substring(lastIndex);
-      parts.push(
-        <span key={`text-${lastIndex}`} style={{ color: '#6b7280' }}>
-          {textAfter}
-        </span>
-      );
-    }
-
-    return <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{parts}</div>;
+          return (
+            <div
+              key={`tag-${index}`}
+              onClick={() => handleTagClick(index)}
+              style={{
+                marginLeft: `${indentSize}px`,
+                color: hasProperty ? '#10b981' : '#3b82f6',
+                cursor: 'pointer',
+                backgroundColor: isSelected ? '#dbeafe' : hasProperty ? '#d1fae5' : 'transparent',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontWeight: hasProperty ? 'bold' : 'normal',
+                transition: 'all 0.2s',
+                border: isSelected ? '1px solid #3b82f6' : '1px solid transparent',
+                fontSize: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSelected) {
+                  e.currentTarget.style.backgroundColor = '#f3f4f6';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected) {
+                  e.currentTarget.style.backgroundColor = hasProperty ? '#d1fae5' : 'transparent';
+                }
+              }}
+            >
+              <span style={{ color: hasProperty ? '#10b981' : '#3b82f6', fontWeight: 'bold' }}>
+                {openTag}
+              </span>
+              {textContent && (
+                <span style={{ color: '#6b7280', fontSize: '11px', fontStyle: 'italic' }}>
+                  "{textContent}"
+                </span>
+              )}
+              {hasProperty && (
+                <span style={{
+                  fontSize: '10px',
+                  color: '#10b981',
+                  backgroundColor: '#d1fae5',
+                  padding: '2px 6px',
+                  borderRadius: '3px',
+                  fontWeight: 'bold'
+                }}>
+                  ✓ プロパティ定義済み
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   const addPropertyFromSelection = () => {
@@ -598,7 +632,7 @@ export default ${componentName};`;
     setStep('generate');
   };
 
-  const saveToDatabase = () => {
+  const saveComponentAndCreateFiles = async () => {
     if (!componentName || !displayName) {
       alert('コンポーネント名と表示名は必須です');
       return;
@@ -665,6 +699,16 @@ export default ${componentName};`;
     });
 
     try {
+      // 1. コンポーネントファイル名を生成
+      const componentFileName = componentName
+        .split(/[\s-]+/)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join('') + 'Component.tsx';
+
+      console.log('生成されたコンポーネントファイル名:', componentFileName);
+      console.log('生成されたコード:', generatedCode);
+
+      // 2. localStorageに保存
       addComponentTemplate({
         name: componentName,
         nameRomanized: componentName,
@@ -694,25 +738,7 @@ export default ${componentName};`;
 
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
-      
-      // コンポーネントファイルを自動ダウンロード
-      downloadComponentFile(componentName, generatedCode);
-      
-      // 関連ファイル更新ガイドを生成・ダウンロード
-      downloadRelatedFilesGuide(
-        componentName,
-        displayName,
-        finalCategory,
-        finalCategoryRomanized,
-        metadata,
-        defaultProps,
-        propSchema,
-        thumbnailUrl,
-        cssFiles,
-        jsFiles
-      );
-      
-      alert('コンポーネントがlocalStorageに保存されました！\n\nコンポーネントファイルと関連ファイル更新ガイドをダウンロードしました。');
+      alert('コンポーネントがlocalStorageに保存されました！');
     } catch (error) {
       console.error('Error saving component:', error);
       alert(`保存エラー: ${error}`);
@@ -1153,18 +1179,27 @@ Unique ID: ${metadata.uniqueId}
               <Code size={20} style={{ marginRight: '8px' }} />
               基本情報とHTMLコード
             </h3>
-            {htmlCode && (
-              <button
-                style={styles.nextButton}
-                onClick={() => setStep('props')}
-              >
-                次へ：プロパティ定義
-              </button>
+            {htmlCode && componentName && (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  style={styles.nextButton}
+                  onClick={() => setStep('props')}
+                >
+                  次へ：プロパティ定義
+                </button>
+                <button
+                  style={{ ...styles.generateButton, padding: '8px 16px', fontSize: '13px' }}
+                  onClick={generateComponentCode}
+                >
+                  <Wand2 size={16} style={{ marginRight: '4px' }} />
+                  スキップしてコード生成
+                </button>
+              </div>
             )}
           </div>
 
           <p style={styles.helpText}>
-            基本情報を入力し、HTMLコードを貼り付けてください。コード内のタグをクリックするとプロパティを定義できます。
+            基本情報を入力し、HTMLコードを貼り付けてください。表示されるタグ一覧から、親要素・子要素問わず任意のタグをクリックしてプロパティを定義できます。
           </p>
 
           <div style={{
@@ -1180,9 +1215,13 @@ Unique ID: ${metadata.uniqueId}
             <ol style={{ fontSize: '12px', color: '#0369a1', margin: 0, paddingLeft: '20px', lineHeight: '1.6' }}>
               <li>基本情報（コンポーネント名、カテゴリなど）を入力</li>
               <li>HTMLコードを入力または貼り付け</li>
-              <li>表示されたコード内の<strong>タグ（&lt;h2&gt;, &lt;p&gt;など）</strong>を直接クリック</li>
-              <li>プロパティタイプを選択して追加</li>
+              <li><strong>（任意）</strong> 表示されるタグ一覧から<strong>親要素・子要素問わず任意のタグ</strong>をクリック</li>
+              <li><strong>（任意）</strong> プロパティタイプを選択して追加（複数のタグにプロパティ定義可能）</li>
+              <li>「次へ：プロパティ定義」をクリック、または直接「コード生成」でコンポーネント作成</li>
             </ol>
+            <p style={{ fontSize: '11px', color: '#0369a1', margin: '8px 0 0', fontStyle: 'italic' }}>
+              ※ プロパティなしでも静的なコンポーネントとして生成できます
+            </p>
           </div>
 
           <textarea
@@ -1226,7 +1265,7 @@ Unique ID: ${metadata.uniqueId}
                   gap: '8px'
                 }}>
                   <Wand2 size={16} />
-                  タグをクリックしてプロパティを定義
+                  すべてのタグ（親・子要素）- クリックしてプロパティを定義
                 </p>
                 <div style={{ display: 'flex', gap: '12px', fontSize: '11px' }}>
                   <span style={{ color: '#3b82f6' }}>● クリック可能</span>
@@ -1260,21 +1299,22 @@ Unique ID: ${metadata.uniqueId}
               <button
                 style={styles.generateButton}
                 onClick={generateComponentCode}
-                disabled={!componentName || propFields.length === 0}
+                disabled={!componentName}
               >
                 コード生成
               </button>
             </div>
 
             <p style={styles.helpText}>
-              コード内のテキストを選択して、プロパティとして定義してください。同じ要素に複数のプロパティを定義できます（例：テキスト + カラー）。
+              プロパティは任意です。静的なコンポーネントの場合はプロパティなしでもコード生成できます。動的な値を設定したい場合は、コード内のテキストを選択してプロパティを定義してください。
             </p>
 
             {propFields.length === 0 ? (
               <div style={styles.emptyState}>
                 <p>プロパティが定義されていません</p>
                 <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '8px' }}>
-                  上のHTMLコード内でテキストを選択してプロパティを追加してください
+                  プロパティなしで静的なコンポーネントとして生成することもできます。<br />
+                  動的な値を設定したい場合は、HTMLコード内でテキストを選択してプロパティを追加してください。
                 </p>
               </div>
             ) : (
@@ -1399,20 +1439,23 @@ Unique ID: ${metadata.uniqueId}
             <div style={styles.saveSection}>
               <button
                 style={{ ...styles.saveButton, ...(isSaved ? styles.savedButton : {}) }}
-                onClick={saveToDatabase}
+                onClick={saveComponentAndCreateFiles}
                 disabled={isSaved}
               >
                 {isSaved ? (
                   <>
                     <Check size={16} />
-                    保存完了
+                    追加完了
                   </>
                 ) : (
-                  'データベースに保存'
+                  <>
+                    <Plus size={16} />
+                    コンポーネント追加
+                  </>
                 )}
               </button>
               <p style={styles.saveHint}>
-                保存後、コンポーネントライブラリに表示されます
+                追加後、コンポーネントライブラリに表示されます
               </p>
             </div>
           </div>
