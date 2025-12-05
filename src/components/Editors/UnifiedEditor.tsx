@@ -441,50 +441,128 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
           </div>
           <div>
             <label style={{ ...styles.label, fontSize: '11px' }}>リンクテキスト</label>
-            <input
-              type="text"
+            <textarea
               value={value.text}
               onChange={(e) => handlePropChange(key, { ...value, text: e.target.value })}
-              style={styles.input}
-              placeholder="クリックしてください"
+              style={styles.textarea}
+              placeholder="クリックしてください（改行可）"
+              rows={3}
               onFocus={handleFocus}
               onBlur={handleBlur}
             />
+          </div>
+          <div style={{ marginTop: '12px' }}>
+            <label style={{ ...styles.label, fontSize: '11px' }}>リンクターゲット</label>
+            <select
+              value={value.target || '_self'}
+              onChange={(e) => handlePropChange(key, { ...value, target: e.target.value })}
+              style={styles.input}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+            >
+              <option value="_self">同じタブで開く (_self)</option>
+              <option value="_blank">新しいタブで開く (_blank)</option>
+            </select>
           </div>
         </div>
       );
     }
 
     if (typeof value === 'object' && value !== null && 'src' in value && 'alt' in value) {
+      // ベースパスを取得（存在する場合）
+      const basePath = (value as any).basePath || '';
+      const currentSrc = value.src || '';
+      
+      // 現在のファイル名を抽出
+      const getFilename = (path: string): string => {
+        const lastSlashIndex = path.lastIndexOf('/');
+        if (lastSlashIndex >= 0) {
+          return path.substring(lastSlashIndex + 1);
+        }
+        return path;
+      };
+      
+      // ベースパスとファイル名を結合
+      const buildImagePath = (filename: string): string => {
+        if (basePath) {
+          return basePath + filename;
+        }
+        return filename;
+      };
+      
       return (
         <div>
           <div style={{ marginBottom: '12px' }}>
-            <label style={{ ...styles.label, fontSize: '11px' }}>画像パス</label>
-            <input
-              type="text"
-              value={value.src}
-              onChange={(e) => handlePropChange(key, { ...value, src: e.target.value })}
-              style={styles.input}
-              placeholder="/path/to/image.jpg"
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-            />
-            <ImageDropZone
-              currentImage={value.src}
-              onImageUpload={(result: ImageUploadResult) => {
-                handlePropChange(key, { ...value, src: result.fullPath });
-              }}
-              fieldLabel="画像"
-            />
+            <label style={{ ...styles.label, fontSize: '11px' }}>
+              画像パス
+              {basePath && (
+                <span style={{ fontSize: '10px', color: '#6b7280', marginLeft: '8px', fontWeight: 'normal' }}>
+                  (ベースパス: {basePath})
+                </span>
+              )}
+            </label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+              <input
+                type="text"
+                value={currentSrc}
+                onChange={(e) => {
+                  const newSrc = e.target.value;
+                  // 新しいパスからベースパスを再計算（必要に応じて）
+                  const newBasePath = basePath || (() => {
+                    const lastSlashIndex = newSrc.lastIndexOf('/');
+                    return lastSlashIndex >= 0 ? newSrc.substring(0, lastSlashIndex + 1) : '';
+                  })();
+                  handlePropChange(key, { 
+                    ...value, 
+                    src: newSrc,
+                    basePath: newBasePath || undefined,
+                  });
+                }}
+                style={{ ...styles.input, flex: 1 }}
+                placeholder="/path/to/image.jpg"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+              />
+            </div>
+            <div style={{ marginTop: '8px' }}>
+              <ImageDropZone
+                currentImage={currentSrc}
+                onImageUpload={(result: ImageUploadResult) => {
+                  // ベースパスが存在する場合は、ベースパス + ファイル名の形式で保存
+                  // ベースパスが存在しない場合は、Base64データまたはフルパスをそのまま使用
+                  let newSrc: string;
+                  if (basePath && result.filename) {
+                    // ベースパス + ファイル名の形式
+                    newSrc = basePath + result.filename;
+                  } else if (result.url) {
+                    // Base64データまたはフルパスの場合
+                    newSrc = result.url;
+                  } else {
+                    newSrc = currentSrc;
+                  }
+                  
+                  handlePropChange(key, { 
+                    ...value, 
+                    src: newSrc,
+                    basePath: basePath || undefined,
+                  });
+                }}
+                fieldLabel="画像"
+              />
+              {basePath && (
+                <p style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px', marginBottom: 0 }}>
+                  ドラッグ&ドロップで追加した画像のファイル名が、ベースパスに追加されます
+                </p>
+              )}
+            </div>
           </div>
           <div>
             <label style={{ ...styles.label, fontSize: '11px' }}>ALTテキスト</label>
-            <input
-              type="text"
-              value={value.alt}
+            <textarea
+              value={value.alt || ''}
               onChange={(e) => handlePropChange(key, { ...value, alt: e.target.value })}
-              style={styles.input}
-              placeholder="画像の説明"
+              style={{ ...styles.textarea, minHeight: '60px' }}
+              placeholder="画像の説明（改行可）"
               onFocus={handleFocus}
               onBlur={handleBlur}
             />
@@ -586,63 +664,135 @@ const UnifiedEditor: React.FC<UnifiedEditorProps> = ({ component, mode }) => {
     }
 
     if (Array.isArray(value)) {
+      const createNewArrayItem = () => {
+        if (value.length === 0) {
+          return '';
+        }
+        const lastItem = value[value.length - 1];
+        if (typeof lastItem === 'object' && lastItem !== null && 'url' in lastItem && 'text' in lastItem) {
+          return { url: '', text: '', target: '_self' };
+        }
+        if (typeof lastItem === 'object' && lastItem !== null) {
+          return { ...lastItem };
+        }
+        return '';
+      };
+
       return (
         <div>
-          {value.map((item, index) => (
-            <div key={index} style={styles.itemCard}>
-              <div style={styles.itemHeader}>
-                <span style={styles.itemIndex}>項目 {index + 1}</span>
-                {value.length > 1 && (
-                  <button
-                    onClick={() => {
-                      const newArray = value.filter((_, i) => i !== index);
-                      handlePropChange(key, newArray);
-                    }}
-                    style={styles.deleteButton}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
-              </div>
-              {typeof item === 'object' ? (
-                Object.entries(item).map(([itemKey, itemValue]) => (
-                  <div key={itemKey} style={{ ...styles.field, marginBottom: '8px' }}>
-                    <label style={{ ...styles.label, fontSize: '11px' }}>{itemKey}</label>
-                    <input
-                      type="text"
-                      value={itemValue as string}
-                      onChange={(e) => {
-                        const newArray = [...value];
-                        newArray[index] = { ...newArray[index], [itemKey]: e.target.value };
+          {value.map((item, index) => {
+            const isLinkItem = typeof item === 'object' && item !== null && 'url' in item && 'text' in item;
+            const isObjectItem = typeof item === 'object' && item !== null;
+            const isStringItem = typeof item === 'string';
+
+            return (
+              <div key={index} style={styles.itemCard}>
+                <div style={styles.itemHeader}>
+                  <span style={styles.itemIndex}>項目 {index + 1}</span>
+                  {value.length > 1 && (
+                    <button
+                      onClick={() => {
+                        const newArray = value.filter((_, i) => i !== index);
                         handlePropChange(key, newArray);
                       }}
-                      style={styles.input}
-                      onFocus={handleFocus}
-                      onBlur={handleBlur}
-                    />
+                      style={styles.deleteButton}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {isLinkItem ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div>
+                      <label style={{ ...styles.label, fontSize: '11px' }}>リンクURL</label>
+                      <input
+                        type="text"
+                        value={(item as any).url || ''}
+                        onChange={(e) => {
+                          const newArray = [...value];
+                          newArray[index] = { ...(item as any), url: e.target.value, href: e.target.value };
+                          handlePropChange(key, newArray);
+                        }}
+                        style={styles.input}
+                        placeholder="https://example.com"
+                        onFocus={handleFocus}
+                        onBlur={handleBlur}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ ...styles.label, fontSize: '11px' }}>リンクテキスト</label>
+                      <textarea
+                        value={(item as any).text || ''}
+                        onChange={(e) => {
+                          const newArray = [...value];
+                          newArray[index] = { ...(item as any), text: e.target.value };
+                          handlePropChange(key, newArray);
+                        }}
+                        style={styles.textarea}
+                        rows={3}
+                        onFocus={handleFocus}
+                        onBlur={handleBlur}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ ...styles.label, fontSize: '11px' }}>target属性</label>
+                      <select
+                        value={(item as any).target || '_self'}
+                        onChange={(e) => {
+                          const newArray = [...value];
+                          newArray[index] = { ...(item as any), target: e.target.value };
+                          handlePropChange(key, newArray);
+                        }}
+                        style={styles.input}
+                        onFocus={handleFocus}
+                        onBlur={handleBlur}
+                      >
+                        <option value="_self">同じタブで開く (_self)</option>
+                        <option value="_blank">新しいタブで開く (_blank)</option>
+                      </select>
+                    </div>
                   </div>
-                ))
-              ) : (
-                <input
-                  type="text"
-                  value={item}
-                  onChange={(e) => {
-                    const newArray = [...value];
-                    newArray[index] = e.target.value;
-                    handlePropChange(key, newArray);
-                  }}
-                  style={styles.input}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                />
-              )}
-            </div>
-          ))}
+                ) : isObjectItem ? (
+                  Object.entries(item as Record<string, any>).map(([itemKey, itemValue]) => (
+                    <div key={itemKey} style={{ ...styles.field, marginBottom: '8px' }}>
+                      <label style={{ ...styles.label, fontSize: '11px' }}>{itemKey}</label>
+                      <input
+                        type="text"
+                        value={itemValue as string}
+                        onChange={(e) => {
+                          const newArray = [...value];
+                          newArray[index] = { ...newArray[index], [itemKey]: e.target.value };
+                          handlePropChange(key, newArray);
+                        }}
+                        style={styles.input}
+                        onFocus={handleFocus}
+                        onBlur={handleBlur}
+                      />
+                    </div>
+                  ))
+                ) : isStringItem ? (
+                  <textarea
+                    value={item as string}
+                    onChange={(e) => {
+                      const newArray = [...value];
+                      newArray[index] = e.target.value;
+                      handlePropChange(key, newArray);
+                    }}
+                    rows={3}
+                    style={styles.textarea}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                  />
+                ) : null}
+              </div>
+            );
+          })}
           <button
             onClick={() => {
-              const newItem = typeof value[0] === 'object' ? {} : '';
+              const newItem = createNewArrayItem();
               handlePropChange(key, [...value, newItem]);
             }}
             style={styles.addButton}

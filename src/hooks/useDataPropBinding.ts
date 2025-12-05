@@ -112,11 +112,22 @@ export const useDataPropBinding = ({ props, containerRef }: DataPropBindingOptio
 
         case 'link-full':
           if (element instanceof HTMLAnchorElement && typeof propValue === 'object') {
-            if (propValue.url) {
-              element.href = propValue.url;
+            if ('url' in propValue) {
+              element.href = propValue.url || '';
             }
-            if (propValue.text) {
-              element.textContent = propValue.text;
+            if ('text' in propValue) {
+              const textValue = (propValue.text ?? '').toString();
+              element.innerHTML = textValue.split('\n').map((line, idx, arr) => (
+                idx === arr.length - 1 ? line : `${line}<br>`
+              )).join('');
+            }
+            if ('target' in propValue) {
+              const targetValue = propValue.target || '_self';
+              if (targetValue) {
+                element.target = targetValue;
+              } else {
+                element.removeAttribute('target');
+              }
             }
           }
           break;
@@ -149,16 +160,91 @@ export const useDataPropBinding = ({ props, containerRef }: DataPropBindingOptio
               const clone = template.cloneNode(true) as HTMLElement;
 
               if (typeof item === 'string') {
-                clone.textContent = item;
-              } else if (typeof item === 'object') {
-                Object.keys(item).forEach((key) => {
-                  const targetElements = clone.querySelectorAll(`[data-array-field="${key}"]`);
-                  targetElements.forEach((targetEl) => {
-                    if (targetEl instanceof HTMLElement) {
-                      targetEl.textContent = String(item[key]);
+                // 文字列の場合：改行を<br>タグに変換して設定
+                const textWithBreaks = item.split('\n').map((line, idx, arr) => {
+                  if (idx === arr.length - 1) return line;
+                  return line + '<br>';
+                }).join('');
+                clone.innerHTML = textWithBreaks;
+              } else if (typeof item === 'object' && item !== null) {
+                // オブジェクトの場合
+                // <a>タグが含まれているかチェック
+                const linkElement = clone.querySelector('a');
+                
+                if (linkElement && (item.url !== undefined || item.href !== undefined)) {
+                  // リンク項目の場合：<a>タグの属性を設定
+                  const url = item.url || item.href || '';
+                  linkElement.href = url;
+                  if (item.target !== undefined) {
+                    linkElement.target = item.target;
+                  }
+                  // リンクテキストを設定（改行も含む）
+                  if (item.text !== undefined) {
+                    const textWithBreaks = String(item.text).split('\n').map((line, idx, arr) => {
+                      if (idx === arr.length - 1) return line;
+                      return line + '<br>';
+                    }).join('');
+                    linkElement.innerHTML = textWithBreaks;
+                  }
+                } else {
+                  // その他のオブジェクト：data-array-field属性を使用
+                  Object.keys(item).forEach((key) => {
+                    const fieldValue = item[key];
+                    const targetElements = clone.querySelectorAll(`[data-array-field="${key}"]`);
+                    
+                    targetElements.forEach((targetEl) => {
+                      if (targetEl instanceof HTMLElement) {
+                        // 値の型に応じて処理
+                        if (typeof fieldValue === 'string') {
+                          // 文字列の場合：改行を<br>タグに変換
+                          const textWithBreaks = fieldValue.split('\n').map((line, idx, arr) => {
+                            if (idx === arr.length - 1) return line;
+                            return line + '<br>';
+                          }).join('');
+                          targetEl.innerHTML = textWithBreaks;
+                        } else if (typeof fieldValue === 'object' && fieldValue !== null) {
+                          // オブジェクトの場合（colorBoth等）
+                          if (fieldValue.color !== undefined) {
+                            targetEl.style.color = fieldValue.color;
+                          }
+                          if (fieldValue.backgroundColor !== undefined) {
+                            targetEl.style.backgroundColor = fieldValue.backgroundColor;
+                          }
+                        } else {
+                          // その他の型
+                          targetEl.textContent = String(fieldValue);
+                        }
+                      }
+                    });
+                    
+                    // data-array-field属性がない場合、直接要素に適用を試みる
+                    if (targetElements.length === 0) {
+                      // カラー系の値の場合、親要素にスタイルを適用
+                      if (typeof fieldValue === 'string' && /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(fieldValue)) {
+                        // フィールド名から型を推測
+                        if (key.includes('color') && !key.includes('background')) {
+                          clone.style.color = fieldValue;
+                        } else if (key.includes('background') || key.includes('bg')) {
+                          clone.style.backgroundColor = fieldValue;
+                        }
+                      } else if (typeof fieldValue === 'object' && fieldValue !== null) {
+                        if (fieldValue.color !== undefined) {
+                          clone.style.color = fieldValue.color;
+                        }
+                        if (fieldValue.backgroundColor !== undefined) {
+                          clone.style.backgroundColor = fieldValue.backgroundColor;
+                        }
+                      } else if (typeof fieldValue === 'string') {
+                        // テキストの場合、直接設定
+                        const textWithBreaks = fieldValue.split('\n').map((line, idx, arr) => {
+                          if (idx === arr.length - 1) return line;
+                          return line + '<br>';
+                        }).join('');
+                        clone.innerHTML = textWithBreaks;
+                      }
                     }
                   });
-                });
+                }
               }
 
               element.appendChild(clone);

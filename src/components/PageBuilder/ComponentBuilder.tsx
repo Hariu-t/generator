@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Plus, Trash2, Download, Copy, Check, Code, Wand2 } from 'lucide-react';
+import React, { useState, useRef, useMemo } from 'react';
+import { Plus, Trash2, Download, Copy, Check, Code, Wand2, Eye, AlertTriangle, History, Save } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import {
   validateComponentNameRomanized,
@@ -9,8 +9,15 @@ import {
 import {
   addComponentTemplate,
   getComponentTemplates,
-  getComponentTemplateByName
+  getComponentTemplateByName,
+  saveComponentTemplateToSupabase,
+  releaseComponentTemplate,
+  getComponentVersionHistory,
+  getComponentTemplateByVersion
 } from '../../utils/componentTemplateStorage';
+import ComponentPreview from './ComponentPreview';
+import { validatePropFields, formatValidationMessages, PropField as ValidationPropField } from '../../utils/propValidation';
+import { usePageStore } from '../../store/usePageStore';
 
 interface PropField {
   id: string;
@@ -21,17 +28,496 @@ interface PropField {
   description?: string;
   position?: { start: number; end: number };
   elementPath?: string;
+  arrayFieldName?: string;
+  arrayParentId?: string;
 }
 
+const styles = {
+  container: {
+    padding: '24px',
+    backgroundColor: '#f9fafb',
+    minHeight: '100vh',
+  } as React.CSSProperties,
+  header: {
+    marginBottom: '24px',
+  } as React.CSSProperties,
+  title: {
+    fontSize: '28px',
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: '8px',
+  } as React.CSSProperties,
+  subtitle: {
+    fontSize: '16px',
+    color: '#6b7280',
+  } as React.CSSProperties,
+  stepsContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '32px',
+    padding: '20px',
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  } as React.CSSProperties,
+  step: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 20px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#9ca3af',
+    transition: 'all 0.2s',
+  } as React.CSSProperties,
+  stepActive: {
+    color: '#2563eb',
+    backgroundColor: '#dbeafe',
+  } as React.CSSProperties,
+  stepNumber: {
+    width: '28px',
+    height: '28px',
+    borderRadius: '50%',
+    backgroundColor: '#e5e7eb',
+    color: '#6b7280',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '13px',
+    fontWeight: 'bold',
+  } as React.CSSProperties,
+  stepDivider: {
+    width: '60px',
+    height: '2px',
+    backgroundColor: '#e5e7eb',
+    margin: '0 8px',
+  } as React.CSSProperties,
+  content: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+  } as React.CSSProperties,
+  formSection: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    padding: '24px',
+    marginBottom: '24px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  } as React.CSSProperties,
+  sectionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '16px',
+  } as React.CSSProperties,
+  sectionTitle: {
+    fontSize: '18px',
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: '16px',
+  } as React.CSSProperties,
+  fieldRow: {
+    display: 'flex',
+    gap: '16px',
+    marginBottom: '16px',
+  } as React.CSSProperties,
+  field: {
+    flex: 1,
+  } as React.CSSProperties,
+  label: {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: '6px',
+  } as React.CSSProperties,
+  required: {
+    color: '#ef4444',
+  } as React.CSSProperties,
+  input: {
+    width: '100%',
+    padding: '10px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontFamily: 'inherit',
+  } as React.CSSProperties,
+  textarea: {
+    width: '100%',
+    padding: '10px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontFamily: 'inherit',
+    resize: 'vertical',
+    minHeight: '100px',
+  } as React.CSSProperties,
+  select: {
+    width: '100%',
+    padding: '10px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontFamily: 'inherit',
+    backgroundColor: '#ffffff',
+  } as React.CSSProperties,
+  button: {
+    padding: '10px 20px',
+    backgroundColor: '#2563eb',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  } as React.CSSProperties,
+  buttonSecondary: {
+    padding: '10px 20px',
+    backgroundColor: '#f3f4f6',
+    color: '#374151',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  } as React.CSSProperties,
+  iconButton: {
+    padding: '8px 12px',
+    backgroundColor: '#f3f4f6',
+    color: '#374151',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '12px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    transition: 'all 0.2s',
+  } as React.CSSProperties,
+  codeSection: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    padding: '24px',
+    marginBottom: '24px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  } as React.CSSProperties,
+  codeSectionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '16px',
+  } as React.CSSProperties,
+  codeActions: {
+    display: 'flex',
+    gap: '8px',
+  } as React.CSSProperties,
+  codeBlock: {
+    backgroundColor: '#1f2937',
+    color: '#f9fafb',
+    padding: '16px',
+    borderRadius: '6px',
+    overflowX: 'auto',
+    fontSize: '13px',
+    fontFamily: 'monospace',
+    lineHeight: '1.6',
+    margin: 0,
+  } as React.CSSProperties,
+  saveSection: {
+    marginTop: '24px',
+    paddingTop: '24px',
+    borderTop: '1px solid #e5e7eb',
+  } as React.CSSProperties,
+  saveButton: {
+    padding: '12px 24px',
+    backgroundColor: '#10b981',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  } as React.CSSProperties,
+  htmlEditor: {
+    width: '100%',
+    padding: '12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '13px',
+    fontFamily: 'monospace',
+    minHeight: '300px',
+    resize: 'vertical',
+  } as React.CSSProperties,
+  tagList: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px',
+    marginTop: '12px',
+  } as React.CSSProperties,
+  tagItem: {
+    padding: '6px 12px',
+    backgroundColor: '#f3f4f6',
+    border: '1px solid #d1d5db',
+    borderRadius: '4px',
+    fontSize: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  } as React.CSSProperties,
+  propsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  } as React.CSSProperties,
+  propCard: {
+    backgroundColor: '#ffffff',
+    border: '1px solid #e5e7eb',
+    borderRadius: '8px',
+    padding: '16px',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+  } as React.CSSProperties,
+  propCardHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '12px',
+  } as React.CSSProperties,
+  propBadge: {
+    padding: '4px 8px',
+    backgroundColor: '#dbeafe',
+    color: '#1e40af',
+    borderRadius: '4px',
+    fontSize: '11px',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  } as React.CSSProperties,
+  propName: {
+    fontSize: '13px',
+    fontFamily: 'monospace',
+    color: '#6b7280',
+    flex: 1,
+  } as React.CSSProperties,
+  propCardBody: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  } as React.CSSProperties,
+  propFieldRow: {
+    display: 'flex',
+    gap: '12px',
+  } as React.CSSProperties,
+  propFieldHalf: {
+    flex: 1,
+  } as React.CSSProperties,
+  propField: {
+    marginBottom: '12px',
+  } as React.CSSProperties,
+  propLabel: {
+    display: 'block',
+    fontSize: '12px',
+    fontWeight: '500',
+    color: '#6b7280',
+    marginBottom: '6px',
+  } as React.CSSProperties,
+  propInput: {
+    width: '100%',
+    padding: '8px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '13px',
+    fontFamily: 'inherit',
+  } as React.CSSProperties,
+  addButton: {
+    padding: '8px 16px',
+    backgroundColor: '#10b981',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '12px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    transition: 'all 0.2s',
+  } as React.CSSProperties,
+  deleteButton: {
+    padding: '4px 8px',
+    backgroundColor: 'transparent',
+    color: '#dc2626',
+    border: 'none',
+    borderRadius: '4px',
+    fontSize: '12px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    transition: 'all 0.2s',
+  } as React.CSSProperties,
+  emptyState: {
+    textAlign: 'center',
+    padding: '40px 20px',
+    color: '#9ca3af',
+  } as React.CSSProperties,
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  } as React.CSSProperties,
+  modal: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    padding: '24px',
+    maxWidth: '600px',
+    width: '90%',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
+  } as React.CSSProperties,
+  modalTitle: {
+    fontSize: '20px',
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: '20px',
+  } as React.CSSProperties,
+  modalContent: {
+    marginBottom: '24px',
+  } as React.CSSProperties,
+  modalField: {
+    marginBottom: '16px',
+  } as React.CSSProperties,
+  modalLabel: {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: '8px',
+  } as React.CSSProperties,
+  modalInput: {
+    width: '100%',
+    padding: '10px 12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontFamily: 'inherit',
+  } as React.CSSProperties,
+  modalHint: {
+    fontSize: '12px',
+    color: '#6b7280',
+    marginTop: '4px',
+  } as React.CSSProperties,
+  modalActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '8px',
+  } as React.CSSProperties,
+  modalCancelButton: {
+    padding: '10px 20px',
+    backgroundColor: '#f3f4f6',
+    color: '#374151',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+  } as React.CSSProperties,
+  modalSaveButton: {
+    padding: '10px 20px',
+    backgroundColor: '#2563eb',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+  } as React.CSSProperties,
+  selectedTextPreview: {
+    marginBottom: '16px',
+  } as React.CSSProperties,
+  selectedTextBox: {
+    padding: '8px',
+    backgroundColor: '#f3f4f6',
+    borderRadius: '6px',
+    fontSize: '12px',
+    fontFamily: 'monospace',
+    marginTop: '4px',
+  } as React.CSSProperties,
+  nextButton: {
+    padding: '10px 20px',
+    backgroundColor: '#2563eb',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  } as React.CSSProperties,
+  generateButton: {
+    padding: '10px 20px',
+    backgroundColor: '#10b981',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  } as React.CSSProperties,
+  helpText: {
+    fontSize: '13px',
+    color: '#6b7280',
+    marginBottom: '16px',
+    lineHeight: '1.6',
+  } as React.CSSProperties,
+  codeTextarea: {
+    width: '100%',
+    padding: '12px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '13px',
+    fontFamily: 'monospace',
+    minHeight: '300px',
+    resize: 'vertical',
+  } as React.CSSProperties,
+  savedButton: {
+    padding: '12px 24px',
+    backgroundColor: '#10b981',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    opacity: 0.7,
+  } as React.CSSProperties,
+  saveHint: {
+    fontSize: '12px',
+    color: '#6b7280',
+    marginTop: '8px',
+    textAlign: 'center',
+  } as React.CSSProperties,
+};
+
 const ComponentBuilder: React.FC = () => {
-  // カテゴリのローマ字マッピング
   const CATEGORY_ROMANIZED_MAP: Record<string, string> = {
     'KV': 'kv',
     '料金': 'pricing',
     '番組配信': 'streaming',
     'FAQ': 'faq',
     'footer': 'footer',
-    'テスト': 'test'
+    'テスト': 'test',
   };
 
   const [componentName, setComponentName] = useState('');
@@ -64,6 +550,21 @@ const ComponentBuilder: React.FC = () => {
   const [newCssFile, setNewCssFile] = useState('');
   const [newJsFile, setNewJsFile] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewProps, setPreviewProps] = useState<Record<string, any>>({});
+  
+  const [validationResult, setValidationResult] = useState<{ isValid: boolean; errors: any[]; warnings: any[] } | null>(null);
+  
+  const [isArrayField, setIsArrayField] = useState(false);
+  const [arrayParentName, setArrayParentName] = useState('');
+  const [arrayFieldName, setArrayFieldName] = useState('');
+  
+  const [saveAsDraft, setSaveAsDraft] = useState(true);
+  const [versionHistory, setVersionHistory] = useState<any[]>([]);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  
+  const { pageData } = usePageStore();
 
   const parseHtmlTags = (html: string) => {
     const tags: Array<{ tag: string; fullElement: string; position: { start: number; end: number }; tagName: string }> = [];
@@ -135,8 +636,6 @@ const ComponentBuilder: React.FC = () => {
       }
     }
 
-    // すべてのタグを表示（親要素も子要素も含む）
-    // 深さ（ネストレベル）を計算して、インデント表示用に保存
     const tagsWithDepth = tags.map(tag => {
       let depth = 0;
       for (const other of tags) {
@@ -150,9 +649,7 @@ const ComponentBuilder: React.FC = () => {
       return { ...tag, depth };
     });
 
-    // すべてのタグを返す（フィルタリングなし）
     const filteredTags = tagsWithDepth.filter((tag, index) => {
-      // 重複チェックのみ（同じ位置のタグは除外）
       for (let i = 0; i < index; i++) {
         if (
           tagsWithDepth[i].position.start === tag.position.start &&
@@ -179,7 +676,7 @@ const ComponentBuilder: React.FC = () => {
     const loadCategories = async () => {
       const defaultCategories = ['KV', '料金'];
 
-      // Supabaseが利用可能な場合のみデータベースからカテゴリを取得
+      // Supabaseが利用可能な場合、デフォルトのカテゴリを読み込み
       if (!supabase) {
         setExistingCategories(defaultCategories);
         return;
@@ -240,8 +737,24 @@ const ComponentBuilder: React.FC = () => {
   const extractClassName = (fullElement: string): string | null => {
     const classMatch = fullElement.match(/class=["']([^"']+)["']/i);
     if (classMatch && classMatch[1]) {
-      // 最初のクラス名のみを取得
       return classMatch[1].split(/\s+/)[0];
+    }
+    return null;
+  };
+
+  const findParentArrayElement = (tagIndex: number): number | null => {
+    const tag = parsedTags[tagIndex];
+    if (!tag) return null;
+    
+    // 現在のタグより前のタグを検索
+    for (let i = tagIndex - 1; i >= 0; i--) {
+      const candidate = parsedTags[i];
+      if (candidate.tagName === 'ul' || candidate.tagName === 'ol') {
+        if (tag.position.start >= candidate.position.start && 
+            tag.position.end <= candidate.position.end) {
+          return i;
+        }
+      }
     }
     return null;
   };
@@ -252,8 +765,26 @@ const ComponentBuilder: React.FC = () => {
     setSelectedText(tag.fullElement);
     setSelectionRange(tag.position);
     setShowPropModal(true);
+    
+    setIsArrayField(false);
+    setArrayParentName('');
+    setArrayFieldName('');
+    
+    const parentArrayIndex = findParentArrayElement(index);
+    if (parentArrayIndex !== null) {
+      const parentTag = parsedTags[parentArrayIndex];
+      const existingArrayProp = propFields.find(f => 
+        f.type === 'array' && 
+        f.position && 
+        f.position.start === parentTag.position.start
+      );
+      if (existingArrayProp) {
+        setIsArrayField(true);
+        setArrayParentName(existingArrayProp.name);
+      }
+    }
 
-    // 子要素（入れ子のタグ）を抽出してモーダルで選択可能にする
+    // 子要素も含めた子タグを抽出してモーダルで選択可能にする
     try {
       const openTagMatch = tag.fullElement.match(/^<([a-zA-Z][a-zA-Z0-9]*)(?:\s[^>]*)?>/);
       const closeTagMatch = tag.fullElement.match(/<\/([a-zA-Z][a-zA-Z0-9]*)>\s*$/);
@@ -356,11 +887,11 @@ const ComponentBuilder: React.FC = () => {
           const indent = (tag as any).depth || 0;
           const indentSize = indent * 20;
 
-          // タグの開始部分のみを取得（最初の>まで）
+          // タグの開始部を取得（最初の>まで）
           const openTagMatch = tag.fullElement.match(/^<[^>]+>/);
           const openTag = openTagMatch ? openTagMatch[0] : tag.tag;
 
-          // タグ内のテキストコンテンツを取得（子要素は除外）
+          // タグのテキストコンテンツを取得（子要素は除外！）
           let textContent = '';
           const contentMatch = tag.fullElement.match(/^<[^>]+>([^<]*)/);
           if (contentMatch && contentMatch[1].trim()) {
@@ -417,7 +948,7 @@ const ComponentBuilder: React.FC = () => {
                   borderRadius: '3px',
                   fontWeight: 'bold'
                 }}>
-                  ✓ プロパティ定義済み
+                  プロパティ定義済み
                 </span>
               )}
             </div>
@@ -454,8 +985,23 @@ const ComponentBuilder: React.FC = () => {
     const elementTag = findElementTag(beforeText);
     const elementPath = elementTag || `element-${Date.now()}`;
 
+    const getTextContent = (html: string) => {
+      if (typeof window !== 'undefined') {
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        return temp.textContent || temp.innerText || '';
+      }
+      return html.replace(/<[^>]+>/g, '');
+    };
+
     const getDefaultValue = (type: PropField['type'], text: string) => {
+      const textContent = getTextContent(localSelectedText);
       switch (type) {
+        case 'text':
+        case 'textarea': {
+          const cleanText = textContent.trim();
+          return cleanText || text;
+        }
         case 'colorBoth':
           return { color: '#000000', backgroundColor: '#ffffff' };
         case 'color':
@@ -464,28 +1010,77 @@ const ComponentBuilder: React.FC = () => {
         case 'visibility':
           return true;
         case 'array': {
-          const itemMatches = localSelectedText.match(/<li[^>]*>([^<]+)<\/li>/gi);
+          const itemMatches = localSelectedText.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
           if (itemMatches) {
             return itemMatches.map(match => {
-              const textMatch = match.match(/>([^<]+)</);
-              return textMatch ? textMatch[1].trim() : '';
-            }).filter(Boolean);
+              // <a>タグが含まれているかチェック
+              const linkMatch = match.match(/<a[^>]*href=["']([^"']*)["'][^>]*(?:target=["']([^"']*)["'])?[^>]*>([\s\S]*?)<\/a>/i);
+              if (linkMatch) {
+                // リンクページとして抽出
+                const url = linkMatch[1] || '';
+                const target = linkMatch[2] || '_self';
+                const linkText = getTextContent(linkMatch[3] || '').trim();
+                return {
+                  url: url,
+                  href: url, // 互換性のため両方設定
+                  text: linkText || 'リンクテキスト',
+                  target: target,
+                };
+              }
+              const textContent = getTextContent(match).trim();
+              return textContent || '';
+            }).filter(item => {         
+              if (typeof item === 'string') {
+                return item.length > 0;
+              }
+              if (typeof item === 'object' && item !== null) {
+                return Object.keys(item).length > 0;
+              }
+              return false;
+            });
           }
-          return ['項目1', '項目2', '項目3'];
+          return ['1', '2', '3'];
         }
         case 'link': {
-          const fullElement = localSelectedText.match(/<a[^>]*href=["']([^"']+)["'][^>]*>([^<]+)<\/a>/i);
-          if (fullElement) {
-            return { url: fullElement[1] || '', text: fullElement[2] || '' };
-          }
-          return { url: text.match(/^https?:\/\//) ? text : '', text: text.match(/^https?:\/\//) ? '' : text };
+          const hrefMatch = localSelectedText.match(/<a[^>]*href=["']([^"']*)["'][^>]*>/i);
+          const targetMatch = localSelectedText.match(/<a[^>]*target=["']([^"']*)["'][^>]*>/i);
+          const url = hrefMatch ? (hrefMatch[1] || '') : '';
+          const target = targetMatch ? targetMatch[1] || '_self' : '_self';
+          
+          const linkTextMatch = localSelectedText.match(/<a[^>]*>([\s\S]*?)<\/a>/i);
+          const linkText = linkTextMatch ? getTextContent(linkTextMatch[1]).trim() : textContent.trim();
+          
+          return { 
+            url: url || '', 
+            text: linkText || 'リンクテキスト',
+            target,
+          };
         }
         case 'image': {
-          const fullElement = localSelectedText.match(/<img[^>]*src=["']([^"']+)["'][^>]*alt=["']([^"']+)["'][^>]*>/i);
+          const fullElement = localSelectedText.match(/<img[^>]*src=["']([^"']+)["'][^>]*(?:alt=["']([^"']+)["'])?[^>]*>/i);
           if (fullElement) {
-            return { src: fullElement[1] || '', alt: fullElement[2] || '' };
+            const src = fullElement[1] || '';
+            const alt = fullElement[2] || '';
+            
+            let basePath = '';
+            let filename = '';
+            if (src) {
+              const lastSlashIndex = src.lastIndexOf('/');
+              if (lastSlashIndex >= 0) {
+                basePath = src.substring(0, lastSlashIndex + 1);
+                filename = src.substring(lastSlashIndex + 1);
+              } else {
+                filename = src;
+              }
+            }
+            
+            return { 
+              src: src, 
+              alt: alt,
+              basePath: basePath || undefined,
+            };
           }
-          return { src: text, alt: '' };
+          return { src: text || '', alt: '', basePath: undefined };
         }
       default:
           return text;
@@ -503,18 +1098,139 @@ const ComponentBuilder: React.FC = () => {
       return name.charAt(0).toUpperCase() + name.slice(1);
     };
 
-    const newField: PropField = {
-      id: `prop_${Date.now()}`,
-      name: autoGeneratedName,
-      type: newPropType,
-      label: generateLabel(autoGeneratedName),
-      defaultValue: getDefaultValue(newPropType, localSelectedText),
-      description: '',
-      position: localRange,
-      elementPath: elementPath,
-    };
+    if (isArrayField && arrayParentName && arrayFieldName) {
+      const parentArrayIndex = findParentArrayElement(selectedTagIndex!);
+      let arrayParentProp = propFields.find(f => f.name === arrayParentName && f.type === 'array');
+      
+      if (!arrayParentProp && parentArrayIndex !== null) {
+        const parentTag = parsedTags[parentArrayIndex];
+        const arrayDefaultValue = getDefaultValue('array', parentTag.fullElement);
+        
+        arrayParentProp = {
+          id: `prop_${Date.now()}_array`,
+          name: arrayParentName,
+          type: 'array',
+          label: generateLabel(arrayParentName),
+          defaultValue: arrayDefaultValue,
+          description: '',
+          position: parentTag.position,
+          elementPath: parentTag.fullElement.match(/^<[^>]+>/) ? parentTag.fullElement.match(/^<[^>]+>/)![0] : '',
+        };
+        
+        setPropFields([...propFields, arrayParentProp]);
+      }
+      
+      if (arrayParentProp) {
+        const fieldProp: PropField = {
+          id: `prop_${Date.now()}_field`,
+          name: autoGeneratedName,
+          type: newPropType,
+          label: generateLabel(autoGeneratedName),
+          defaultValue: getDefaultValue(newPropType, localSelectedText),
+          description: '',
+          position: localRange,
+          elementPath: elementPath,
+          arrayFieldName: arrayFieldName,
+          arrayParentId: arrayParentProp.id,
+        };
+        
+        setPropFields([...propFields, fieldProp]);
+        
+        const currentArrayValue = Array.isArray(arrayParentProp.defaultValue) 
+          ? arrayParentProp.defaultValue 
+          : [];
+        
+        const updatedArrayValue = currentArrayValue.length > 0
+          ? currentArrayValue.map((item: any) => {
+              if (typeof item === 'object' && item !== null) {
+                return {
+                  ...item,
+                  [arrayFieldName]: getDefaultValue(newPropType, localSelectedText),
+                };
+              } else {
+                return {
+                  [arrayFieldName]: getDefaultValue(newPropType, localSelectedText),
+                };
+              }
+            })
+          : [{
+              [arrayFieldName]: getDefaultValue(newPropType, localSelectedText),
+            }];
+        
+        setPropFields(prevFields => 
+          prevFields.map(f => 
+            f.id === arrayParentProp!.id 
+              ? { ...f, defaultValue: updatedArrayValue }
+              : f
+          )
+        );
+        
+        const dataPropAttr = ` data-prop="${arrayParentName}" data-bind-type="array" data-array-field="${arrayFieldName}"`;
+        
+        const openingTagMatch = localSelectedText.match(/^<([a-zA-Z][a-zA-Z0-9]*)((?:\s[^>]*)?)>/);
+        if (openingTagMatch) {
+          const tagName = openingTagMatch[1];
+          let existingAttrs = openingTagMatch[2] || '';
+          const restOfElement = localSelectedText.slice(openingTagMatch[0].length);
 
-    setPropFields([...propFields, newField]);
+          existingAttrs = existingAttrs
+            .replace(/\s*data-prop=["'][^"']*["']/gi, '')
+            .replace(/\s*data-bind-type=["'][^"']*["']/gi, '')
+            .replace(/\s*data-array-field=["'][^"']*["']/gi, '');
+
+          const newOpeningTag = `<${tagName}${existingAttrs}${dataPropAttr}>`;
+          const updatedElement = newOpeningTag + restOfElement;
+          const newHtml = beforeText + updatedElement + afterText;
+
+          setHtmlCode(newHtml);
+        }
+      }
+    } else {            
+      const newField: PropField = {
+        id: `prop_${Date.now()}`,
+        name: autoGeneratedName,
+        type: newPropType,
+        label: generateLabel(autoGeneratedName),
+        defaultValue: getDefaultValue(newPropType, localSelectedText),
+        description: '',
+        position: localRange,
+        elementPath: elementPath,
+      };
+
+      setPropFields([...propFields, newField]);
+
+      const getBindType = (type: PropField['type']) => {
+        switch (type) {
+          case 'image': return 'image-full';
+          case 'link': return 'link-full';
+          case 'color': return 'color';
+          case 'backgroundColor': return 'background-color';
+          case 'colorBoth': return 'color-both';
+          case 'visibility': return 'visibility';
+          case 'array': return 'array';
+          default: return 'text';
+        }
+      };
+
+      const dataPropAttr = ` data-prop="${autoGeneratedName}" data-bind-type="${getBindType(newPropType)}"`;
+
+      const openingTagMatch = localSelectedText.match(/^<([a-zA-Z][a-zA-Z0-9]*)((?:\s[^>]*)?)>/);
+      if (openingTagMatch) {
+        const tagName = openingTagMatch[1];
+        let existingAttrs = openingTagMatch[2] || '';
+        const restOfElement = localSelectedText.slice(openingTagMatch[0].length);
+
+        existingAttrs = existingAttrs
+          .replace(/\s*data-prop=["'][^"']*["']/gi, '')
+          .replace(/\s*data-bind-type=["'][^"']*["']/gi, '');
+
+        const newOpeningTag = `<${tagName}${existingAttrs}${dataPropAttr}>`;
+        const updatedElement = newOpeningTag + restOfElement;
+        const newHtml = beforeText + updatedElement + afterText;
+
+        setHtmlCode(newHtml);
+      }
+    }
 
     const getBindType = (type: PropField['type']) => {
       switch (type) {
@@ -534,8 +1250,12 @@ const ComponentBuilder: React.FC = () => {
     const openingTagMatch = localSelectedText.match(/^<([a-zA-Z][a-zA-Z0-9]*)((?:\s[^>]*)?)>/);
     if (openingTagMatch) {
       const tagName = openingTagMatch[1];
-      const existingAttrs = openingTagMatch[2];
+      let existingAttrs = openingTagMatch[2] || '';
       const restOfElement = localSelectedText.slice(openingTagMatch[0].length);
+
+      existingAttrs = existingAttrs
+        .replace(/\s*data-prop=["'][^"']*["']/gi, '')
+        .replace(/\s*data-bind-type=["'][^"']*["']/gi, '');
 
       const newOpeningTag = `<${tagName}${existingAttrs}${dataPropAttr}>`;
       const updatedElement = newOpeningTag + restOfElement;
@@ -552,26 +1272,82 @@ const ComponentBuilder: React.FC = () => {
     setSelectedTagIndex(null);
     setChildTags([]);
     setSelectedChildIndex(-1);
+    setIsArrayField(false);
+    setArrayParentName('');
+    setArrayFieldName('');
   };
 
   const removePropField = (id: string) => {
     const field = propFields.find(f => f.id === id);
-    if (field && field.position) {
-      const dataPropRegex = new RegExp(`\\s*data-prop="${field.name}"[^>]*`, 'g');
-      setHtmlCode(htmlCode.replace(dataPropRegex, ''));
+    if (field) {
+      if (field.type === 'array') {
+        const childFields = propFields.filter(f => f.arrayParentId === id);
+        childFields.forEach(childField => {
+          if (childField.position) {
+            const dataPropRegex = new RegExp(`\\s*data-prop="[^"]*"\\s*data-bind-type="[^"]*"\\s*data-array-field="[^"]*"`, 'g');
+            setHtmlCode(prev => prev.replace(dataPropRegex, ''));
+          }
+        });
+        setPropFields(prev => prev.filter(f => f.id !== id && f.arrayParentId !== id));
+      } else {
+        if (field.position) {
+          const dataPropRegex = new RegExp(`\\s*data-prop="${field.name}"[^>]*`, 'g');
+          setHtmlCode(htmlCode.replace(dataPropRegex, ''));
+        }
+        setPropFields(propFields.filter(field => field.id !== id));
+      }
     }
-    setPropFields(propFields.filter(field => field.id !== id));
   };
 
   const updatePropField = (id: string, updates: Partial<PropField>) => {
-    setPropFields(propFields.map(field =>
+    const updatedFields = propFields.map(field =>
       field.id === id ? { ...field, ...updates } : field
-    ));
+    );
+    setPropFields(updatedFields);
+    
+    updatePreviewProps(updatedFields);
+    
+    validateProps(updatedFields);
   };
 
+  const updatePreviewProps = (fields: PropField[]) => {
+    const props: Record<string, any> = {};
+    fields.forEach(field => {
+      if (!field.arrayParentId) {
+        props[field.name] = field.defaultValue;
+      }
+    });
+    setPreviewProps(props);
+  };
+
+  const validateProps = (fields: PropField[]) => {
+    const result = validatePropFields(fields as ValidationPropField[]);
+    setValidationResult(result);
+    return result;
+  };
+
+  const computedPreviewProps = useMemo(() => {
+    const props: Record<string, any> = {};
+    propFields.forEach(field => {
+      if (!field.arrayParentId) {
+        props[field.name] = field.defaultValue;
+      }
+    });
+    return props;
+  }, [propFields]);
+
+  React.useEffect(() => {
+    updatePreviewProps(propFields);
+    if (propFields.length > 0) {
+      validateProps(propFields);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propFields]);
+
   const generateComponentCode = () => {
-    const propNames = propFields.map(f => f.name).filter(Boolean).join(', ');
-    const propsDestructure = propFields.length > 0 ? `const { ${propNames} } = props;` : '';
+    const mainProps = propFields.filter(f => !f.arrayParentId);
+    const propNames = mainProps.map(f => f.name).filter(Boolean).join(', ');
+    const propsDestructure = mainProps.length > 0 ? `const { ${propNames} } = props;` : '';
 
     const cssFilesComment = cssFiles.length > 0
       ? `/**
@@ -634,8 +1410,18 @@ export default ${componentName};`;
 
   const saveComponentAndCreateFiles = async () => {
     if (!componentName || !displayName) {
-      alert('コンポーネント名と表示名は必須です');
+      alert('コンポーネント名と表示名が未入力です');
       return;
+    }
+
+    // プロパティのバリデーション
+    const validation = validateProps(propFields);
+    if (!validation.isValid) {
+      const messages = formatValidationMessages(validation);
+      const confirmMessage = `プロパティにエラーがあります\n\n${messages.join('\n')}\n\nそれでも保存しますか？`;
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
     }
 
     // コンポーネント名のバリデーション（ローマ字のみ）
@@ -667,7 +1453,7 @@ export default ${componentName};`;
     const finalCategory = isNewCategory ? newCategoryName.trim() : category;
     const finalCategoryRomanized = isNewCategory ? newCategoryRomanized.trim() : categoryRomanized;
 
-    // 一意のIDとメタデータを生成
+    // 一意なIDとメタデータを生成
     const metadata = generateComponentMetadata(
       finalCategory,
       finalCategoryRomanized,
@@ -679,7 +1465,7 @@ export default ${componentName};`;
     const existingComponent = existingTemplates.find(t => t.uniqueId === metadata.uniqueId);
 
     if (existingComponent) {
-      alert(`このunique_id（${metadata.uniqueId}）は既に使用されています。\n既存のコンポーネント: ${existingComponent.displayName}\n\n異なるコンポーネント名またはカテゴリを選択してください。`);
+      alert(`このunique_id: ${metadata.uniqueId} は既に使用されています。\n既存のコンポーネント: ${existingComponent.displayName}\n\n異なるコンポーネント名またはカテゴリを選択してください。`);
       return;
     }
 
@@ -705,11 +1491,10 @@ export default ${componentName};`;
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join('') + 'Component.tsx';
 
-      console.log('生成されたコンポーネントファイル名:', componentFileName);
-      console.log('生成されたコード:', generatedCode);
+      console.log('生成されたコンポーネントファイル名', componentFileName);
+      console.log('生成されたコード', generatedCode);
 
-      // 2. localStorageに保存
-      addComponentTemplate({
+      const templateData = {
         name: componentName,
         nameRomanized: componentName,
         displayName: displayName,
@@ -725,7 +1510,26 @@ export default ${componentName};`;
         cssFiles: cssFiles,
         jsFiles: jsFiles,
         isActive: true,
-      });
+      };
+
+      // 2. Supabaseに保存（ドラフトまたはリリース版として）
+      let savedTemplate = null;
+      if (supabase) {
+        try {
+          savedTemplate = await saveComponentTemplateToSupabase(templateData, saveAsDraft);
+          if (savedTemplate) {
+            console.log('Supabaseに保存しました:', savedTemplate);
+          }
+        } catch (supabaseError) {
+          console.warn('Supabaseへの保存に失敗しました。localStorageにフォールバックします', supabaseError);
+        }
+      }
+
+      // 3. localStorageにも保存（フォールバックまたは追加保存！）
+      const localTemplate = addComponentTemplate(templateData);
+      if (!savedTemplate) {
+        savedTemplate = localTemplate;
+      }
 
       if (isNewCategory && newCategoryName.trim()) {
         if (!existingCategories.includes(finalCategory)) {
@@ -738,10 +1542,41 @@ export default ${componentName};`;
 
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
-      alert('コンポーネントがlocalStorageに保存されました！');
+      
+      const saveMessage = saveAsDraft 
+        ? 'コンポーネントがドラフト版として保存されました'
+        : 'コンポーネントがリリース版として保存されました';
+      alert(saveMessage);
     } catch (error) {
       console.error('Error saving component:', error);
       alert(`保存エラー: ${error}`);
+    }
+  };
+
+  // バージョン履歴を読み込む
+  const loadVersionHistory = async (uniqueId: string) => {
+    const history = await getComponentVersionHistory(uniqueId);
+    setVersionHistory(history);
+    setShowVersionHistory(true);
+  };
+
+  // 特定のバージョンをロード
+  const loadVersion = async (uniqueId: string, version: number) => {
+    const template = await getComponentTemplateByVersion(uniqueId, version);
+    if (template) {
+      // テンプレートデータをフォームに反映
+      setComponentName(template.name);
+      setDisplayName(template.displayName);
+      setCategory(template.category);
+      setCategoryRomanized(template.categoryRomanized);
+      setDescription(template.description || '');
+      setThumbnailUrl(template.thumbnailUrl || '');
+      setCssFiles(template.cssFiles);
+      setJsFiles(template.jsFiles);
+      setHtmlCode(template.codeTemplate);
+      // propFieldsの復元が必要なので、コード生成から送信する必要がある
+      setGeneratedCode(template.codeTemplate);
+      alert(`バージョン ${version} を読み込みました`);
     }
   };
 
@@ -770,7 +1605,7 @@ export default ${componentName};`;
     jsFilesValue: string[]
   ) => {
     // ComponentTypeに追加する必要があるかチェック
-    // uniqueIdからコンポーネントタイプを生成（例: kv_program_hero -> kv-program-hero）
+    // uniqueIdからコンポーネントタイプを生成（kv_program_hero -> kv-program-hero）
     const componentType = metadata.uniqueId.replace(/_/g, '-');
     
     // 既存のComponentTypeをチェック
@@ -796,7 +1631,7 @@ export default ${componentName};`;
     jsFiles: ${JSON.stringify(jsFilesValue)},
   },`;
 
-    // types/index.tsに追加する必要がある場合のコード
+    // types/index.tsに追加する必要がある場合、コードを生成
     const typeUpdateCode = needsTypeUpdate
       ? `\n  | '${componentType}'`
       : '';
@@ -809,7 +1644,7 @@ export default ${componentName};`;
 
 \`src/components/Components/${componentName}.tsx\`
 
-（※ 既にダウンロードされたファイルをそのまま配置してください）
+※ 既にダウンロードされたファイルをそのまま配置してください
 
 
 ## 2. src/data/componentTemplates.ts の更新
@@ -820,12 +1655,12 @@ export default ${componentName};`;
 ${componentTemplateCode}
 \`\`\`
 
-注意: 配列の最後にカンマ（,）を追加することを忘れないでください。
+注：配列の最後にカンマ！を追加することを忘れないでください
 
 
 ## 3. src/types/index.ts の更新
 
-ComponentType に新しいタイプを追加する必要がある場合:
+ComponentType に新しいタイプを追加する必要がある場合
 
 \`\`\`typescript
 export type ComponentType =
@@ -842,32 +1677,32 @@ export type ComponentType =
   | 'slider'${typeUpdateCode};
 \`\`\`
 
-${needsTypeUpdate ? `⚠️ 注意: '${componentType}' を ComponentType に追加する必要があります。` : `✓ '${componentType}' は既存のタイプです。追加不要ですが、確認してください。`}
+  ${needsTypeUpdate ? `⚠ 注：'${componentType}' はComponentType に追加する必要があります。` : `✅'${componentType}' は既存のタイプです。追加不要ですが、確認してください。`}
 
 
-## 4. ComponentRenderer.tsx の更新（必要に応じて）
+## 4. ComponentRenderer.tsx の更新に応じて
 
-新しいコンポーネントタイプを使用する場合は、以下のファイルにインポートとレンダリングロジックを追加してください:
+新しいコンポーネントタイプを使用する場合、以下のファイルにインポートとレンダリングロジックを追加してください:
 
 \`src/components/PageBuilder/ComponentRenderer.tsx\`
 
-例:
+\`\`\`typescript
 \`\`\`typescript
 import ${componentName} from '../Components/${componentName}';
 
-// switch文などでレンダリング処理を追加
+// switch文でレンダリング処理を追加
 case '${componentType}':
   return <${componentName} component={component} />;
 \`\`\`
 
 
-## 完了後
+## 完了
 
-すべてのファイルを更新したら、アプリケーションを再起動またはリロードしてください。
-新しいコンポーネントがコンポーネントライブラリに表示されるようになります。
+すべてのファイルを更新したら、アプリケーションを起動またはリロードしてください
+新しいコンポーネントがコンポーネントライブラリに表示されるようになります
 
 ---
-生成日時: ${new Date().toLocaleString('ja-JP')}
+生成日: ${new Date().toLocaleString('ja-JP')}
 コンポーネント名: ${componentName}
 表示名: ${displayName}
 カテゴリ: ${category} (${categoryRomanized})
@@ -878,7 +1713,7 @@ Unique ID: ${metadata.uniqueId}
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${componentName}_更新ガイド.md`;
+    a.download = `${componentName}_更新ガイチEmd`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -908,7 +1743,7 @@ Unique ID: ${metadata.uniqueId}
       <div style={styles.header}>
         <h2 style={styles.title}>コンポーネントビルダー</h2>
         <p style={styles.subtitle}>
-          基本情報を入力し、HTMLコードを貼り付けて、対話的にプロパティを定義できます
+          基本情報を入力し、HTMLコードを貼り付けて、対話式プロパティを定義できます
         </p>
       </div>
 
@@ -943,10 +1778,10 @@ Unique ID: ${metadata.uniqueId}
                 style={styles.input}
                 value={componentName}
                 onChange={(e) => setComponentName(e.target.value)}
-                placeholder="例: custom-hero（半角英数字、ハイフンのみ）"
+                placeholder="custom-hero（半角英数字、ハイフンのみ）"
               />
               <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                半角英数字とハイフン、スペースのみ使用可。CSS IDとコンポーネント識別子に使用されます。
+                半角英数字とハイフン、スペースのみ使用可、ESS IDとコンポーネント識別子に使用されます
               </p>
               {componentName && (isNewCategory ? newCategoryRomanized : categoryRomanized) && (
                 <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#f0f9ff', borderRadius: '4px', border: '1px solid #bae6fd' }}>
@@ -965,17 +1800,17 @@ Unique ID: ${metadata.uniqueId}
 
             <div style={styles.field}>
               <label style={styles.label}>
-                表示名 <span style={styles.required}>*</span>
+                表示名<span style={styles.required}>*</span>
               </label>
               <input
                 type="text"
                 style={styles.input}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="例: カスタムヒーローセクション"
+                placeholder="カスタムヒーローセクション"
               />
               <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                日本語OK。コンポーネントライブラリに表示される名前です。
+                日本語OK。コンポーネントライブラリに表示される名前です
               </p>
             </div>
 
@@ -1011,14 +1846,14 @@ Unique ID: ${metadata.uniqueId}
               <div style={styles.fieldRow}>
                 <div style={styles.field}>
                   <label style={styles.label}>
-                    新しいカテゴリ名 <span style={styles.required}>*</span>
+                    新しいカテゴリ名<span style={styles.required}>*</span>
                   </label>
                   <input
                     type="text"
                     style={styles.input}
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="例: 特集、イベント、キャンペーン"
+                    placeholder="特別イベント、キャンペーン"
                   />
                   <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
                     日本語・英語どちらでも可
@@ -1027,17 +1862,17 @@ Unique ID: ${metadata.uniqueId}
 
                 <div style={styles.field}>
                   <label style={styles.label}>
-                    カテゴリ名（ローマ字） <span style={styles.required}>*</span>
+                    カテゴリ名（ローマ字！）<span style={styles.required}>*</span>
                   </label>
                   <input
                     type="text"
                     style={styles.input}
                     value={newCategoryRomanized}
                     onChange={(e) => setNewCategoryRomanized(e.target.value)}
-                    placeholder="例: special, event, campaign"
+                    placeholder="special, event, campaign"
                   />
                   <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-                    半角英数字とハイフンのみ。CSSファイル名に使用されます。
+                    半角英数字とハイフンのみ、ESSファイル名に使用されます
                   </p>
                 </div>
               </div>
@@ -1049,7 +1884,7 @@ Unique ID: ${metadata.uniqueId}
               読み込むCSSファイル
             </h4>
             <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px' }}>
-              public/generator_common/css/ 配下のファイルを指定してください（複数可）
+              public/generator_common/css/ 配下のファイルを指定してください
             </p>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
               <input
@@ -1057,7 +1892,7 @@ Unique ID: ${metadata.uniqueId}
                 style={{ ...styles.input, flex: 1 }}
                 value={newCssFile}
                 onChange={(e) => setNewCssFile(e.target.value)}
-                placeholder="例: style.css"
+                placeholder="style.css"
               />
               <button
                 style={styles.addButton}
@@ -1113,7 +1948,7 @@ Unique ID: ${metadata.uniqueId}
               読み込むJSファイル
             </h4>
             <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '12px' }}>
-              public/generator_common/js/ 配下のファイルを指定してください（複数可）
+              public/generator_common/js/ 配下のファイルを指定してください
             </p>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
               <input
@@ -1121,7 +1956,7 @@ Unique ID: ${metadata.uniqueId}
                 style={{ ...styles.input, flex: 1 }}
                 value={newJsFile}
                 onChange={(e) => setNewJsFile(e.target.value)}
-                placeholder="例: script.js"
+                placeholder="script.js"
               />
               <button
                 style={styles.addButton}
@@ -1185,21 +2020,21 @@ Unique ID: ${metadata.uniqueId}
                   style={styles.nextButton}
                   onClick={() => setStep('props')}
                 >
-                  次へ：プロパティ定義
+                  次へ・プロパティ定義
                 </button>
                 <button
                   style={{ ...styles.generateButton, padding: '8px 16px', fontSize: '13px' }}
                   onClick={generateComponentCode}
                 >
                   <Wand2 size={16} style={{ marginRight: '4px' }} />
-                  スキップしてコード生成
+                  スキマーしてコード生成
                 </button>
               </div>
             )}
           </div>
 
           <p style={styles.helpText}>
-            基本情報を入力し、HTMLコードを貼り付けてください。表示されるタグ一覧から、親要素・子要素問わず任意のタグをクリックしてプロパティを定義できます。
+            基本情報を入力し、HTMLコードを貼り付けてください。表示されるタグ一覧から、親要素・子要素問わず任意のタグをクリックしてプロパティを定義できます
           </p>
 
           <div style={{
@@ -1213,14 +2048,14 @@ Unique ID: ${metadata.uniqueId}
               💡 使い方
             </p>
             <ol style={{ fontSize: '12px', color: '#0369a1', margin: 0, paddingLeft: '20px', lineHeight: '1.6' }}>
-              <li>基本情報（コンポーネント名、カテゴリなど）を入力</li>
+              <li>基本情報を入力し、コンポーネント名、カテゴリなどを入力</li>
               <li>HTMLコードを入力または貼り付け</li>
-              <li><strong>（任意）</strong> 表示されるタグ一覧から<strong>親要素・子要素問わず任意のタグ</strong>をクリック</li>
-              <li><strong>（任意）</strong> プロパティタイプを選択して追加（複数のタグにプロパティ定義可能）</li>
-              <li>「次へ：プロパティ定義」をクリック、または直接「コード生成」でコンポーネント作成</li>
+              <li><strong>任意！</strong> 表示されるタグ一覧から<strong>親要素・子要素問わず任意のタグ</strong>をクリック</li>
+              <li><strong>任意！</strong> プロパテグタイプを選択して追加・複数のタグにプロパティ定義可能</li>
+              <li>「次へ・プロパティ定義」をクリック、または直接「コード生成」でコンポーネント作成</li>
             </ol>
             <p style={{ fontSize: '11px', color: '#0369a1', margin: '8px 0 0', fontStyle: 'italic' }}>
-              ※ プロパティなしでも静的なコンポーネントとして生成できます
+              ※ プロパティなしでも静的コンポーネントとして生成できます
             </p>
           </div>
 
@@ -1229,13 +2064,13 @@ Unique ID: ${metadata.uniqueId}
             style={styles.codeTextarea}
             value={htmlCode}
             onChange={(e) => setHtmlCode(e.target.value)}
-            placeholder={`例：
-<h2>タイトルをここに入力</h2>
+            placeholder={`例！
+<h2>タイトルをここに入劁E/h2>
 <p>説明文をここに入力</p>
-<img src="/path/to/image.jpg" alt="画像" />
+<img src="/path/to/image.jpg" alt="画像説明" />
 <ul>
-  <li>項目1</li>
-  <li>項目2</li>
+  <li>リスト1</li>
+  <li>リスト2</li>
 </ul>
 `}
             rows={8}
@@ -1265,11 +2100,11 @@ Unique ID: ${metadata.uniqueId}
                   gap: '8px'
                 }}>
                   <Wand2 size={16} />
-                  すべてのタグ（親・子要素）- クリックしてプロパティを定義
+                  すべてのタグ・親・子要素・クリックしてプロパティを定義
                 </p>
                 <div style={{ display: 'flex', gap: '12px', fontSize: '11px' }}>
-                  <span style={{ color: '#3b82f6' }}>● クリック可能</span>
-                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>● プロパティ定義済み</span>
+                  <span style={{ color: '#3b82f6' }}>◁クリック可能</span>
+                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>◁プロパティ定義済み</span>
                 </div>
               </div>
               <div style={{
@@ -1285,6 +2120,52 @@ Unique ID: ${metadata.uniqueId}
               }}>
                 {renderInteractiveHTML()}
               </div>
+            </div>
+          )}
+
+          {/* リアルタイムプレビュー */}
+          {htmlCode && (
+            <div style={{ marginTop: '24px' }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '12px',
+              }}>
+                <h4 style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151', margin: 0 }}>
+                  <Eye size={18} style={{ marginRight: '8px', display: 'inline', verticalAlign: 'middle' }} />
+                  リアルタイムプレビュー
+                </h4>
+                <button
+                  onClick={() => setShowPreview(!showPreview)}
+                  style={{
+                    padding: '6px 12px',
+                    backgroundColor: showPreview ? '#3b82f6' : '#f3f4f6',
+                    color: showPreview ? '#ffffff' : '#374151',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {showPreview ? '非表示' : '表示'}
+                </button>
+              </div>
+              {showPreview && (
+                <div style={{
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  backgroundColor: '#ffffff',
+                }}>
+                  <ComponentPreview
+                    htmlCode={htmlCode}
+                    props={computedPreviewProps}
+                    cssFiles={cssFiles}
+                    globalStyles={pageData.globalStyles}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1306,15 +2187,70 @@ Unique ID: ${metadata.uniqueId}
             </div>
 
             <p style={styles.helpText}>
-              プロパティは任意です。静的なコンポーネントの場合はプロパティなしでもコード生成できます。動的な値を設定したい場合は、コード内のテキストを選択してプロパティを定義してください。
+              プロパティは任意です。静的コンポーネントの場合、プロパティなしでもコード生成できます。動的な値を設定したい場合、コードのチェックボックスを選択してプロパティを定義してください
             </p>
+
+            {/* バリデーション結果表示 */}
+            {validationResult && propFields.length > 0 && (
+              <div style={{
+                marginBottom: '16px',
+                padding: '12px',
+                backgroundColor: validationResult.isValid ? '#f0fdf4' : '#fef2f2',
+                borderRadius: '6px',
+                border: `1px solid ${validationResult.isValid ? '#bbf7d0' : '#fecaca'}`,
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginBottom: validationResult.errors.length > 0 || validationResult.warnings.length > 0 ? '8px' : '0',
+                }}>
+                  {validationResult.isValid ? (
+                    <Check size={16} color="#10b981" />
+                  ) : (
+                    <AlertTriangle size={16} color="#ef4444" />
+                  )}
+                  <span style={{
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: validationResult.isValid ? '#15803d' : '#dc2626',
+                  }}>
+                    {validationResult.isValid ? 'プロパティは正常です' : 'プロパティに問題があります'}
+                  </span>
+                </div>
+                {validationResult.errors.length > 0 && (
+                  <div style={{ marginTop: '8px' }}>
+                    <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#dc2626', margin: '0 0 4px 0' }}>
+                      エラー ({validationResult.errors.length}件):
+                    </p>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '12px', color: '#991b1b' }}>
+                      {validationResult.errors.map((error, idx) => (
+                        <li key={idx}>{error.fieldName}: {error.message}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {validationResult.warnings.length > 0 && (
+                  <div style={{ marginTop: '8px' }}>
+                    <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#d97706', margin: '0 0 4px 0' }}>
+                      警告({validationResult.warnings.length}件):
+                    </p>
+                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '12px', color: '#92400e' }}>
+                      {validationResult.warnings.map((warning, idx) => (
+                        <li key={idx}>{warning.fieldName}: {warning.message}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
 
             {propFields.length === 0 ? (
               <div style={styles.emptyState}>
                 <p>プロパティが定義されていません</p>
                 <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '8px' }}>
-                  プロパティなしで静的なコンポーネントとして生成することもできます。<br />
-                  動的な値を設定したい場合は、HTMLコード内でテキストを選択してプロパティを追加してください。
+                  プロパティなしで静的なコンポーネントとして生成することもできます
+                  動的な値を設定したい場合、HTMLコードでチェックボックスを選択してプロパティを追加してください
                 </p>
               </div>
             ) : (
@@ -1323,12 +2259,25 @@ Unique ID: ${metadata.uniqueId}
                   const sameElementProps = propFields.filter(
                     p => p.elementPath === field.elementPath && p.id !== field.id
                   );
+                  
+                  // 配列に統合されたフィールドプロパティかどうか
+                  const isArrayField = field.arrayParentId !== undefined;
+                  const arrayParent = isArrayField ? propFields.find(f => f.id === field.arrayParentId) : null;
+                  
+                  // この配列プロパティに統合されたフィールドプロパティ
+                  const arrayChildFields = propFields.filter(f => f.arrayParentId === field.id);
 
                   return (
                     <div key={field.id} style={styles.propCard}>
                       <div style={styles.propCardHeader}>
-                        <div style={styles.propBadge}>{field.type}</div>
-                        <span style={styles.propName}>data-prop="{field.name}"</span>
+                        <div style={styles.propBadge}>
+                          {isArrayField ? `配列フィールド(${field.arrayFieldName})` : field.type}
+                        </div>
+                        <span style={styles.propName}>
+                          {isArrayField 
+                            ? `配列 "${arrayParent?.name || 'unknown'}" のフィールド"${field.arrayFieldName || field.name}"`
+                            : `data-prop="${field.name}"`}
+                        </span>
                         <button
                           style={styles.deleteButton}
                           onClick={() => removePropField(field.id)}
@@ -1337,6 +2286,30 @@ Unique ID: ${metadata.uniqueId}
                           <Trash2 size={14} />
                         </button>
                       </div>
+                      {isArrayField && arrayParent && (
+                        <div style={{
+                          padding: '8px',
+                          backgroundColor: '#fef3c7',
+                          borderRadius: '4px',
+                          marginBottom: '12px',
+                          fontSize: '11px',
+                          color: '#92400e',
+                        }}>
+                          <strong>配列プロパティ:</strong> {arrayParent.name} ({arrayParent.label})
+                        </div>
+                      )}
+                      {arrayChildFields.length > 0 && (
+                        <div style={{
+                          padding: '8px',
+                          backgroundColor: '#d1fae5',
+                          borderRadius: '4px',
+                          marginBottom: '12px',
+                          fontSize: '11px',
+                          color: '#065f46',
+                        }}>
+                          <strong>統合されたフィールド</strong> {arrayChildFields.map(f => f.arrayFieldName || f.name).join(', ')}
+                        </div>
+                      )}
                       {sameElementProps.length > 0 && (
                         <div style={{
                           padding: '8px',
@@ -1378,19 +2351,555 @@ Unique ID: ${metadata.uniqueId}
                             背景カラー: {(field.defaultValue as any).backgroundColor || '#ffffff'}
                           </div>
                         ) : field.type === 'link' ? (
-                          <div style={{ fontSize: '12px', color: '#6b7280', padding: '8px', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
-                            URL: {(field.defaultValue as any).url || ''}<br />
-                            テキスト: {(field.defaultValue as any).text || ''}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                                URL (href)
+                              </label>
+                              <input
+                                type="text"
+                                style={styles.propInput}
+                                value={(field.defaultValue as any)?.url || ''}
+                                onChange={(e) => updatePropField(field.id, { defaultValue: { ...(field.defaultValue || {}), url: e.target.value } })}
+                                placeholder="https://example.com"
+                              />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                                テキスト
+                              </label>
+                              <textarea
+                                style={{
+                                  ...styles.propInput,
+                                  minHeight: '80px',
+                                  fontFamily: 'monospace',
+                                  whiteSpace: 'pre-wrap',
+                                }}
+                                value={(field.defaultValue as any)?.text || ''}
+                                onChange={(e) => updatePropField(field.id, { defaultValue: { ...(field.defaultValue || {}), text: e.target.value } })}
+                                placeholder="リンクテキスト（改行可）"
+                              />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                                target属性
+                              </label>
+                              <select
+                                style={styles.propInput}
+                                value={(field.defaultValue as any)?.target || '_self'}
+                                onChange={(e) => updatePropField(field.id, { defaultValue: { ...(field.defaultValue || {}), target: e.target.value } })}
+                              >
+                                <option value="_self">同じタブで開く (_self)</option>
+                                <option value="_blank">新しいタブで開く (_blank)</option>
+                              </select>
+                            </div>
                           </div>
                         ) : field.type === 'image' ? (
-                          <div style={{ fontSize: '12px', color: '#6b7280', padding: '8px', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
-                            画像パス: {(field.defaultValue as any).src || ''}<br />
-                            ALT: {(field.defaultValue as any).alt || ''}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div>
+                              <label style={styles.propLabel}>画像パス</label>
+                              <input
+                                type="text"
+                                style={styles.propInput}
+                                value={(field.defaultValue as any).src || ''}
+                                onChange={(e) => {
+                                  const currentValue = field.defaultValue as any;
+                                  const newSrc = e.target.value;
+                                  
+                                  let basePath = currentValue?.basePath;
+                                  if (!basePath && newSrc) {
+                                    const lastSlashIndex = newSrc.lastIndexOf('/');
+                                    if (lastSlashIndex >= 0) {
+                                      basePath = newSrc.substring(0, lastSlashIndex + 1);
+                                    }
+                                  }
+                                  
+                                  updatePropField(field.id, { 
+                                    defaultValue: { 
+                                      ...currentValue, 
+                                      src: newSrc,
+                                      basePath: basePath || undefined,
+                                    } 
+                                  });
+                                }}
+                                placeholder="/path/to/image.jpg"
+                              />
+                              {(field.defaultValue as any).basePath && (
+                                <p style={{ fontSize: '11px', color: '#6b7280', marginTop: '4px', marginBottom: 0 }}>
+                                  ベースパス: {(field.defaultValue as any).basePath}
+                                </p>
+                              )}
+                            </div>
+                            <div>
+                              <label style={styles.propLabel}>ALTテキスト</label>
+                              <textarea
+                                style={{
+                                  ...styles.propInput,
+                                  minHeight: '60px',
+                                  fontFamily: 'monospace',
+                                  whiteSpace: 'pre-wrap',
+                                }}
+                                value={(field.defaultValue as any).alt || ''}
+                                onChange={(e) => {
+                                  const currentValue = field.defaultValue as any;
+                                  updatePropField(field.id, { 
+                                    defaultValue: { 
+                                      ...currentValue, 
+                                      alt: e.target.value 
+                                    } 
+                                  });
+                                }}
+                                placeholder="画像説明（改行可）"
+                              />
+                            </div>
                           </div>
                         ) : field.type === 'array' ? (
-                          <div style={{ fontSize: '12px', color: '#6b7280', padding: '8px', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
-                            配列 ({Array.isArray(field.defaultValue) ? field.defaultValue.length : 0}個の要素)
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {(() => {
+                              const arrayFieldProps = propFields.filter(f => f.arrayParentId === field.id);
+                              const hasNestedFields = arrayFieldProps.length > 0;
+                              const hasItems = Array.isArray(field.defaultValue) && field.defaultValue.length > 0;
+
+                              if (!hasItems) {
+                                return (
+                                  <div style={{ fontSize: '12px', color: '#9ca3af', textAlign: 'center', padding: '12px' }}>
+                                    配列が空です
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                  {hasNestedFields && (
+                                    <div
+                                      style={{
+                                        padding: '8px',
+                                        backgroundColor: '#fef3c7',
+                                        borderRadius: '4px',
+                                        marginBottom: '8px',
+                                        fontSize: '11px',
+                                        color: '#92400e',
+                                      }}
+                                    >
+                                      <strong>統合されたフィールド</strong>{' '}
+                                      {arrayFieldProps.map(f => f.arrayFieldName || f.name).join(', ')}
+                                    </div>
+                                  )}
+
+                                  {field.defaultValue.map((item: any, index: number) => {
+                                      const isLinkItem = typeof item === 'object' && item !== null && (item.url !== undefined || item.href !== undefined);
+                                      const isStringItem = typeof item === 'string';
+                                      const isObjectItem = typeof item === 'object' && item !== null && !isLinkItem;
+                                      
+                                      return (
+                                        <div
+                                          key={index}
+                                          style={{
+                                            padding: '12px',
+                                            backgroundColor: '#f9fafb',
+                                            borderRadius: '6px',
+                                            border: '1px solid #e5e7eb',
+                                          }}
+                                        >
+                                          <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            marginBottom: '8px',
+                                          }}>
+                                            <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#374151' }}>
+                                              項目 {index + 1}
+                                            </span>
+                                            {field.defaultValue.length > 1 && (
+                                              <button
+                                                onClick={() => {
+                                                  const newArray = (field.defaultValue as any[]).filter((_, i) => i !== index);
+                                                  updatePropField(field.id, { defaultValue: newArray });
+                                                }}
+                                                style={{
+                                                  padding: '4px 8px',
+                                                  backgroundColor: '#fee2e2',
+                                                  color: '#dc2626',
+                                                  border: 'none',
+                                                  borderRadius: '4px',
+                                                  fontSize: '11px',
+                                                  cursor: 'pointer',
+                                                }}
+                                              >
+                                                <Trash2 size={12} />
+                                              </button>
+                                            )}
+                                          </div>
+                                          
+                                          {isObjectItem && hasNestedFields ? (
+                                            // オブジェクト項目に統合されたフィールドがある場合
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                              {arrayFieldProps.map((fieldProp) => {
+                                                const fieldName = fieldProp.arrayFieldName || fieldProp.name;
+                                                const fieldValue = item[fieldName];
+                                                
+                                                return (
+                                                  <div key={fieldProp.id}>
+                                                    <label style={{ fontSize: '11px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                                                      {fieldProp.label} ({fieldName})
+                                                    </label>
+                                                    {fieldProp.type === 'text' || fieldProp.type === 'textarea' ? (
+                                                      <textarea
+                                                        style={{
+                                                          ...styles.propInput,
+                                                          minHeight: '60px',
+                                                          fontFamily: 'monospace',
+                                                          whiteSpace: 'pre-wrap',
+                                                        }}
+                                                        value={fieldValue || ''}
+                                                        onChange={(e) => {
+                                                          const newArray = [...(field.defaultValue as any[])];
+                                                          newArray[index] = {
+                                                            ...newArray[index],
+                                                            [fieldName]: e.target.value,
+                                                          };
+                                                          updatePropField(field.id, { defaultValue: newArray });
+                                                        }}
+                                                        placeholder={`${fieldProp.label}を入力（改行可）`}
+                                                      />
+                                                    ) : fieldProp.type === 'color' || fieldProp.type === 'backgroundColor' ? (
+                                                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                        <input
+                                                          type="color"
+                                                          value={fieldValue || '#000000'}
+                                                          onChange={(e) => {
+                                                            const newArray = [...(field.defaultValue as any[])];
+                                                            newArray[index] = {
+                                                              ...newArray[index],
+                                                              [fieldName]: e.target.value,
+                                                            };
+                                                            updatePropField(field.id, { defaultValue: newArray });
+                                                          }}
+                                                          style={{ width: '40px', height: '40px', cursor: 'pointer' }}
+                                                        />
+                                                        <input
+                                                          type="text"
+                                                          style={styles.propInput}
+                                                          value={fieldValue || '#000000'}
+                                                          onChange={(e) => {
+                                                            const newArray = [...(field.defaultValue as any[])];
+                                                            newArray[index] = {
+                                                              ...newArray[index],
+                                                              [fieldName]: e.target.value,
+                                                            };
+                                                            updatePropField(field.id, { defaultValue: newArray });
+                                                          }}
+                                                          placeholder="#000000"
+                                                        />
+                                                      </div>
+                                                    ) : fieldProp.type === 'colorBoth' ? (
+                                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                          <label style={{ fontSize: '11px', width: '80px' }}>テキスト</label>
+                                                          <input
+                                                            type="color"
+                                                            value={fieldValue?.color || '#000000'}
+                                                            onChange={(e) => {
+                                                              const newArray = [...(field.defaultValue as any[])];
+                                                              newArray[index] = {
+                                                                ...newArray[index],
+                                                                [fieldName]: {
+                                                                  ...(newArray[index][fieldName] || {}),
+                                                                  color: e.target.value,
+                                                                },
+                                                              };
+                                                              updatePropField(field.id, { defaultValue: newArray });
+                                                            }}
+                                                            style={{ width: '40px', height: '40px', cursor: 'pointer' }}
+                                                          />
+                                                          <input
+                                                            type="text"
+                                                            style={{ ...styles.propInput, flex: 1 }}
+                                                            value={fieldValue?.color || '#000000'}
+                                                            onChange={(e) => {
+                                                              const newArray = [...(field.defaultValue as any[])];
+                                                              newArray[index] = {
+                                                                ...newArray[index],
+                                                                [fieldName]: {
+                                                                  ...(newArray[index][fieldName] || {}),
+                                                                  color: e.target.value,
+                                                                },
+                                                              };
+                                                              updatePropField(field.id, { defaultValue: newArray });
+                                                            }}
+                                                          />
+                                                        </div>
+                                                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                          <label style={{ fontSize: '11px', width: '80px' }}>背景:</label>
+                                                          <input
+                                                            type="color"
+                                                            value={fieldValue?.backgroundColor || '#ffffff'}
+                                                            onChange={(e) => {
+                                                              const newArray = [...(field.defaultValue as any[])];
+                                                              newArray[index] = {
+                                                                ...newArray[index],
+                                                                [fieldName]: {
+                                                                  ...(newArray[index][fieldName] || {}),
+                                                                  backgroundColor: e.target.value,
+                                                                },
+                                                              };
+                                                              updatePropField(field.id, { defaultValue: newArray });
+                                                            }}
+                                                            style={{ width: '40px', height: '40px', cursor: 'pointer' }}
+                                                          />
+                                                          <input
+                                                            type="text"
+                                                            style={{ ...styles.propInput, flex: 1 }}
+                                                            value={fieldValue?.backgroundColor || '#ffffff'}
+                                                            onChange={(e) => {
+                                                              const newArray = [...(field.defaultValue as any[])];
+                                                              newArray[index] = {
+                                                                ...newArray[index],
+                                                                [fieldName]: {
+                                                                  ...(newArray[index][fieldName] || {}),
+                                                                  backgroundColor: e.target.value,
+                                                                },
+                                                              };
+                                                              updatePropField(field.id, { defaultValue: newArray });
+                                                            }}
+                                                          />
+                                                        </div>
+                                                      </div>
+                                                    ) : fieldProp.type === 'link' ? (
+                                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        <input
+                                                          type="text"
+                                                          style={styles.propInput}
+                                                          value={fieldValue?.url || ''}
+                                                          onChange={(e) => {
+                                                            const newArray = [...(field.defaultValue as any[])];
+                                                            newArray[index] = {
+                                                              ...newArray[index],
+                                                              [fieldName]: {
+                                                                ...(newArray[index][fieldName] || {}),
+                                                                url: e.target.value,
+                                                              },
+                                                            };
+                                                            updatePropField(field.id, { defaultValue: newArray });
+                                                          }}
+                                                          placeholder="https://example.com"
+                                                        />
+                                                        <textarea
+                                                          style={{
+                                                            ...styles.propInput,
+                                                            minHeight: '60px',
+                                                            fontFamily: 'monospace',
+                                                            whiteSpace: 'pre-wrap',
+                                                          }}
+                                                          value={fieldValue?.text || ''}
+                                                          onChange={(e) => {
+                                                            const newArray = [...(field.defaultValue as any[])];
+                                                            newArray[index] = {
+                                                              ...newArray[index],
+                                                              [fieldName]: {
+                                                                ...(newArray[index][fieldName] || {}),
+                                                                text: e.target.value,
+                                                              },
+                                                            };
+                                                            updatePropField(field.id, { defaultValue: newArray });
+                                                          }}
+                                                            placeholder="リンクテキスト（改行可）"
+                                                        />
+                                                        <select
+                                                          style={styles.propInput}
+                                                          value={fieldValue?.target || '_self'}
+                                                          onChange={(e) => {
+                                                            const newArray = [...(field.defaultValue as any[])];
+                                                            newArray[index] = {
+                                                              ...newArray[index],
+                                                              [fieldName]: {
+                                                                ...(newArray[index][fieldName] || {}),
+                                                                target: e.target.value,
+                                                              },
+                                                            };
+                                                            updatePropField(field.id, { defaultValue: newArray });
+                                                          }}
+                                                        >
+                                                          <option value="_self">同じタブで開く (_self)</option>
+                                                          <option value="_blank">新しいタブで開く (_blank)</option>
+                                                        </select>
+                                                      </div>
+                                                    ) : (
+                                                      <input
+                                                        type="text"
+                                                        style={styles.propInput}
+                                                        value={typeof fieldValue === 'string' ? fieldValue : JSON.stringify(fieldValue)}
+                                                        onChange={(e) => {
+                                                          const newArray = [...(field.defaultValue as any[])];
+                                                          newArray[index] = {
+                                                            ...newArray[index],
+                                                            [fieldName]: e.target.value,
+                                                          };
+                                                          updatePropField(field.id, { defaultValue: newArray });
+                                                        }}
+                                                      />
+                                                    )}
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
+                                          ) : isLinkItem ? (
+                            // リンク項目にタグを含む場合
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <div>
+                                          <label style={{ fontSize: '11px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                                            URL (href)
+                                          </label>
+                                          <input
+                                            type="text"
+                                            style={styles.propInput}
+                                            value={item.url || item.href || ''}
+                                            onChange={(e) => {
+                                              const newArray = [...(field.defaultValue as any[])];
+                                              newArray[index] = {
+                                                ...item,
+                                                url: e.target.value,
+                                                href: e.target.value,
+                                              };
+                                              updatePropField(field.id, { defaultValue: newArray });
+                                            }}
+                                            placeholder="https://example.com"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label style={{ fontSize: '11px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                                            テキスト
+                                          </label>
+                                          <textarea
+                                            style={{
+                                              ...styles.propInput,
+                                              minHeight: '60px',
+                                              fontFamily: 'monospace',
+                                              whiteSpace: 'pre-wrap',
+                                            }}
+                                            value={item.text || ''}
+                                            onChange={(e) => {
+                                              const newArray = [...(field.defaultValue as any[])];
+                                              newArray[index] = {
+                                                ...item,
+                                                text: e.target.value,
+                                              };
+                                              updatePropField(field.id, { defaultValue: newArray });
+                                            }}
+                                            placeholder="リンクテキスト（改行可）"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label style={{ fontSize: '11px', fontWeight: '500', color: '#6b7280', display: 'block', marginBottom: '4px' }}>
+                                            target属性
+                                          </label>
+                                          <select
+                                            style={styles.propInput}
+                                            value={item.target || '_self'}
+                                            onChange={(e) => {
+                                              const newArray = [...(field.defaultValue as any[])];
+                                              newArray[index] = {
+                                                ...item,
+                                                target: e.target.value,
+                                              };
+                                              updatePropField(field.id, { defaultValue: newArray });
+                                            }}
+                                          >
+                                            <option value="_self">同じタブで開く (_self)</option>
+                                            <option value="_blank">新しいタブで開く (_blank)</option>
+                                          </select>
+                                        </div>
+                                      </div>
+                                    ) : isStringItem ? (
+                                      // 文字列項目
+                                      <textarea
+                                        style={{
+                                          ...styles.propInput,
+                                          minHeight: '60px',
+                                          fontFamily: 'monospace',
+                                          whiteSpace: 'pre-wrap',
+                                        }}
+                                        value={item}
+                                        onChange={(e) => {
+                                          const newArray = [...(field.defaultValue as any[])];
+                                          newArray[index] = e.target.value;
+                                          updatePropField(field.id, { defaultValue: newArray });
+                                        }}
+                                        placeholder="テキストを入力（改行可）"
+                                      />
+                                    ) : (
+                                      // その他のオブジェクト項目
+                                      <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                        {JSON.stringify(item, null, 2)}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                              <button
+                                onClick={() => {
+                                  const currentArray = Array.isArray(field.defaultValue) ? [...field.defaultValue] : [];
+                                  const arrayFieldPropsForAdd = propFields.filter(f => f.arrayParentId === field.id);
+                                  
+                                  let newItem: any;
+                                  
+                                  if (arrayFieldPropsForAdd.length > 0) {
+                                    newItem = {};
+                                    arrayFieldPropsForAdd.forEach(fieldProp => {
+                                      const fieldName = fieldProp.arrayFieldName || fieldProp.name;
+                                      const defaultValue = fieldProp.defaultValue;
+                                      newItem[fieldName] = defaultValue;
+                                    });
+                                  } else {
+                                    const lastItem = currentArray.length > 0 ? currentArray[currentArray.length - 1] : null;
+                                    
+                                    if (lastItem && typeof lastItem === 'object' && (lastItem.url !== undefined || lastItem.href !== undefined)) {
+                                      newItem = { url: '', text: '', target: '_self' };
+                                    } else if (lastItem && typeof lastItem === 'object') {
+                                      newItem = { ...lastItem };
+                                    } else {
+                                      newItem = '新しい項目';
+                                    }
+                                  }
+                                  
+                                  updatePropField(field.id, { defaultValue: [...currentArray, newItem] });
+                                }}
+                                style={{
+                                  padding: '8px 12px',
+                                  backgroundColor: '#3b82f6',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  fontSize: '12px',
+                                  fontWeight: '500',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px',
+                                }}
+                              >
+                                <Plus size={14} />
+                                項目を追加
+                              </button>
+                            </div>
+                          );
+                        })()}
                           </div>
+                        ) : field.type === 'text' || field.type === 'textarea' ? (
+                          <textarea
+                            style={{
+                              ...styles.propInput,
+                              minHeight: '80px',
+                              fontFamily: 'monospace',
+                              lineHeight: '1.4',
+                              resize: 'vertical',
+                              whiteSpace: 'pre-wrap',
+                            }}
+                            value={typeof field.defaultValue === 'string' ? field.defaultValue : ''}
+                            onChange={(e) => updatePropField(field.id, { defaultValue: e.target.value })}
+                              placeholder="改行を含むテキストを入力できます"
+                          />
                         ) : (
                           <input
                             type="text"
@@ -1437,6 +2946,73 @@ Unique ID: ${metadata.uniqueId}
             </pre>
 
             <div style={styles.saveSection}>
+              {/* バージョン管理オプション */}
+              {supabase && (
+                <div style={{
+                  marginBottom: '16px',
+                  padding: '16px',
+                  backgroundColor: '#f9fafb',
+                  borderRadius: '8px',
+                  border: '1px solid #e5e7eb',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '12px',
+                  }}>
+                    <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#374151', margin: 0 }}>
+                      <History size={16} style={{ marginRight: '6px', display: 'inline', verticalAlign: 'middle' }} />
+                      バージョン管理
+                    </h4>
+                    {componentName && (
+                      <button
+                        onClick={() => {
+                          const metadata = generateComponentMetadata(
+                            isNewCategory ? newCategoryName : category,
+                            isNewCategory ? newCategoryRomanized : categoryRomanized,
+                            componentName
+                          );
+                          loadVersionHistory(metadata.uniqueId);
+                        }}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: '#f3f4f6',
+                          color: '#374151',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        履歴を表示
+                      </button>
+                    )}
+                  </div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    color: '#374151',
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={saveAsDraft}
+                      onChange={(e) => setSaveAsDraft(e.target.checked)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <span>ドラフト版として保存（後でリリース版に変更可能）</span>
+                  </label>
+                  <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px', marginBottom: 0 }}>
+                    {saveAsDraft
+                      ? 'ドラフト版として保存すると、開発中のテスト用に使用します。リリース版に変更すると、他のユーザーが使用できるようになります'
+                      : 'リリース版として保存すると、すぐにコンポーネントライブラリで使用可能になります'}
+                  </p>
+                </div>
+              )}
+
               <button
                 style={{ ...styles.saveButton, ...(isSaved ? styles.savedButton : {}) }}
                 onClick={saveComponentAndCreateFiles}
@@ -1449,13 +3025,15 @@ Unique ID: ${metadata.uniqueId}
                   </>
                 ) : (
                   <>
-                    <Plus size={16} />
+                    <Save size={16} />
                     コンポーネント追加
                   </>
                 )}
               </button>
               <p style={styles.saveHint}>
-                追加後、コンポーネントライブラリに表示されます
+                {supabase && saveAsDraft
+                  ? 'ドラフト版として保存されます。後でリリース版に変更できます'
+                  : '追加後、コンポーネントライブラリに表示されます'}
               </p>
             </div>
           </div>
@@ -1475,7 +3053,7 @@ Unique ID: ${metadata.uniqueId}
               <div style={styles.selectedTextPreview}>
                 <label style={styles.modalLabel}>選択されたタグ:</label>
                 <div style={styles.selectedTextBox}>
-                  {selectedTagIndex !== null && parsedTags[selectedTagIndex] && (
+                  {selectedTagIndex !== null && selectedTagIndex >= 0 && parsedTags[selectedTagIndex] && (
                     <span style={{ fontFamily: 'monospace', color: '#3b82f6', fontWeight: 'bold' }}>
                       &lt;{parsedTags[selectedTagIndex].tagName}&gt;
                     </span>
@@ -1485,7 +3063,7 @@ Unique ID: ${metadata.uniqueId}
 
               {childTags.length > 0 && (
                 <div style={styles.modalField}>
-                  <label style={styles.modalLabel}>対象要素を選択:</label>
+                  <label style={styles.modalLabel}>対象要素を選択</label>
                   <div style={{
                     padding: '12px',
                     backgroundColor: '#f9fafb',
@@ -1510,11 +3088,15 @@ Unique ID: ${metadata.uniqueId}
                         style={{ marginRight: '8px' }}
                       />
                       <span style={{ fontFamily: 'monospace', fontSize: '13px' }}>
-                        &lt;{parsedTags[selectedTagIndex!].tagName}&gt;
-                        {(() => {
-                          const className = extractClassName(parsedTags[selectedTagIndex!].fullElement);
-                          return className ? ` (${className})` : '';
-                        })()} (親要素)
+                        {selectedTagIndex !== null && selectedTagIndex >= 0 && parsedTags[selectedTagIndex] && (
+                          <>
+                            &lt;{parsedTags[selectedTagIndex].tagName}&gt;
+                            {(() => {
+                              const className = extractClassName(parsedTags[selectedTagIndex].fullElement);
+                              return className ? ` (${className})` : '';
+                            })()} (親要素)
+                          </>
+                        )}
                       </span>
                     </label>
                     {childTags.map((childTag, index) => (
@@ -1555,7 +3137,7 @@ Unique ID: ${metadata.uniqueId}
                           const displayName = className 
                             ? `&lt;${selectedChild.tagName}&gt; (${className})`
                             : `&lt;${selectedChild.tagName}&gt;`;
-                          return `子タグ「${displayName}」にプロパティが適用されます`;
+                          return `子タグ、${displayName}にプロパティが適用されます`;
                         })()}
                   </p>
                 </div>
@@ -1575,18 +3157,17 @@ Unique ID: ${metadata.uniqueId}
                   onChange={(e) => setNewPropType(e.target.value as PropField['type'])}
                   autoFocus
                 >
-                  <option value="text">① テキスト編集</option>
-                  <option value="textarea">① テキスト編集（複数行）</option>
+                  <option value="text">① テキスト編集（改行可）</option>
                   <option value="link">② リンク編集</option>
-                  <option value="image">③ 画像編集（D&amp;D対応）</option>
+                  <option value="image">③ 画像編集（&amp;D対応！）</option>
                   <option value="color">④ テキストカラーのみ</option>
                   <option value="backgroundColor">④ 背景カラーのみ</option>
-                  <option value="colorBoth">④ テキスト＆背景カラー両方</option>
-                  <option value="array">⑤ 配列（li要素など）</option>
+                  <option value="colorBoth">④ テキスト！背景カラー両方</option>
+                  <option value="array">⑤ 配列（i要素など）</option>
                   <option value="visibility">⑥ 表示/非表示</option>
                 </select>
                 <p style={styles.modalHint}>
-                  {selectedTagIndex !== null && parsedTags[selectedTagIndex] && (() => {
+                  {selectedTagIndex !== null && selectedTagIndex >= 0 && parsedTags[selectedTagIndex] && (() => {
                     const targetTagName = selectedChildIndex >= 0 && childTags[selectedChildIndex]
                       ? childTags[selectedChildIndex].tagName
                       : parsedTags[selectedTagIndex].tagName;
@@ -1594,36 +3175,138 @@ Unique ID: ${metadata.uniqueId}
                       <>
                         <strong>推奨:</strong>
                         {targetTagName === 'a' && ' ② リンク編集'}
-                        {targetTagName === 'img' && ' ③ 画像編集'}
-                        {targetTagName === 'ul' && ' ⑤ 配列'}
-                        {targetTagName === 'ol' && ' ⑤ 配列'}
+                        {targetTagName === 'img' && ' ③ 画像編集（&amp;D対応！）'}
+                        {targetTagName === 'ul' && ' ⑤ 配列（i要素など）'}
+                        {targetTagName === 'ol' && ' ⑤ 配列（i要素など）'}
                         {!['a', 'img', 'ul', 'ol'].includes(targetTagName) &&
-                          ' ① テキスト編集 または ④ カラー編集'}
+                          ' ① テキスト編集（改行可）または ④ カラー編集'}
                       </>
                     );
                   })()}
                 </p>
               </div>
 
-              {selectedTagIndex !== null && parsedTags[selectedTagIndex] && (() => {
+              {selectedTagIndex !== null && selectedTagIndex >= 0 && parsedTags[selectedTagIndex] && (() => {
                 const targetTag = selectedChildIndex >= 0 && childTags[selectedChildIndex] 
                   ? childTags[selectedChildIndex] 
                   : parsedTags[selectedTagIndex];
+                const parentArrayIndex = selectedTagIndex !== null ? findParentArrayElement(selectedTagIndex) : null;
+                const canBeArrayField = parentArrayIndex !== null && 
+                                        newPropType !== 'array' && 
+                                        (parsedTags[selectedTagIndex].tagName === 'li' || 
+                                         (selectedChildIndex >= 0 && childTags[selectedChildIndex]?.tagName === 'li'));
+                
                 return (
-                  <div style={{
-                    padding: '12px',
-                    backgroundColor: '#f0fdf4',
-                    borderRadius: '6px',
-                    border: '1px solid #bbf7d0',
-                    marginTop: '12px',
-                  }}>
-                    <p style={{ fontSize: '12px', color: '#15803d', margin: '0 0 4px 0', fontWeight: 'bold' }}>
-                      ✓ 自動生成されるプロパティ名
-                    </p>
-                    <p style={{ fontSize: '13px', color: '#166534', margin: 0, fontFamily: 'monospace', fontWeight: 'bold' }}>
-                      {generatePropertyName(targetTag.tagName, newPropType)}
-                    </p>
-                  </div>
+                  <>
+                    <div style={{
+                      padding: '12px',
+                      backgroundColor: '#f0fdf4',
+                      borderRadius: '6px',
+                      border: '1px solid #bbf7d0',
+                      marginTop: '12px',
+                    }}>
+                      <p style={{ fontSize: '12px', color: '#15803d', margin: '0 0 4px 0', fontWeight: 'bold' }}>
+                        自動生成されるプロパティ名
+                      </p>
+                      <p style={{ fontSize: '13px', color: '#166534', margin: 0, fontFamily: 'monospace', fontWeight: 'bold' }}>
+                        {generatePropertyName(targetTag.tagName, newPropType)}
+                      </p>
+                    </div>
+                    
+                    {/* 配列統合オプション */}
+                    {canBeArrayField && (
+                      <div style={{
+                        padding: '12px',
+                        backgroundColor: '#fef3c7',
+                        borderRadius: '6px',
+                        border: '1px solid #fde68a',
+                        marginTop: '12px',
+                      }}>
+                        <label style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          cursor: 'pointer',
+                          marginBottom: isArrayField ? '12px' : '0',
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={isArrayField}
+                            onChange={(e) => {
+                              setIsArrayField(e.target.checked);
+                              if (!e.target.checked) {
+                                setArrayParentName('');
+                                setArrayFieldName('');
+                              } else {
+                                // 既存の配列プロパティを検索
+                                const parentTag = parsedTags[parentArrayIndex!];
+                                const existingArrayProp = propFields.find(f => 
+                                  f.type === 'array' && 
+                                  f.position && 
+                                  f.position.start === parentTag.position.start
+                                );
+                                if (existingArrayProp) {
+                                  setArrayParentName(existingArrayProp.name);
+                                } else {
+                                  // 新しい配列プロパティ名を生成
+                                  const newArrayName = generatePropertyName('ul', 'array');
+                                  setArrayParentName(newArrayName);
+                                }
+                                // フィールド名を動的生成（name, price, backgroundColor）
+                                const fieldName = generatePropertyName(targetTag.tagName, newPropType)
+                                  .replace(/_\d+_/, '_')
+                                  .replace(/_text$/, '')
+                                  .replace(/_link$/, '')
+                                  .replace(/_image$/, '')
+                                  .replace(/_color$/, '')
+                                  .replace(/_bg_color$/, '')
+                                  .replace(/_color_both$/, '');
+                                setArrayFieldName(fieldName);
+                              }
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          <span style={{ fontSize: '13px', fontWeight: '500', color: '#92400e' }}>
+                            配列項目のフィールドとして統合
+                          </span>
+                        </label>
+                        {isArrayField && (
+                          <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div>
+                              <label style={{ fontSize: '12px', fontWeight: '500', color: '#92400e', display: 'block', marginBottom: '4px' }}>
+                                配列プロパティ名
+                              </label>
+                              <input
+                                type="text"
+                                value={arrayParentName}
+                                onChange={(e) => setArrayParentName(e.target.value)}
+                                style={styles.modalInput}
+                                placeholder="additionalPlans"
+                              />
+                              <p style={{ fontSize: '11px', color: '#a16207', marginTop: '4px', marginBottom: 0 }}>
+                                既存の配列プロパティに統合する場合、その名前を入力してください
+                              </p>
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '12px', fontWeight: '500', color: '#92400e', display: 'block', marginBottom: '4px' }}>
+                                フィールド名（配列項目の名前）
+                              </label>
+                              <input
+                                type="text"
+                                value={arrayFieldName}
+                                onChange={(e) => setArrayFieldName(e.target.value)}
+                                style={styles.modalInput}
+                                placeholder="name, price, backgroundColor"
+                              />
+                              <p style={{ fontSize: '11px', color: '#a16207', marginTop: '4px', marginBottom: 0 }}>
+                                配列の項目に使用されるフィールド名（name, price, backgroundColor）
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
                 );
               })()}
             </div>
@@ -1649,411 +3332,110 @@ Unique ID: ${metadata.uniqueId}
           </div>
         </div>
       )}
+
+      {/* バージョン履歴モーダル */}
+      {showVersionHistory && (
+        <div style={styles.modalOverlay} onClick={() => setShowVersionHistory(false)}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h3 style={styles.modalTitle}>
+              <History size={20} style={{ marginRight: '8px', display: 'inline', verticalAlign: 'middle' }} />
+              バージョン履歴
+            </h3>
+            <div style={styles.modalContent}>
+              {versionHistory.length === 0 ? (
+                <p style={{ color: '#6b7280', fontSize: '14px' }}>バージョン履歴がありません</p>
+              ) : (
+                <div style={{
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                }}>
+                  {versionHistory.map((version) => (
+                    <div
+                      key={version.id}
+                      style={{
+                        padding: '12px',
+                        marginBottom: '8px',
+                        backgroundColor: version.isDraft ? '#fef3c7' : '#d1fae5',
+                        borderRadius: '6px',
+                        border: `1px solid ${version.isDraft ? '#fde68a' : '#a7f3d0'}`,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: '14px' }}>
+                            バージョン {version.version}
+                          </span>
+                          {version.isDraft ? (
+                            <span style={{
+                              padding: '2px 8px',
+                              backgroundColor: '#fbbf24',
+                              color: '#78350f',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                            }}>
+                              ドラフト
+                            </span>
+                          ) : (
+                            <span style={{
+                              padding: '2px 8px',
+                              backgroundColor: '#10b981',
+                              color: '#064e3b',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: 'bold',
+                            }}>
+                              リリース
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#6b7280', margin: '4px 0 0 0' }}>
+                          {new Date(version.createdAt).toLocaleString('ja-JP')}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const metadata = generateComponentMetadata(
+                            isNewCategory ? newCategoryName : category,
+                            isNewCategory ? newCategoryRomanized : categoryRomanized,
+                            componentName
+                          );
+                          loadVersion(metadata.uniqueId, version.version);
+                          setShowVersionHistory(false);
+                        }}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: '#3b82f6',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        読み込む
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={styles.modalActions}>
+              <button
+                style={styles.modalCancelButton}
+                onClick={() => setShowVersionHistory(false)}
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-const styles = {
-  container: {
-    padding: '24px',
-    backgroundColor: '#f9fafb',
-    minHeight: '100vh',
-  } as React.CSSProperties,
-  header: {
-    marginBottom: '24px',
-  } as React.CSSProperties,
-  title: {
-    fontSize: '28px',
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: '8px',
-  } as React.CSSProperties,
-  subtitle: {
-    fontSize: '16px',
-    color: '#6b7280',
-  } as React.CSSProperties,
-  stepsContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '32px',
-    padding: '20px',
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  } as React.CSSProperties,
-  step: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 20px',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#9ca3af',
-    transition: 'all 0.2s',
-  } as React.CSSProperties,
-  stepActive: {
-    color: '#2563eb',
-    backgroundColor: '#dbeafe',
-  } as React.CSSProperties,
-  stepNumber: {
-    width: '28px',
-    height: '28px',
-    borderRadius: '50%',
-    backgroundColor: '#e5e7eb',
-    color: '#6b7280',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '13px',
-    fontWeight: 'bold',
-  } as React.CSSProperties,
-  stepDivider: {
-    width: '60px',
-    height: '2px',
-    backgroundColor: '#e5e7eb',
-    margin: '0 8px',
-  } as React.CSSProperties,
-  content: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-  } as React.CSSProperties,
-  formSection: {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    padding: '24px',
-    marginBottom: '24px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  } as React.CSSProperties,
-  sectionHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px',
-  } as React.CSSProperties,
-  sectionTitle: {
-    fontSize: '20px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: 0,
-    display: 'flex',
-    alignItems: 'center',
-  } as React.CSSProperties,
-  fieldRow: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr 1fr',
-    gap: '16px',
-  } as React.CSSProperties,
-  field: {
-    marginBottom: '0',
-  } as React.CSSProperties,
-  label: {
-    display: 'block',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: '6px',
-  } as React.CSSProperties,
-  required: {
-    color: '#ef4444',
-  } as React.CSSProperties,
-  input: {
-    width: '100%',
-    padding: '10px 12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-    outline: 'none',
-  } as React.CSSProperties,
-  helpText: {
-    fontSize: '14px',
-    color: '#6b7280',
-    marginBottom: '12px',
-    lineHeight: '1.5',
-  } as React.CSSProperties,
-  codeTextarea: {
-    width: '100%',
-    padding: '12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontFamily: 'monospace',
-    lineHeight: '1.6',
-    outline: 'none',
-    resize: 'vertical',
-  } as React.CSSProperties,
-  nextButton: {
-    padding: '10px 20px',
-    backgroundColor: '#3b82f6',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: '500',
-    cursor: 'pointer',
-  } as React.CSSProperties,
-  generateButton: {
-    padding: '10px 20px',
-    backgroundColor: '#10b981',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-  } as React.CSSProperties,
-  emptyState: {
-    textAlign: 'center' as const,
-    padding: '40px 20px',
-    color: '#6b7280',
-    fontSize: '14px',
-  } as React.CSSProperties,
-  propsList: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '12px',
-  } as React.CSSProperties,
-  propCard: {
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
-    padding: '16px',
-    backgroundColor: '#f9fafb',
-  } as React.CSSProperties,
-  propCardHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '12px',
-  } as React.CSSProperties,
-  propBadge: {
-    padding: '4px 8px',
-    backgroundColor: '#dbeafe',
-    color: '#1e40af',
-    borderRadius: '4px',
-    fontSize: '11px',
-    fontWeight: '600',
-    textTransform: 'uppercase' as const,
-  } as React.CSSProperties,
-  propName: {
-    flex: 1,
-    fontFamily: 'monospace',
-    fontSize: '13px',
-    color: '#374151',
-    fontWeight: '500',
-  } as React.CSSProperties,
-  deleteButton: {
-    padding: '6px',
-    backgroundColor: '#fee2e2',
-    color: '#dc2626',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-  } as React.CSSProperties,
-  addButton: {
-    padding: '10px 12px',
-    backgroundColor: '#3b82f6',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'background-color 0.2s',
-  } as React.CSSProperties,
-  propCardBody: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '12px',
-  } as React.CSSProperties,
-  propFieldRow: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '12px',
-  } as React.CSSProperties,
-  propFieldHalf: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-  } as React.CSSProperties,
-  propField: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-  } as React.CSSProperties,
-  propLabel: {
-    fontSize: '12px',
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: '4px',
-  } as React.CSSProperties,
-  propInput: {
-    padding: '8px 12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '13px',
-    outline: 'none',
-  } as React.CSSProperties,
-  codeSection: {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    padding: '24px',
-    marginBottom: '24px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  } as React.CSSProperties,
-  codeSectionHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px',
-  } as React.CSSProperties,
-  codeActions: {
-    display: 'flex',
-    gap: '8px',
-  } as React.CSSProperties,
-  iconButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '8px 12px',
-    backgroundColor: '#f3f4f6',
-    color: '#374151',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '13px',
-    fontWeight: '500',
-    cursor: 'pointer',
-  } as React.CSSProperties,
-  codeBlock: {
-    backgroundColor: '#1f2937',
-    color: '#f9fafb',
-    padding: '20px',
-    borderRadius: '8px',
-    overflow: 'auto',
-    fontSize: '13px',
-    lineHeight: '1.6',
-    fontFamily: 'monospace',
-    maxHeight: '400px',
-  } as React.CSSProperties,
-  saveSection: {
-    marginTop: '24px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    gap: '8px',
-  } as React.CSSProperties,
-  saveButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 32px',
-    backgroundColor: '#6366f1',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '16px',
-    fontWeight: '600',
-    cursor: 'pointer',
-  } as React.CSSProperties,
-  savedButton: {
-    backgroundColor: '#10b981',
-  } as React.CSSProperties,
-  saveHint: {
-    fontSize: '13px',
-    color: '#6b7280',
-  } as React.CSSProperties,
-  modalOverlay: {
-    position: 'fixed' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2000,
-  } as React.CSSProperties,
-  modal: {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    padding: '24px',
-    maxWidth: '500px',
-    width: '90%',
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-  } as React.CSSProperties,
-  modalTitle: {
-    fontSize: '20px',
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: '20px',
-  } as React.CSSProperties,
-  modalContent: {
-    marginBottom: '20px',
-  } as React.CSSProperties,
-  selectedTextPreview: {
-    marginBottom: '16px',
-  } as React.CSSProperties,
-  modalLabel: {
-    display: 'block',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#374151',
-    marginBottom: '8px',
-  } as React.CSSProperties,
-  selectedTextBox: {
-    padding: '12px',
-    backgroundColor: '#f3f4f6',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-    color: '#1f2937',
-    fontFamily: 'monospace',
-    wordBreak: 'break-word' as const,
-  } as React.CSSProperties,
-  modalField: {
-    marginBottom: '16px',
-  } as React.CSSProperties,
-  modalInput: {
-    width: '100%',
-    padding: '10px 12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-    outline: 'none',
-  } as React.CSSProperties,
-  modalHint: {
-    fontSize: '12px',
-    color: '#6b7280',
-    marginTop: '4px',
-    fontFamily: 'monospace',
-  } as React.CSSProperties,
-  modalActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '8px',
-  } as React.CSSProperties,
-  modalCancelButton: {
-    padding: '10px 20px',
-    backgroundColor: '#f3f4f6',
-    color: '#374151',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: '500',
-    cursor: 'pointer',
-  } as React.CSSProperties,
-  modalSaveButton: {
-    padding: '10px 20px',
-    backgroundColor: '#2563eb',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: '500',
-    cursor: 'pointer',
-  } as React.CSSProperties,
 };
 
 export default ComponentBuilder;
